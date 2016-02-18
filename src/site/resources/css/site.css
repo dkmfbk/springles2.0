@@ -1,0 +1,16 @@
+#banner {
+	background: none !important;
+	padding: 10px;
+	height: 75px;
+}
+
+#leftColumn {
+	margin-left: 10px;
+	border: solid 1px #cccccc;
+	width: 250px;
+}
+
+#bodyColumn {
+	margin-right: 10px;
+	margin-left: 280px;
+}

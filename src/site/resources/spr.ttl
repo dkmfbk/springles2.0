@@ -1,0 +1,271 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix :     <http://dkm.fbk.eu/springles/ruleset#> .
+
+
+# RULESETS
+
+:Ruleset a owl:Class ;
+    rdfs:label "ruleset"^^xsd:string ;
+    rdfs:comment "A ruleset consists of a set of rules that are evaluated either in forward- or backward- chaining and jointly specify the type of inference provided by a Springles repository. Forward evaluation of rules is used to materialize a repository closure and can be further specified by supplying a closure plan, that decomposes the process in tasks and sub-tasks. A ruleset is optionally associated to a SPARQL prologue, that defines the namespaces and base URIs for parsing SPARQL expressions in the ruleset, and to zero or more ruleset parameters, that permit to inject user-supplied constant values (e.g., the URI of a graph where to store inferences) for controlling the evaluation of rules."^^xsd:string ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty :closurePlan ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:parameterizedBy a owl:ObjectProperty ;
+    rdfs:label "parameterized by"^^xsd:string ;
+    rdfs:comment "Specifies the (optional) parameters of the ruleset."^^xsd:string ;
+    rdfs:domain :Ruleset ;
+    rdfs:range :Parameter .
+
+:prologue a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "prologue"^^xsd:string ;
+    rdfs:comment "The optional SPARQL prologue, consisting of namespace and base URI declarations, to be used when parsing SPARQL expressions in the ruleset (head, body and condition of rules, bind expressions)."^^xsd:string ;
+    rdfs:domain :Ruleset ;
+    rdfs:range xsd:string .
+
+:evalBackward a owl:ObjectProperty ;
+    rdfs:label "eval backward"^^xsd:string ;
+    rdfs:comment "Specifies the rules to be evaluated in a backward-chaining fashion. Note that forward- and backward- evaluation of a rule are mutually exclusive."^^xsd:string ;
+    owl:propertyDisjointWith :evalForward ;
+    rdfs:domain :Ruleset ;
+    rdfs:range :Rule .
+
+:evalForward a owl:ObjectProperty ;
+    rdfs:label "eval forward"^^xsd:string ;
+    rdfs:comment "Specifies the rules to be evaluated in a forward-chaining fashion. If a closure plan is supplied, then this property can be omitted; otherwise, the rules listed here are evaluated according to a basic plan that perform a fix-point evaluation of all the forward-chanining rules."^^xsd:string ;
+    owl:propertyDisjointWith :evalBackward ;
+    rdfs:domain :Ruleset ;
+    rdfs:range :Rule .
+
+:closurePlan a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "closure plan"^^xsd:string ;
+    rdfs:comment "Specifies the closure plan to be used for evaluating forward-chaining rules. Note that this property is optional: if supplied, property 'evalForward' will be ignored; otherwised, a simple plan consisting of the fix-point evaluation of all the forward-chaining rules will be used."^^xsd:string ;
+    rdfs:domain :Ruleset ;
+    rdfs:range :ClosureTask .
+
+
+# PARAMETERS
+
+# general definition
+
+:Parameter a owl:Class ;
+    rdfs:label "parameter"^^xsd:string ;
+    rdfs:comment "A ruleset parameter whose value can be supplied by users to customize the way rules in the ruleset are evaluated. A ruleset parameter is characterized by mandatory name and default value. Two types of ruleset parameters are supported: literal parameters assume literal values; IRI parameters assume IRI values."^^xsd:string ;
+    owl:unionOf ( :LiteralParameter :IRIParameter ) ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty :name ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:name a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "name"^^xsd:string ;
+    rdfs:comment "Specifies the name of a ruleset parameter. SPARQL variables in the ruleset having the same name will be replaced with the values supplied by the user for the parameter (or its default value)."^^xsd:string ;
+    rdfs:range xsd:string .
+
+# literal parameters
+
+:LiteralParameter a owl:Class ;
+    rdfs:label "literal parameter"^^xsd:string ;
+    rdfs:comment "A literal parameter, whose value must be an RDF literal."^^xsd:string ;
+    owl:disjointWith :IRIParameter ;
+    rdfs:subClassOf :Parameter , [
+        a owl:Restriction ;
+        owl:onProperty :defaultValue ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:defaultValue a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "default value"^^xsd:string ;
+    rdfs:comment "Specifies the default literal value of a literal parameter."^^xsd:string ;
+    rdfs:domain :LiteralParameter .
+
+# IRI parameters
+
+:IRIParameter a owl:Class ;
+    rdfs:label "IRI parameter"^^xsd:string ;
+    rdfs:comment "A IRI parameter, whose value must be an IRI."^^xsd:string ;
+    owl:disjointWith :LiteralParameter ;
+    rdfs:subClassOf :Parameter , [
+        a owl:Restriction ;
+        owl:onProperty :defaultIRI ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:defaultIRI a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "default IRI"^^xsd:string ;
+    rdfs:comment "Specifies the default IRI value of an IRI parameter."^^xsd:string ;
+    rdfs:domain :IRIParameter .
+
+
+# RULES
+
+:Rule a owl:Class ;
+    rdfs:label "rule"^^xsd:string ;
+    rdfs:comment "An inference rule expressed in a SPARQL-based form. A rule has a mandatory body, that has to be matched by statements in the repository, and head, that specifies which statements have to be inferred if the body is matched. Optionally, a rule is associated to the rules that may fire as a consequence of this rule being fired, and to a condition that must be satisfied by bindings inherited from the ruleset and closure task in order for the rule to be evaluated."^^xsd:string ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty :head ;
+        owl:someValuesFrom xsd:string
+    ], [
+        a owl:Restriction ;
+        owl:onProperty :body ;
+        owl:someValuesFrom xsd:string
+    ] .
+
+:RuleList a owl:Class ; # auxiliary, required by closure eval task
+    rdfs:subClassOf rdf:List , [
+        a owl:Restriction ;
+        owl:onProperty rdf:first ;
+        owl:allValuesFrom :Rule
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty rdf:rest ;
+        owl:allValuesFrom :RuleList
+    ] .
+    
+:condition a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "condition"^^xsd:string ;
+    rdfs:comment "Specifies an optional condition that must be satisfied in order for the rule to be evaluated. The condition is a generic SPARQL boolean expression (of the kind used in a FILTER construct); it can reference variables which are given a value based on the bindings inherited from the ruleset and the active closure tasks."^^xsd:string ;
+    rdfs:domain :Rule ;
+    rdfs:range xsd:string .
+
+:head a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "head"^^xsd:string ;
+    rdfs:comment "Specifies the head of the rule. The head is a SPARQL group graph pattern (of the kind used in a CONSTRUCT clause) extended with the support of the GRAPH keyword for generating statements in specific graphs. The head expression may reference variables, whose values derive either from the matched rule body or from bindings inherited from the ruleset and the active closure tasks."^^xsd:string ;
+    rdfs:domain :Rule ;
+    rdfs:range xsd:string .
+
+:body a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "body"^^xsd:string ;
+    rdfs:comment "Specifies the body of the rule. The body is a SPARQL expression of the kind used in WHERE clauses. Variables in the expression for which there is a binding (inherited from the ruleset or the active closure tasks) are replaced with the binding value. In general, the body has the tasks of (1) implementing the premise of the rule; (2) checking that the statements produced by the head are not already stated (explicitly or as inferences) in the repository; note that it is not necessary (and it may be detrimental for performances) to remove duplicates at this level, as this is already efficiently done by the inference engine."^^xsd:string ;
+    rdfs:domain :Rule ;
+    rdfs:range xsd:string .
+
+:triggerOf a owl:ObjectProperty ;
+    rdfs:label "trigger of"^^xsd:string ;
+    rdfs:comment "Specifies the (possibly empty) list of rule(s) that may fire if the subject rule is fired. This is an optional property that permit to provide the engine with the result of a static analysis of rule dependencies, so that it can be used to avoid unnecessary rule evaluations. If this property is not supplied, the engine will assume that every other rule may fire as a result of the subject rule being fired. Note that the order of rules in the list is not important."^^xsd:string ;
+    rdfs:domain :Rule ;
+    rdfs:range :RuleList .
+
+
+# CLOSURE TASKS
+
+# general task definition
+
+:ClosureTask a owl:Class ;
+    rdfs:label "closure task"^^xsd:string ;
+    rdfs:comment "A generic task for computing the closure by evaluating rules in forward-chaining mode. Closure tasks are arranged in a hierarchy where a parent task can be decomposed in one or more sub-tasks, that it executes according to a specific strategy (e.g., sequential vs fix-point execution). Note that the same task can be included in multiple positions in the hierarchy, which is actually a DAG and not necessarily a tree. Every task can declare zero or more 'bindings', which associate the result of a certain SPARQL expression - possibly referring to ruleset parameters or other bound variables - to a variable. The computed value is then replaced to all the occurrences of that variable in the sub-tasks and rules referenced by the task, providing a mechanism for controlling their execution."^^xsd:string .
+
+:ClosureTaskList a owl:Class ; # auxiliary, required by sequence task
+    rdfs:subClassOf rdf:List , [
+        a owl:Restriction ;
+        owl:onProperty rdf:first ;
+        owl:allValuesFrom :ClosureTask
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty rdf:rest ;
+        owl:allValuesFrom :ClosureTaskList
+    ] .
+
+:bind a owl:DatatypeProperty ;
+    rdfs:label "bind"^^xsd:string ;
+    rdfs:comment "Declares a binding for the subject closure task. A binding is a string of the form 'variable = SPARQL expression'. The expression is evaluated each time the task is executed, and the computed value is used to replace all the occurrences of the variable in the rules and sub-tasks referenced by the task."^^xsd:string ;
+    rdfs:domain :ClosureTask ;
+    rdfs:range xsd:string .
+    
+# eval task
+
+:ClosureEvalTask a owl:Class ;
+    rdfs:label "closure eval task"^^xsd:string ;
+    rdfs:comment "A closure task consisting in the evaluation of zero or more rules, specified using property 'evalOf'. Rules are evaluated in parallel. In case only a limited number 'N' of rules can be evaluated in parallel, rules are queued according to the order specified by 'evalOf' and the first 'N' rules are evaluated, starting the evaluation of another rule from the queue each time the the evaluation of a preceeding rule terminates. Inferred statements produced by each rules are buffered and written back to the repository only after all the rules have been evaluated."^^xsd:string ;
+    rdfs:subClassOf :ClosureTask , [
+        a owl:Restriction ;
+        owl:onProperty :evalOf ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:evalOf a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "evaluation of"^^xsd:string ;
+    rdfs:comment "Specifies a list of rules to be evaluated in parallel as part of a 'ClosureEvalTask'."^^xsd:string ;
+    rdfs:domain :ClosureEvalTask ;
+    rdfs:range :RuleList .
+
+# sequence task
+
+:ClosureSequenceTask a owl:Class ;
+    rdfs:label "closure sequence task"^^xsd:string ;
+    rdfs:comment "A closure task consisting in the sequential execution of zero or more sub-tasks, specified using property 'sequenceOf'."^^xsd:string ;
+    rdfs:subClassOf :ClosureTask , [
+        a owl:Restriction ;
+        owl:onProperty :sequenceOf ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:sequenceOf a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "sequence of"^^xsd:string ;
+    rdfs:comment "Specifies a list of sub-tasks to be executed sequentially as part of a 'ClosureSequenceTask'."^^xsd:string ;
+    rdfs:domain :ClosureSequenceTask ;
+    rdfs:range :ClosureTaskList .
+
+# fix-point task
+
+:ClosureFixPointTask a owl:Class ;
+    rdfs:label "closure fix-point task"^^xsd:string ;
+    rdfs:comment "A closure task consisting in the fix-point execution of a sub-task, i.e., the sub-task is repeatedly executed until it produces no more inferred statements."^^xsd:string ;
+    rdfs:subClassOf :ClosureTask , [
+        a owl:Restriction ;
+        owl:onProperty :fixPointOf ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:fixPointOf a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "fix-point of"^^xsd:string ;
+    rdfs:comment "Specifies the sub-task to be executed in a fix-point fashin as part of a 'ClosureFixPointTask'."^^xsd:string ;
+    rdfs:domain :ClosureFixPointTask ;
+    rdfs:range :ClosureTask .
+
+# repeat task
+
+:ClosureRepeatTask a owl:Class ;
+    rdfs:label "closure repeat task"^^xsd:string ;
+    rdfs:comment "A closure task consisting in the repeated execution of a sub-task for each tuple obtained from the evaluation of a query (a sort of for-each primitive). The query, specified by 'repeatOver', is executed once when the task is executed; query results are collected and bufferend and the sub-task, specified using 'repeatOf', is executed for each result tuple in the order they have been returned by the query. Note that the SPARQL bindings in the result tuple are injected as additional bindings in the sub-task, so that data extracted from the query can be actually used to control the execution of the sub-task."^^xsd:string ;
+    rdfs:subClassOf :ClosureTask , [
+        a owl:Restriction ;
+        owl:onProperty :repeatOf ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] , [
+        a owl:Restriction ;
+        owl:onProperty :repeatOver ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger
+    ] .
+
+:repeatOf a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "repeat of"^^xsd:string ;
+    rdfs:comment "Specifies the sub-task to be repeatedly executed as part of a 'ClosureRepeatTask'."^^xsd:string ;
+    rdfs:domain :ClosureRepeatTask ;
+    rdfs:range :ClosureTask .
+
+:repeatOver a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "repeat over"^^xsd:string ;
+    rdfs:comment "Specifies the query whose results control the execution of a sub-task in a 'ClosureRepeatTask'."^^xsd:string ;
+    rdfs:domain :ClosureRepeatTask ;
+    rdfs:range xsd:string .
+
+# disjointness constraint
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( :ClosureEvalTask :ClosureSequenceTask
+                  :ClosureFixPointTask :ClosureRepeatTask ) .
+
+
+# GLOBAL DISJOINTNESS AXIOMS
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( :Ruleset :Parameter :Rule :RuleList
+                  :ClosureTask :ClosureTaskList ) .

@@ -1,0 +1,27 @@
+Prefices
+{
+ P0     :   http://a.cx/onto#
+ edbP0  :   edb:http://a.cx/onto#
+ owl    :   http://www.w3.org/2002/07/owl#
+ rdf    :   http://www.w3.org/1999/02/22-rdf-syntax-ns#
+ rdfs   :   http://www.w3.org/2000/01/rdf-schema#
+ ruleml :   http://www.w3.org/2003/11/ruleml#
+ swrl   :   http://www.w3.org/2003/11/swrl#
+ swrlb  :   http://www.w3.org/2003/11/swrlb#
+ swrlx  :   http://www.w3.org/2003/11/swrlx#
+ xsd    :   http://www.w3.org/2001/XMLSchema#
+}
+
+Axioms
+{
+// Required by OWLIM (see https://confluence.ontotext.com/display/OWLIMv43/OWLIM-Lite+Reasoner#OWLIM-LiteReasoner-CustomRuleSets)
+<rdf:type> <rdf:type> <rdf:Property>
+}
+Rules
+{
+// Required by OWLIM (see https://confluence.ontotext.com/display/OWLIMv43/OWLIM-Lite+Reasoner#OWLIM-LiteReasoner-CustomRuleSets)
+ Id: Dummy
+ <P0:FY> <xsd:DUMMY> <P0:FY>
+--------------------------------------------------
+X <rdf:type> Y
+}

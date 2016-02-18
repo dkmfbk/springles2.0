@@ -1,0 +1,334 @@
+<classpath>
+  <classpathentry kind="src" path="src/test/resources" output="target/test-classes" excluding="**/*.java"/>
+  <classpathentry kind="src" path="src/main/java" including="**/*.java"/>
+  <classpathentry kind="src" path="src/main/resources" excluding="**/*.java"/>
+  <classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="var" path="M2_REPO/com/bigdata/bigdata/1.2.2/bigdata-1.2.2.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.10/commons-codec-1.10.jar" sourcepath="M2_REPO/commons-codec/commons-codec/1.10/commons-codec-1.10-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/commons-codec/commons-codec/1.10/commons-codec-1.10-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/commons-io/commons-io/2.4/commons-io-2.4.jar" sourcepath="M2_REPO/commons-io/commons-io/2.4/commons-io-2.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/commons-io/commons-io/2.4/commons-io-2.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/google/guava/guava/16.0/guava-16.0.jar" sourcepath="M2_REPO/com/google/guava/guava/16.0/guava-16.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/google/guava/guava/16.0/guava-16.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" sourcepath="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.4/httpclient-4.4.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpclient/4.4/httpclient-4.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/httpcomponents/httpclient/4.4/httpclient-4.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient-cache/4.2.5/httpclient-cache-4.2.5.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpclient-cache/4.2.5/httpclient-cache-4.2.5-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/httpcomponents/httpclient-cache/4.2.5/httpclient-cache-4.2.5-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.4/httpcore-4.4.jar" sourcepath="M2_REPO/org/apache/httpcomponents/httpcore/4.4/httpcore-4.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/httpcomponents/httpcore/4.4/httpcore-4.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-annotations/2.3.0/jackson-annotations-2.3.0.jar" sourcepath="M2_REPO/com/fasterxml/jackson/core/jackson-annotations/2.3.0/jackson-annotations-2.3.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.3.0/jackson-annotations-2.3.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.4.4/jackson-core-2.4.4.jar" sourcepath="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.4.4/jackson-core-2.4.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.4.4/jackson-core-2.4.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-databind/2.3.3/jackson-databind-2.3.3.jar" sourcepath="M2_REPO/com/fasterxml/jackson/core/jackson-databind/2.3.3/jackson-databind-2.3.3-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.3.3/jackson-databind-2.3.3-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/jcl-over-slf4j/1.7.7/jcl-over-slf4j-1.7.7.jar" sourcepath="M2_REPO/org/slf4j/jcl-over-slf4j/1.7.7/jcl-over-slf4j-1.7.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/slf4j/jcl-over-slf4j/1.7.7/jcl-over-slf4j-1.7.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/github/jsonld-java/jsonld-java/0.5.1/jsonld-java-0.5.1.jar" sourcepath="M2_REPO/com/github/jsonld-java/jsonld-java/0.5.1/jsonld-java-0.5.1-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/github/jsonld-java/jsonld-java/0.5.1/jsonld-java-0.5.1-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/google/code/findbugs/jsr305/2.0.1/jsr305-2.0.1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/junit/junit/4.11/junit-4.11.jar" sourcepath="M2_REPO/junit/junit/4.11/junit-4.11-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/junit/junit/4.11/junit-4.11-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.17/log4j-1.2.17.jar" sourcepath="M2_REPO/log4j/log4j/1.2.17/log4j-1.2.17-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/log4j/log4j/1.2.17/log4j-1.2.17-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-classic/1.0.8/logback-classic-1.0.8.jar" sourcepath="M2_REPO/ch/qos/logback/logback-classic/1.0.8/logback-classic-1.0.8-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/ch/qos/logback/logback-classic/1.0.8/logback-classic-1.0.8-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-core/1.0.8/logback-core-1.0.8.jar" sourcepath="M2_REPO/ch/qos/logback/logback-core/1.0.8/logback-core-1.0.8-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/ch/qos/logback/logback-core/1.0.8/logback-core-1.0.8-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-analyzers-common/4.10.4/lucene-analyzers-common-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-analyzers-common/4.10.4/lucene-analyzers-common-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-analyzers-common/4.10.4/lucene-analyzers-common-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-core/4.10.4/lucene-core-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-core/4.10.4/lucene-core-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-core/4.10.4/lucene-core-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-highlighter/4.10.4/lucene-highlighter-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-highlighter/4.10.4/lucene-highlighter-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-highlighter/4.10.4/lucene-highlighter-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-memory/4.10.4/lucene-memory-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-memory/4.10.4/lucene-memory-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-memory/4.10.4/lucene-memory-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-queries/4.10.4/lucene-queries-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-queries/4.10.4/lucene-queries-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-queries/4.10.4/lucene-queries-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-queryparser/4.10.4/lucene-queryparser-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-queryparser/4.10.4/lucene-queryparser-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-queryparser/4.10.4/lucene-queryparser-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-sandbox/4.10.4/lucene-sandbox-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-sandbox/4.10.4/lucene-sandbox-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-sandbox/4.10.4/lucene-sandbox-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/lucene/lucene-spatial/4.10.4/lucene-spatial-4.10.4.jar" sourcepath="M2_REPO/org/apache/lucene/lucene-spatial/4.10.4/lucene-spatial-4.10.4-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/apache/lucene/lucene-spatial/4.10.4/lucene-spatial-4.10.4-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/mapdb/mapdb/1.0.7/mapdb-1.0.7.jar" sourcepath="M2_REPO/org/mapdb/mapdb/1.0.7/mapdb-1.0.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/mapdb/mapdb/1.0.7/mapdb-1.0.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/ontotext/owlim/owlim-lite/5.2.5331/owlim-lite-5.2.5331.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-http-client/2.8.7/sesame-http-client-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-http-client/2.8.7/sesame-http-client-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-http-client/2.8.7/sesame-http-client-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-http-protocol/2.8.7/sesame-http-protocol-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-http-protocol/2.8.7/sesame-http-protocol-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-http-protocol/2.8.7/sesame-http-protocol-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-model/2.8.7/sesame-model-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-model/2.8.7/sesame-model-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-model/2.8.7/sesame-model-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-query/2.8.7/sesame-query-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-query/2.8.7/sesame-query-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-query/2.8.7/sesame-query-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryalgebra-evaluation/2.8.7/sesame-queryalgebra-evaluation-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryalgebra-evaluation/2.8.7/sesame-queryalgebra-evaluation-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryalgebra-evaluation/2.8.7/sesame-queryalgebra-evaluation-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryalgebra-model/2.8.7/sesame-queryalgebra-model-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryalgebra-model/2.8.7/sesame-queryalgebra-model-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryalgebra-model/2.8.7/sesame-queryalgebra-model-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryparser-api/2.8.7/sesame-queryparser-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryparser-api/2.8.7/sesame-queryparser-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryparser-api/2.8.7/sesame-queryparser-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryparser-serql/2.8.7/sesame-queryparser-serql-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryparser-serql/2.8.7/sesame-queryparser-serql-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryparser-serql/2.8.7/sesame-queryparser-serql-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryparser-sparql/2.8.7/sesame-queryparser-sparql-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryparser-sparql/2.8.7/sesame-queryparser-sparql-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryparser-sparql/2.8.7/sesame-queryparser-sparql-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryresultio-api/2.8.7/sesame-queryresultio-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryresultio-api/2.8.7/sesame-queryresultio-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryresultio-api/2.8.7/sesame-queryresultio-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-queryresultio-sparqlxml/2.8.7/sesame-queryresultio-sparqlxml-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-queryresultio-sparqlxml/2.8.7/sesame-queryresultio-sparqlxml-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-queryresultio-sparqlxml/2.8.7/sesame-queryresultio-sparqlxml-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-repository-api/2.8.7/sesame-repository-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-repository-api/2.8.7/sesame-repository-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-repository-api/2.8.7/sesame-repository-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-repository-contextaware/2.8.7/sesame-repository-contextaware-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-repository-contextaware/2.8.7/sesame-repository-contextaware-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-repository-contextaware/2.8.7/sesame-repository-contextaware-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-repository-sail/2.8.7/sesame-repository-sail-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-repository-sail/2.8.7/sesame-repository-sail-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-repository-sail/2.8.7/sesame-repository-sail-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-repository-sparql/2.8.7/sesame-repository-sparql-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-repository-sparql/2.8.7/sesame-repository-sparql-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-repository-sparql/2.8.7/sesame-repository-sparql-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-api/2.8.7/sesame-rio-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-api/2.8.7/sesame-rio-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-api/2.8.7/sesame-rio-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-datatypes/2.8.7/sesame-rio-datatypes-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-datatypes/2.8.7/sesame-rio-datatypes-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-datatypes/2.8.7/sesame-rio-datatypes-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-jsonld/2.8.7/sesame-rio-jsonld-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-jsonld/2.8.7/sesame-rio-jsonld-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-jsonld/2.8.7/sesame-rio-jsonld-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-languages/2.8.7/sesame-rio-languages-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-languages/2.8.7/sesame-rio-languages-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-languages/2.8.7/sesame-rio-languages-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-nquads/2.8.7/sesame-rio-nquads-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-nquads/2.8.7/sesame-rio-nquads-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-nquads/2.8.7/sesame-rio-nquads-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-ntriples/2.8.7/sesame-rio-ntriples-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-ntriples/2.8.7/sesame-rio-ntriples-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-ntriples/2.8.7/sesame-rio-ntriples-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-rdfjson/2.8.7/sesame-rio-rdfjson-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-rdfjson/2.8.7/sesame-rio-rdfjson-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-rdfjson/2.8.7/sesame-rio-rdfjson-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-rdfxml/2.8.7/sesame-rio-rdfxml-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-rdfxml/2.8.7/sesame-rio-rdfxml-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-rdfxml/2.8.7/sesame-rio-rdfxml-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-trig/2.8.7/sesame-rio-trig-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-trig/2.8.7/sesame-rio-trig-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-trig/2.8.7/sesame-rio-trig-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-rio-turtle/2.8.7/sesame-rio-turtle-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-rio-turtle/2.8.7/sesame-rio-turtle-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-rio-turtle/2.8.7/sesame-rio-turtle-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-runtime/2.8.7/sesame-runtime-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-runtime/2.8.7/sesame-runtime-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-runtime/2.8.7/sesame-runtime-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-api/2.8.7/sesame-sail-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-api/2.8.7/sesame-sail-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-api/2.8.7/sesame-sail-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-base/2.8.7/sesame-sail-base-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-base/2.8.7/sesame-sail-base-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-base/2.8.7/sesame-sail-base-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-federation/2.8.7/sesame-sail-federation-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-federation/2.8.7/sesame-sail-federation-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-federation/2.8.7/sesame-sail-federation-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-inferencer/2.8.7/sesame-sail-inferencer-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-inferencer/2.8.7/sesame-sail-inferencer-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-inferencer/2.8.7/sesame-sail-inferencer-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-lucene-api/2.8.7/sesame-sail-lucene-api-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-lucene-api/2.8.7/sesame-sail-lucene-api-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-lucene-api/2.8.7/sesame-sail-lucene-api-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-lucene4/2.8.7/sesame-sail-lucene4-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-lucene4/2.8.7/sesame-sail-lucene4-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-lucene4/2.8.7/sesame-sail-lucene4-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-memory/2.8.7/sesame-sail-memory-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-memory/2.8.7/sesame-sail-memory-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-memory/2.8.7/sesame-sail-memory-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-model/2.8.7/sesame-sail-model-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-model/2.8.7/sesame-sail-model-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-model/2.8.7/sesame-sail-model-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-sail-nativerdf/2.8.7/sesame-sail-nativerdf-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-sail-nativerdf/2.8.7/sesame-sail-nativerdf-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-sail-nativerdf/2.8.7/sesame-sail-nativerdf-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-store-testsuite/2.8.7/sesame-store-testsuite-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-store-testsuite/2.8.7/sesame-store-testsuite-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-store-testsuite/2.8.7/sesame-store-testsuite-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/openrdf/sesame/sesame-util/2.8.7/sesame-util-2.8.7.jar" sourcepath="M2_REPO/org/openrdf/sesame/sesame-util/2.8.7/sesame-util-2.8.7-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/openrdf/sesame/sesame-util/2.8.7/sesame-util-2.8.7-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.2/slf4j-api-1.7.2.jar" sourcepath="M2_REPO/org/slf4j/slf4j-api/1.7.2/slf4j-api-1.7.2-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/org/slf4j/slf4j-api/1.7.2/slf4j-api-1.7.2-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/spatial4j/spatial4j/0.4.1/spatial4j-0.4.1.jar" sourcepath="M2_REPO/com/spatial4j/spatial4j/0.4.1/spatial4j-0.4.1-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/calabrese/.m2/repository/com/spatial4j/spatial4j/0.4.1/spatial4j-0.4.1-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/tomcat/tomcat-api/7.0.29/tomcat-api-7.0.29.jar" sourcepath="M2_REPO/org/apache/tomcat/tomcat-api/7.0.29/tomcat-api-7.0.29-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/tomcat/tomcat-juli/7.0.29/tomcat-juli-7.0.29.jar" sourcepath="M2_REPO/org/apache/tomcat/tomcat-juli/7.0.29/tomcat-juli-7.0.29-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/tomcat/tomcat-servlet-api/7.0.29/tomcat-servlet-api-7.0.29.jar" sourcepath="M2_REPO/org/apache/tomcat/tomcat-servlet-api/7.0.29/tomcat-servlet-api-7.0.29-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/tomcat/tomcat-util/7.0.29/tomcat-util-7.0.29.jar" sourcepath="M2_REPO/org/apache/tomcat/tomcat-util/7.0.29/tomcat-util-7.0.29-sources.jar"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+</classpath>

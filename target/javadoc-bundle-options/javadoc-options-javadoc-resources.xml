@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<javadocOptions>
+  <tags>
+    <tag>
+      <name>apiviz.uses</name>
+    </tag>
+    <tag>
+      <name>apiviz.has</name>
+    </tag>
+    <tag>
+      <name>apiviz.owns</name>
+    </tag>
+    <tag>
+      <name>apiviz.exclude</name>
+    </tag>
+    <tag>
+      <name>apiviz.landmark</name>
+    </tag>
+    <tag>
+      <name>apiviz.stereotype</name>
+    </tag>
+  </tags>
+  <docletArtifacts>
+    <docletArtifact />
+  </docletArtifacts>
+  <tagletArtifacts>
+    <tagletArtifact />
+  </tagletArtifacts>
+  <links>
+    <link>http://java.sun.com/javase/6/docs/api/</link>
+    <link>http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/</link>
+    <link>http://www.openrdf.org/doc/sesame2/api/</link>
+    <link>http://www.slf4j.org/apidocs/</link>
+  </links>
+  <javadocResourcesDirectory>src/main/javadoc</javadocResourcesDirectory>
+</javadocOptions>

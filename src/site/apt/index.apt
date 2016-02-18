@@ -1,0 +1,45 @@
+ --------
+ Overview
+ --------
+
+
+Overview
+
+	Bla bla bla 
+ 
+
+* License and copyright
+
+	SPRINGLES is released under a XXX license. SPRINGLES is free software:
+you are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.
+
+
+* Requirements
+
+	To use the software you need JDK 1.6 or newer installed on your
+machine. TBC
+
+	SPRINGLES project structure is based on MAVEN; in order to compile the package
+or change the code you need to download and configure MAVEN on your machine
+(see {{http://maven.apache.org}} for detailed instructions).
+
+
+* Getting started
+
+	Please refer to the following sections for information regarding SPRINGLES:
+	
+	* tbc1
+	
+	* tbc2
+
+    []
+    
+	If you want to compile the code or extend the tool, please refer to the
+{{{./developers-guide.html}developer guide}}.
+
+
+* Credits
+
+	SPRINGLES is the result of TBC.
+	

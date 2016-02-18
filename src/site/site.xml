@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project>
+  <publishDate position="navigation-bottom" format="dd/MM/yyyy" />
+  <bannerLeft>
+    <name>SPRINGLES</name>
+    <src>images/springles.gif</src>
+    <href>index.html</href>
+  </bannerLeft>
+  <bannerRight>
+    <name>FBK - DKM Unit</name>
+    <src>images/dkm.gif</src>
+    <href>http://dkm.fbk.eu/</href>
+  </bannerRight>
+  <poweredBy>
+    <logo name="Maven" href="http://maven.apache.org/" img="http://maven.apache.org/images/logos/maven-feather.png" />
+  </poweredBy>
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-stylus-skin</artifactId>
+    <version>1.0.1</version>
+  </skin>
+  <body>
+    <head></head>
+    <links>
+      <item name="OpenRDF Sesame" href="http://www.openrdf.org/" />
+    </links>
+    <breadcrumbs>
+      <item name="SPRINGLES" href="index.html" />
+    </breadcrumbs>
+    <menu name="SPRINGLES">
+      <item name="Overview" href="index.html" />
+      <item name="Users guide" href="users-guide.html" />
+      <item name="Developers guide" href="developers-guide.html" />
+      <item name="Download" href="download.html" />
+      <item name="License" href="license.html" />
+      <item name="Javadoc" href="apidocs/index.html" />
+    </menu>
+    <menu ref="reports" />
+  </body>
+</project>

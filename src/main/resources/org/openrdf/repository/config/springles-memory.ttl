@@ -1,0 +1,29 @@
+@prefix spc:  <http://dkm.fbk.eu/springles/config#>.
+@prefix rep:  <http://www.openrdf.org/config/repository#>.
+@prefix sail: <http://www.openrdf.org/config/sail#>.
+@prefix ms:   <http://www.openrdf.org/config/sail/memory#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+
+[] a rep:Repository ;
+    rep:repositoryID "{%Repository ID|springles%}";
+    rdfs:label "{%Repository title|SPRINGLES repository%}";
+    rep:repositoryImpl [
+        a spc:SpringlesStore;
+        rep:repositoryType "springles:Repository";
+        spc:hasNullContextURI <{%Null context URI|sesame:nil%}>;
+        spc:hasInferredContextPrefix "{%Inferred context prefix|sesame:inf:%}";
+        spc:hasMaxTransactionExecutionTime {%Max transaction execution time|1800000%};
+        spc:hasMaxTransactionIdleTime {%Max transaction idle time|60000%};
+        spc:hasBackend [
+            a spc:SailBackend;
+            spc:wraps [
+                sail:sailType "openrdf:MemoryStore";
+                ms:persist "{%Persist|true%}";
+                ms:syncDelay {%Sync delay|0%}
+            ]
+        ] ;
+        spc:hasInferencer [
+            a spc:NaiveInferencer;
+            spc:hasRuleset <{%Ruleset|http://dkm.fbk.eu/springles/config#rdfs-merged%}>;
+        ]
+    ] .

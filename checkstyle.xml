@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+
+<module name="Checker">
+
+  <property name="severity" value="error" />
+
+  <!-- Max 2000 lines per file -->
+  <!-- http://checkstyle.sf.net/config_sizes.html -->
+  <module name="FileLength">
+    <property name="severity" value="warning" />
+  </module>
+
+  <!-- No tab characters ('\t') in the source code -->
+  <!-- http://checkstyle.sf.net/config_whitespace.html -->
+  <module name="FileTabCharacter">
+    <property name="severity" value="warning" />
+  </module>
+
+  <!-- A package-info.java file must exist for each package -->
+  <!-- http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
+  <module name="JavadocPackage">
+    <property name="severity" value="warning" />
+  </module>
+
+  <!-- Files must end with a new line -->
+  <!-- http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
+  <module name="NewlineAtEndOfFile">
+    <property name="severity" value="warning" />
+  </module>
+
+  <module name="TreeWalker">
+
+    <property name="severity" value="warning" />
+    <property name="tabWidth" value="4" />
+
+    <!-- Checks for Javadoc comments -->
+    <!-- http://checkstyle.sf.net/config_javadoc.html -->
+    <module name="JavadocType">
+      <property name="scope" value="protected" />
+    </module>
+    <module name="JavadocMethod">
+      <property name="scope" value="protected" />
+      <property name="allowThrowsTagsForSubclasses" value="true" />
+      <property name="logLoadErrors" value="true" />
+      <property name="suppressLoadErrors" value="true" />
+    </module>
+    <module name="JavadocVariable">
+      <property name="scope" value="protected" />
+    </module>
+    <module name="JavadocStyle">
+      <property name="scope" value="protected" />
+      <property name="checkEmptyJavadoc" value="true" />
+    </module>
+
+    <!-- Checks for Naming Conventions -->
+    <!-- http://checkstyle.sf.net/config_naming.html -->
+    <module name="ConstantName" />
+    <module name="LocalFinalVariableName" />
+    <module name="LocalVariableName" />
+    <module name="MemberName" />
+    <module name="MethodName" />
+    <module name="PackageName" />
+    <module name="ParameterName" />
+    <module name="StaticVariableName" />
+    <module name="TypeName" />
+    <module name="ClassTypeParameterName" />
+    <module name="MethodTypeParameterName" />
+
+    <!-- Checks for imports -->
+    <!-- http://checkstyle.sf.net/config_import.html -->
+    <module name="AvoidStarImport" />
+    <module name="IllegalImport" /> <!-- defaults to sun.* packages -->
+    <module name="RedundantImport" />
+    <!-- <module name="UnusedImports" /> --> <!-- does not detect use in Javadoc comments -->
+    <module name="ImportOrder">
+      <property name="option" value="top" />
+      <property name="groups" value="java, javax, junit, com, net, org, info, it, eu" />
+      <property name="separated" value="true" />
+    </module>
+
+    <!-- Checks for Size Violations -->
+    <!-- http://checkstyle.sf.net/config_sizes.html -->
+    <module name="LineLength">
+      <property name="ignorePattern" value="^.*(@see|@\([#]\) \$Id:).*$" />
+      <property name="max" value="100" />
+      <property name="tabWidth" value="4" />
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="150" />
+      <property name="countEmpty" value="false" />
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="10" />
+    </module>
+    <module name="AnonInnerLength">
+      <property name="max" value="100" />
+    </module>
+
+    <!-- Checks for whitespace -->
+    <!-- http://checkstyle.sf.net/config_whitespace.html -->
+    <module name="EmptyForIteratorPad" />
+    <module name="GenericWhitespace" />
+    <module name="MethodParamPad" />
+    <module name="OperatorWrap" />
+    <module name="ParenPad" />
+    <module name="TypecastParenPad" />
+    <module name="WhitespaceAfter" />
+    <module name="WhitespaceAround" />
+    <module name="NoWhitespaceBefore" />
+    <module name="NoWhitespaceAfter">
+      <property name="tokens" value="BNOT, DEC, DOT, INC, LNOT, UNARY_MINUS, UNARY_PLUS" />
+    </module>
+    <module name="EmptyForInitializerPad" />
+
+    <!-- Modifier Checks -->
+    <!-- http://checkstyle.sf.net/config_modifiers.html -->
+    <module name="ModifierOrder" />
+    <module name="RedundantModifier" />
+
+    <!-- Checks for blocks -->
+    <!-- http://checkstyle.sf.net/config_blocks.html -->
+    <module name="AvoidNestedBlocks" />
+    <!-- <module name="EmptyBlock"> <property name="option" value="text"/> </module> -->
+    <module name="LeftCurly">
+      <property name="maxLineLength" value="100" />
+      <property name="option" value="eol" />
+      <property name="tokens"
+        value="LITERAL_CATCH, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE" />
+    </module>
+    <module name="LeftCurly">
+      <property name="maxLineLength" value="100" />
+      <property name="option" value="nl" />
+      <property name="tokens" value="CLASS_DEF, CTOR_DEF, INTERFACE_DEF, METHOD_DEF" />
+    </module>
+    <module name="RightCurly" />
+    <module name="NeedBraces" />
+
+    <!-- Checks for common coding problems -->
+    <!-- http://checkstyle.sf.net/config_coding.html -->
+    <!-- <module name="DoubleCheckedLocking"/> -->
+    <module name="EmptyStatement" />
+    <module name="EqualsHashCode" />
+    <module name="CovariantEquals" />
+    <!-- <module name="HiddenField"> -->
+    <module name="IllegalInstantiation">
+      <property name="classes" value="java.lang.Boolean" />
+    </module>
+    <module name="InnerAssignment" />
+    <module name="MagicNumber">
+      <property name="ignoreNumbers" value="-1, 0, 1, 2, 3, 4" />
+    </module>
+    <module name="MissingSwitchDefault" />
+    <module name="DefaultComesLast" />
+    <module name="RedundantThrows">
+      <property name="allowUnchecked" value="true" />
+      <property name="allowSubclasses" value="true" />
+      <property name="logLoadErrors" value="true" />
+      <property name="suppressLoadErrors" value="true" />
+    </module>
+    <module name="SimplifyBooleanExpression" />
+    <module name="SimplifyBooleanReturn" />
+    <module name="FinalLocalVariable" />
+    <module name="StringLiteralEquality" />
+    <module name="NestedIfDepth">
+      <property name="max" value="3" />
+    </module>
+    <module name="IllegalTokenText">
+      <property name="tokens" value="LABELED_STAT" />
+      <property name="format" value=".*" />
+      <property name="message" value="labels are discouraged" />
+      <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Labels are discouraged" />
+    </module>
+    <module name="ModifiedControlVariable" />
+    <module name="MultipleVariableDeclarations" />
+    <module name="SuperFinalize" />
+    <module name="SuperClone" />
+    <module name="UnnecessaryParentheses" />
+
+    <!-- Checks for class design -->
+    <!-- http://checkstyle.sf.net/config_design.html -->
+    <!-- <module name="DesignForExtension"/> --> <!-- doesn't work with wrappers -->
+    <module name="FinalClass" />
+    <module name="HideUtilityClassConstructor" />
+    <module name="InterfaceIsType" />
+    <module name="VisibilityModifier" />
+    <module name="MutableException" />
+
+    <!-- Miscellaneous other checks -->
+    <!-- http://checkstyle.sf.net/config_misc.html -->
+    <module name="ArrayTypeStyle" />
+    <module name="FinalParameters" />
+    <!-- <module name="TodoComment"> --> <!-- hides them in Eclipse, use taglist instead -->
+    <!-- <property name="format" value="FIXME" /> -->
+    <!-- <property name="severity" value="warning" /> -->
+    <!-- </module> -->
+    <!-- <module name="TodoComment"> -->
+    <!-- <property name="format" value="TODO" /> -->
+    <!-- <property name="severity" value="info" /> -->
+    <!-- </module> -->
+    <!-- <module name="TodoComment"> -->
+    <!-- <property name="format" value="XXX" /> -->
+    <!-- <property name="severity" value="info" /> -->
+    <!-- </module> -->
+    <module name="UpperEll" />
+
+    <!-- JUnit checks -->
+    <module name="JUnitTestCase" />
+
+    <!-- Checks for annotations -->
+    <!-- http://checkstyle.sourceforge.net/config_annotation.html -->
+    <module name="MissingDeprecated" />
+    <module name="AnnotationUseStyle" />
+    <module name="MissingOverride" />
+    <module name="PackageAnnotation" />
+
+  </module>
+
+  <!-- <module name="RegexpHeader"> <property name="severity" value="warning"/> <property name="header" 
+    value="^/\*[ ]?$\n^ \* @\(#\)(([A-Z][A-Za-z0-9_]*)|(package-info))\.java([ ]?$|[ ]{3}[0-9]+\.[0-9]+[ 
+    ]{3}[A-Z][a-z]{2} [0-9]{1,2}, [0-9]{4,}[ ]?$)\n^ \*[ ]?$\n^ \* Copyright ([0-9]{4,}-)?([0-9]{4}) FBK 
+    \(http\:\\\\www\.fbk\.eu\)\. All Rights Reserved\.[ ]?$\n^ \*[ ]?$\n^ \* This software is the proprietary 
+    information of FBK\.[ ]?$\n^ \* Use is subject to license terms\.[ ]?$\n^ \*[ ]?$\n^ \* @\(#\) \$Id: 
+    ?.* \$[ ]?$\n^ \*/[ ]?$\n"/> <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Missing 
+    or incorrect header"/> </module> -->
+
+</module>

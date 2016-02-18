@@ -1,0 +1,423 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix spr:  <http://dkm.fbk.eu/springles/ruleset#> .
+@prefix spc:  <http://dkm.fbk.eu/springles/config#> .
+@prefix :     <http://dkm.fbk.eu/springles/rdfs-separate-global#> .
+
+spr:rdfs-separate-global a spr:Ruleset ;
+    rdfs:label "RDFS separate inference with global import" ;
+    spr:hasNamespaces """
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+        PREFIX spr:  <http://dkm.fbk.eu/springles/rdfs-separate-global#>
+        """ ;
+    spr:hasParameter [
+        spr:hasVariable "?global" ;
+        spr:hasDefault <springles:global> ;
+    ], [
+        spr:hasVariable "?fullRDFS" ;
+        spr:hasDefault "true"^^xsd:boolean ;
+    ] ;
+    spr:hasClosurePlan :plan .
+
+:plan a spr:ClosureSequenceTask ;
+    spr:hasBinding [
+        spr:hasVariable "?global_inf" ;
+        spr:hasExpression "IRI(concat(?prefix, encode_for_uri(str(?global))))"
+    ] ;
+    spr:hasSubTaskList ( :step1_dependencies :step2_global :step3_graphs ) .
+
+:step1_dependencies a spr:ClosureEvalTask ;
+    spr:hasRuleList ( :dep1 :dep2 ) .
+
+:step2_global a spr:ClosureSequenceTask ;
+    spr:hasBinding [
+        spr:hasVariable "?g_inf" ;
+        spr:hasExpression "?global_inf"
+    ] ;
+    spr:hasSubTaskList ( :task_add_axioms :task_compute_closure ) .
+
+:step3_graphs a spr:ClosureSequenceTask ;
+    spr:hasSubTaskList ( :task_compute_closure ) .
+ 
+:task_add_axioms a spr:ClosureEvalTask ;
+    spr:hasRuleList ( :rdf_axioms :rdfs_axioms :rdfs_axioms_full ) .
+    
+:task_compute_closure a spr:ClosureSequenceTask ;
+    spr:hasSubTaskList ( [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdf1 )
+    ] [
+        a spr:ClosureFixPointTask ;
+        spr:hasSubTask [
+            a spr:ClosureEvalTask ;
+            spr:hasRuleList ( :rdfs5 )
+        ]
+    ] [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdfs7 )
+    ] [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdfs4a_full :rdfs4b_full
+                          :rdfs2_base :rdfs2_schema
+                          :rdfs3_base :rdfs3_schema1 :rdfs3_schema2 )
+    ] [
+        a spr:ClosureFixPointTask ;
+        spr:hasSubTask [
+            a spr:ClosureEvalTask ;
+            spr:hasRuleList ( :rdfs11 )
+        ]
+    ] [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdfs9 )
+    ] [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdfs12 :rdfs13 )
+    ] [
+        a spr:ClosureEvalTask ;
+        spr:hasRuleList ( :rdfs6 :rdfs8_full :rdfs10 )
+    ] [
+        a spr:ClosureFixPointTask ;
+        spr:hasSubTask [
+            a spr:ClosureEvalTask ;
+            spr:hasRuleList ( :rdfs7 :rdf1
+                              :rdfs2_base :rdfs2_schema
+                              :rdfs3_base :rdfs3_schema1 :rdfs3_schema2
+                              :rdfs4a_full :rdfs4b_full
+                              :rdfs5 :rdfs6 :rdfs8_full :rdfs9
+                              :rdfs10 :rdfs11 :rdfs12 :rdfs13 )
+        ]
+    ] ) .
+
+:dep1 a spr:Rule ;
+    spr:hasHead """ GRAPH ?global_inf { ?global_inf spr:derivedFrom ?global_inf, ?global } """ ; 
+    spr:hasBody """ """ .    
+
+:dep2 a spr:Rule ;
+    spr:hasHead """ GRAPH ?g_inf {
+                     ?g_inf spr:derivedFrom ?g, ?g_inf, ?global, ?global_inf
+                    } """ ; 
+    spr:hasBody """ GRAPH ?g { ?s ?p ?o }
+                    FILTER (!strstarts(str(?g), str(?prefix)) && ?g != ?global)
+                    BIND(IRI(concat(?prefix, encode_for_uri(str(?g)))) AS ?g_inf)
+                    """ .
+
+:rdf_axioms a spr:Rule ; # RDF axioms (RDF Semantics, section 3.1):
+    spr:hasHead """ GRAPH ?g_inf {
+                      rdf:type rdf:type rdf:Property.
+                      rdf:subject rdf:type rdf:Property.
+                      rdf:predicate rdf:type rdf:Property.
+                      rdf:object rdf:type rdf:Property.
+                      rdf:first rdf:type rdf:Property.
+                      rdf:rest rdf:type rdf:Property.
+                      rdf:value rdf:type rdf:Property.
+                      rdf:_1 rdf:type rdf:Property.
+                      rdf:nil rdf:type rdf:List.
+                    } """ ;
+    spr:hasBody """ GRAPH ?g_inf { ?g_inf spr:derivedFrom [] } """ .
+
+# RDFS axioms (section 4.2)
+:rdfs_axioms a spr:Rule ; 
+    spr:hasHead """ GRAPH ?g_inf {
+                      rdf:type rdfs:range rdfs:Class.
+                      rdfs:domain rdfs:range rdfs:Class.
+                      rdfs:range rdfs:range rdfs:Class.
+                      rdfs:subClassOf rdfs:range rdfs:Class.
+                      rdfs:subClassOf rdfs:domain rdfs:Class. 
+                      rdf:first rdfs:domain rdf:List.
+                      rdf:rest rdfs:domain rdf:List.
+                      rdf:rest rdfs:range rdf:List.
+                      rdfs:comment rdfs:range rdfs:Literal.
+                      rdfs:label rdfs:range rdfs:Literal.
+                      rdf:subject rdfs:domain rdf:Statement.
+                      rdf:predicate rdfs:domain rdf:Statement. 
+                      rdf:object rdfs:domain rdf:Statement.
+                      rdf:Alt rdfs:subClassOf rdfs:Container.
+                      rdf:Bag rdfs:subClassOf rdfs:Container.
+                      rdf:Seq rdfs:subClassOf rdfs:Container.
+                      rdfs:Datatype rdfs:subClassOf rdfs:Class.
+                      rdf:XMLLiteral rdfs:subClassOf rdfs:Literal.
+                      rdf:XMLLiteral rdf:type rdfs:Datatype.
+                      rdfs:isDefinedBy rdfs:subPropertyOf rdfs:seeAlso.
+                      rdfs:ContainerMembershipProperty rdfs:subClassOf rdf:Property.
+                      rdf:_1 rdf:type rdfs:ContainerMembershipProperty.
+                      rdfs:domain rdfs:domain rdf:Property.
+                      rdfs:range rdfs:domain rdf:Property.
+                      rdfs:subPropertyOf rdfs:domain rdf:Property.
+                      rdfs:subPropertyOf rdfs:range rdf:Property.
+                    } """ ;
+    spr:hasBody """ GRAPH ?g_inf { ?g_inf spr:derivedFrom [] } """ .
+    
+# RDFS axioms (section 4.2) excluded by OWLIM
+# note: OWLIM user guide states that also last 4 axioms of rdfs_axioms are
+# excluded, but this does not happen
+:rdfs_axioms_full a spr:Rule ;
+    spr:hasCondition "?fullRDFS" ;
+    spr:hasHead """ GRAPH ?g_inf {
+                      rdf:type rdfs:domain rdfs:Resource.
+                      rdfs:member rdfs:domain rdfs:Resource.
+                      rdfs:seeAlso rdfs:domain rdfs:Resource.
+                      rdfs:isDefinedBy rdfs:domain rdfs:Resource.
+                      rdfs:comment rdfs:domain rdfs:Resource.
+                      rdfs:label rdfs:domain rdfs:Resource.
+                      rdf:value rdfs:domain rdfs:Resource.
+                      rdf:subject rdfs:range rdfs:Resource.
+                      rdf:predicate rdfs:range rdfs:Resource.
+                      rdf:object rdfs:range rdfs:Resource.
+                      rdfs:member rdfs:range rdfs:Resource.
+                      rdf:first rdfs:range rdfs:Resource.
+                      rdfs:seeAlso rdfs:range rdfs:Resource.
+                      rdfs:isDefinedBy rdfs:range rdfs:Resource.
+                      rdf:value rdfs:range rdfs:Resource.                 
+                      rdf:_1 rdfs:domain rdfs:Resource.
+                      rdf:_1 rdfs:range rdfs:Resource.
+                    } """ ;
+    spr:hasBody """ GRAPH ?g_inf { ?g_inf spr:derivedFrom [] } """ .
+   
+# additional axioms in OWLIM RDFS implementation
+# NOTE. OWLIM seems also to state the following axioms: rdf:type, rdfs:Resource,
+# rdf:Property, rdfs:subPropertyOf, rdfs:subClassOf, owl:sameAs,
+# owl:SymmetricProperty, owl:TransitiveProperty, owl:equivalentProperty
+# and owl:equivalentClass are all rdf:type rdfs:Resource.
+:rdfs_axioms_owlim a spr:Rule ;
+    spr:hasHead """ GRAPH ?g_inf {
+                      xsd:nonNegativeInteger rdf:type rdfs:Datatype.
+                      xsd:string rdf:type rdfs:Datatype.
+                    } """ ;
+    spr:hasBody """ GRAPH ?g_inf { ?g_inf spr:derivedFrom [] } """ .
+
+# missing: se1, se2, lg, gl, rdf2
+# missing: rdfs1
+
+:rdf1 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs4a_full, :rdfs6, :rdfs7, :rdfs9 ;
+    spr:hasHead """ GRAPH ?g_inf { ?p rdf:type rdf:Property } """ ;
+    spr:hasBody """ GRAPH ?g { ?s ?p ?o } 
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g; }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?p rdf:type rdf:Property }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+# :rdfs2 a spr:Rule ;
+#   spr:triggerOf :rdfs2, :rdfs3, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+#                 :rdfs10, :rdfs12, :rdfs13 ;
+#   spr:hasHead """ GRAPH ?g_inf { ?s rdf:type ?x } """ ;
+#   spr:hasBody """ GRAPH ?g1 { ?p rdfs:domain ?x }
+#                   FILTER(?x != rdfs:Resource)
+#                   GRAPH ?g2 { ?s ?p ?o } 
+#                   GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+#                   FILTER NOT EXISTS {
+#                     GRAPH ?g0 { ?s rdf:type ?x }
+#                     GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+#                   } """ .
+
+:rdfs2_base a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+                  :rdfs10, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdf:type ?x } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?p rdfs:domain ?x }
+                    FILTER(?p != rdf:type && ?p != rdfs:subClassOf && ?p != rdfs:subPropertyOf && ?x != rdfs:Resource)
+                    GRAPH ?g2 { ?s ?p ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?s rdf:type ?x }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs2_schema a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+                  :rdfs10, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdf:type ?x } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?p rdfs:domain ?x }
+                    FILTER(?x != rdfs:Resource && (?p = rdf:type || ?p = rdfs:subClassOf || ?p = rdfs:subPropertyOf))
+                    GRAPH ?g2 { ?s ?p ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?s rdf:type ?x }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0}
+                    } """ .
+
+# :rdfs3 a spr:Rule ;
+#   spr:triggerOf :rdfs2, :rdfs3, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+#                 :rdfs10, :rdfs12, :rdfs13 ;
+#   spr:hasHead """ GRAPH ?g_inf { ?o rdf:type ?x } """ ;
+#   spr:hasBody """ GRAPH ?g1 { ?p rdfs:range ?x }
+#                   FILTER(?x != rdfs:Resource && ?x != rdfs:Literal && !strstarts(str(?x), 'http://www.w3.org/2001/XMLSchema#'))
+#                   GRAPH ?g2 { ?s ?p ?o }
+#                   GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+#                   FILTER NOT EXISTS {
+#                     GRAPH ?g0 { ?o rdf:type ?x }
+#                     GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+#                   } """ .
+
+:rdfs3_base a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+                  :rdfs10, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?o rdf:type ?x } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?p rdfs:range ?x }
+                    FILTER(?p != rdf:type && ?p != rdfs:subClassOf && ?p != rdfs:subPropertyOf && ?x != rdfs:Resource && ?x != rdfs:Literal && !strstarts(str(?x), 'http://www.w3.org/2001/XMLSchema#'))
+                    GRAPH ?g2 { ?s ?p ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?o rdf:type ?x }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs3_schema1 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs6, :rdfs7, :rdfs8_full, :rdfs9,
+                  :rdfs10, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?o rdf:type ?x } """ ;
+    spr:hasBody """ { GRAPH ?g1 { rdf:type rdfs:range ?x }
+                      FILTER (?x != rdfs:Resource && ?x != rdfs:Class)
+                      GRAPH ?g2 { [] rdf:type ?o } }
+                    UNION
+                    { GRAPH ?g1 { rdfs:subClassOf rdfs:range ?x }
+                      FILTER (?x != rdfs:Resource)
+                      GRAPH ?g2 { [] rdfs:subClassOf ?o } }
+                    UNION
+                    { GRAPH ?g1 { rdfs:subPropertyOf rdfs:range ?x }
+                      FILTER (?x != rdfs:Resource)
+                      GRAPH ?g2 { [] rdfs:subPropertyOf ?o } }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?o rdf:type ?x }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs3_schema2 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs7, :rdfs8_full, :rdfs9, :rdfs10 ;
+    spr:hasHead """ GRAPH ?g_inf { ?o rdf:type rdfs:Class } """ ;
+    spr:hasBody """ GRAPH ?g { [] rdf:type ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?o rdf:type rdfs:Class }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs4a_full a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7, :rdfs9 ;
+    spr:hasCondition "?fullRDFS" ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdf:type rdfs:Resource } """ ;
+    spr:hasBody """ GRAPH ?g { ?s ?p ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                        GRAPH ?g0 { ?s rdf:type rdfs:Resource }
+                        GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs4b_full a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7, :rdfs9 ;
+    spr:hasCondition "?fullRDFS" ;
+    spr:hasHead """ GRAPH ?g_inf { ?o rdf:type rdfs:Resource } """ ;
+    spr:hasBody """ GRAPH ?g { ?s ?p ?o }
+                    FILTER(!isLiteral(?o))
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                        GRAPH ?g0 { ?o ?p1 ?o1 }
+                        GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs5 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs5, :rdfs7 ;
+    spr:hasHead """ GRAPH ?g_inf { ?p rdfs:subPropertyOf ?r } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?p rdfs:subPropertyOf ?q }
+                    GRAPH ?g2 { ?q rdfs:subPropertyOf ?r }
+                    FILTER(?p != ?q && ?p != ?r && ?q != ?r)
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                        GRAPH ?g0 { ?p rdfs:subPropertyOf ?r }
+                        GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs6 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1 ;
+    spr:hasHead """ GRAPH ?g_inf { ?p rdfs:subPropertyOf ?p } """ ;
+    spr:hasBody """ GRAPH ?g { ?p rdf:type rdf:Property }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                        GRAPH ?g0 { ?p rdfs:subPropertyOf ?p }
+                        GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs7 a spr:Rule ;
+    spr:triggerOf :rdfs2_base, :rdfs2_schema, :rdfs3_base, :rdfs3_schema1, :rdfs5, :rdfs6, :rdfs7, :rdfs8_full,
+                  :rdfs9, :rdfs10, :rdfs11, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?s ?q ?o } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?p rdfs:subPropertyOf ?q }
+                    FILTER(?p != ?q)
+                    GRAPH ?g2 { ?s ?p ?o }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                        GRAPH ?g0 { ?s ?q ?o }
+                        GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs8_full a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7, :rdfs11 ;
+    spr:hasCondition "?fullRDFS" ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdfs:subClassOf rdfs:Resource } """ ;
+    spr:hasBody """ GRAPH ?g { ?s rdf:type rdfs:Class }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?s rdfs:subClassOf rdfs:Resource }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs9 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs6, :rdfs7, :rdfs8_full,
+                  :rdfs10, :rdfs12, :rdfs13 ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdf:type ?y } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?x rdfs:subClassOf ?y }
+                    FILTER(?x != ?y)
+                    FILTER(?y != rdfs:Resource)
+                    GRAPH ?g2 { ?s rdf:type ?x }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?s rdf:type ?y }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs10 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7 ;
+    spr:hasHead """ GRAPH ?g_inf { ?s rdfs:subClassOf ?s } """ ;
+    spr:hasBody """ GRAPH ?g { ?s rdf:type rdfs:Class }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS { 
+                      GRAPH ?g0 { ?s rdfs:subClassOf ?s }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs11 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7, :rdfs9, :rdfs11 ;
+    spr:hasHead """ GRAPH ?g_inf { ?x rdfs:subClassOf ?z } """ ;
+    spr:hasBody """ GRAPH ?g1 { ?x rdfs:subClassOf ?y }
+                    GRAPH ?g2 { ?y rdfs:subClassOf ?z }
+                    FILTER(?x != ?y && ?x != ?z && ?y != ?z && ?z != rdfs:Resource)
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g1, ?g2 }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?x rdfs:subClassOf ?z }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs12 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs5, :rdfs7 ;
+    spr:hasHead """ GRAPH ?g_inf { ?p rdfs:subPropertyOf rdfs:member } """ ;
+    spr:hasBody """ GRAPH ?g { ?p rdf:type rdfs:ContainerMembershipProperty }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?p rdfs:subPropertyOf rdfs:member }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .
+
+:rdfs13 a spr:Rule ;
+    spr:triggerOf :rdfs2_schema, :rdfs3_schema1, :rdfs7, :rdfs9, :rdfs11 ;
+    spr:hasHead """ GRAPH ?g_inf { ?o rdfs:subClassOf rdfs:Literal } """ ;
+    spr:hasBody """ GRAPH ?g { ?o rdf:type rdfs:Datatype }
+                    GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g }
+                    FILTER NOT EXISTS {
+                      GRAPH ?g0 { ?o rdfs:subClassOf rdfs:Literal }
+                      GRAPH ?g_inf { ?g_inf spr:derivedFrom ?g0 }
+                    } """ .

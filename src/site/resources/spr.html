@@ -1,0 +1,975 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+
+<html version="XHTML+RDFa 1.0"
+    xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:vs="http://www.w3.org/2003/06/sw-vocab-status/ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:dcterms="http://purl.org/dc/terms/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:olo="http://purl.org/ontology/olo/core#"
+    xmlns:spr="http://dkm.fbk.eu/springles/ruleset#"
+    xmlns:vann="http://purl.org/vocab/vann/"
+    xmlns:bibo="http://purl.org/ontology/bibo/"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    typeof="bibo:Document"
+    about="http://purl.org/ontology/olo/orderedlistontology.html">
+    
+<head>
+<title about="http://dkm.fbk.eu/springles/spr.html" property="dc:title">Springles Ruleset Vocabulary</title>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+<link about="http://dkm.fbk.eu/springles/ruleset#" typeof="owl:Ontology" />
+<link about="http://dkm.fbk.eu/springles/ruleset#" rel="dc:creator" href="https://dkm.fbk.eu/index.php/Luciano_Serafini" />
+<link about="http://dkm.fbk.eu/springles/ruleset#" rel="dc:creator" href="https://dkm.fbk.eu/index.php/Loris_Bozzato" />
+<link about="http://dkm.fbk.eu/springles/ruleset#" rel="dc:creator" href="https://dkm.fbk.eu/index.php/Francesco_Corcoglioniti" />
+<link about="http://dkm.fbk.eu/springles/spr.html" rel="foaf:primaryTopic" rev="foaf:isPrimaryTopicOf" href="http://dkm.fbk.eu/springles/ruleset#" />
+<link about="http://dkm.fbk.eu/springles/spr.html" rel="alternate dcterms:hasFormat" type="application/rdf+xml" href="http://dkm.fbk.eu/springles/spr.owl" />
+<link about="http://dkm.fbk.eu/springles/spr.html" rel="alternate dcterms:hasFormat" type="text/turtle" href="http://dkm.fbk.eu/springles/spr.ttl" />
+<style media="all" type="text/css">
+@media all {
+    dt { font-weight: bold; }
+    .class-table { margin: 1px; padding: 3px; }
+    .tableheading { background: #CCCCFF; font-weight:  bold; font-size: 120%; }
+    .float-right { float:right; }
+    .code { margin-top: 8pt; margin-bottom: 8pt; background-color: #D9E3E9; white-space: pre; border: 1px solid black; color:#111111; padding: 5px; width: 100%; }
+    body { font-family: sans-serif; color: black; background: white; text-align: justify; }
+    :link { color: #00C; background: transparent }
+    :visited { color: #609; background: transparent }
+    a:active { color: #C00; background: transparent }
+    a:link img, a:visited img { border-style: none; border: 0 }
+    th, td { font-family: sans-serif; }
+    h1, h2, h3, h4, h5, h6 { text-align: left }
+    h1, h2, h3, h4, h5 { color: #000000; background: white }
+    h1 { font: 170% sans-serif }
+    h2 { font: 140% sans-serif }
+    h3 { font: 120% sans-serif }
+    h4 { font: bold 100% sans-serif }
+    h5 { font: italic 100% sans-serif }
+    h6 { font: small-caps 100% sans-serif }
+    .hide { display: none }
+    div.head { margin-bottom: 1em }
+    div.head h1 { margin-top: 2em; clear: both }
+    div.head table { margin-left: 2em; margin-top: 2em }
+    p.copyright { font-size: small }
+    p.copyright small { font-size: small }
+    a[href]:hover { background: #ffa }
+    pre { margin-left: 2em }
+    p { margin-top: 0.6em; margin-bottom: 0.6em; }
+    dt, dd { margin-top: 0; margin-bottom: 0 }
+    dt { font-weight: bold }
+    pre, code { font-family: monospace }
+    ul.toc { list-style: disc; list-style: none; }
+    .termdetails { }
+    div.rdf-proplist { background-color: #ddf; border: 1px solid black; float: left; margin: 0.3em 1%; }
+    .editorial { border: 2px solid green; padding: 5px; }
+    div.rdf-classlist { background-color: #eef; border: 1px solid black; float: left; margin: 0.3em 1%; width: 26%; }
+    div.rdf-proplist h3 { background-color: #bbf; font-size: 100%; margin: 0; padding: 5px; }
+    div.rdf-classlist h3 { background-color: #ccf; font-size: 100%; margin: 0; padding: 5px; }
+    .azlist { padding: 5px; border: solid; background-color: #ddd; }
+    .restrictions { vertical-align: top; }
+    .header { width: 100%; }
+    .infobox { border:2px dashed #FFCC00; font-size:small; padding:10px; width:400px; height:140px; text-align:right; margin-right:20px; }
+    .infobox_whitespace { width:150px; height:50px; }
+    div.specterm table { margin-top: 0.5em; }
+}
+@media screen {
+    body { padding: 2em 1em 2em 70px; margin-left: 4em; margin-right: 9em; }
+    div.specterm { border: 1px solid black; background: #F0F0F0; padding: 1em; }
+    .specterm h3 { background-color: #fff; padding: 3px; margin: 0em 0em 1em 0em; }
+}
+@media print {
+    .backlink { display: none; }
+    .specterm h3 { margin: 1em 0em 1em 0em; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+
+<h1>
+    <span about="http://dkm.fbk.eu/springles/ruleset#" property="dc:title">Springles Ruleset Vocabulary</span>
+    <span about="http://dkm.fbk.eu/springles/ruleset#" property="owl:versionInfo" datatype="xsd:decimal">0.1</span>
+</h1>
+
+<h2>
+    Namespace Document
+    <span about="http://dkm.fbk.eu/springles/ruleset#" property="dc:date" content="2013-01-11T12:00:00+01:00" datatype="xsd:dateTime">11 Jan 2013</span>
+</h2>
+
+<dl about="http://purl.org/ontology/olo/orderedlistontology.html">
+    <dt>Document URL:</dt>
+    <dd><a href="http://stettler.fbk.eu/ckr/springles/spr.html">http://stettler.fbk.eu/ckr/springles/spr.html</a>
+        (<a href="http://stettler.fbk.eu/ckr/springles/spr.html">HTML</a>,
+         <a href="http://stettler.fbk.eu/ckr/springles/spr.pdf">PDF</a>)</dd>
+    <dt>Vocabulary URL:</dt>
+    <dd><a href="http://stettler.fbk.eu/ckr/springles/spr.owl">http://stettler.fbk.eu/ckr/springles/spr.owl</a>
+        (<a href="http://stettler.fbk.eu/ckr/springles/spr.owl">RDF/XML</a>,
+         <a href="http://stettler.fbk.eu/ckr/springles/spr.ttl">TURTLE</a>)</dd>
+    <dt>Authors:</dt>
+    <dd><a href="https://dkm.fbk.eu/index.php/Luciano_Serafini">Luciano Serafini<a>,
+        <a href="https://dkm.fbk.eu/index.php/Loris_Bozzato">Loris Bozzato</a> (<a href="https://dkm.fbk.eu/">FBK-Irst</a>)<br/>
+        <a href="https://dkm.fbk.eu/index.php/Francesco_Corcoglioniti">Francesco Corcoglioniti</a></dd>
+</dl>
+
+<div about="http://purl.org/ontology/olo/orderedlistontology.html" rel="dc:conformsTo" resource="http://www.w3.org/TR/rdfa-syntax" style="float: right">
+    <a href="http://validator.w3.org/check?uri=referer"><img style="border: 0; float: right; padding: 5px;" src="http://www.w3.org/Icons/valid-xhtml-rdfa" alt="Valid XHTML + RDFa" height="31" width="88" /></a>
+</div>
+
+<p class="copyright"><span about="http://dkm.fbk.eu/springles/ruleset#" property="dc:rights">Copyright &#169; 2013 FBK-Irst</span></p><br/>
+<!--<a href="http://creativecommons.org/licenses/by/1.0/"><img alt="Creative Commons License" style="border: 0; float: right; padding: 5px;" src="http://i.creativecommons.org/l/by/3.0/88x31.png" /></a>
+This work is licensed under a <a about="spr.html" rel="license dc:license" href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons Attribution License">Creative Commons Attribution License</a>. This copyright applies to the <em>Springles Ruleset Vocabulary</em> specification and accompanying documentation.-->
+
+<hr/>
+
+
+<!-- Abstract -->
+
+<h2>Abstract</h2>
+
+The Springles Ruleset Vocabulary defines the classes and the properties that can be used to specify a Springles ruleset in RDF, after which it can be loaded to control inference in a Springles repository. This document describes the vocabulary and provides general instructions and reference documentation for its usage.
+
+<!-- Status -->
+
+<h2>Status of This Document</h2>
+
+The Springles Ruleset Vocabulary is a work in progress. This document describes the latest version of the vocabulary as supported by the Springles platform.
+
+
+<!-- TOC -->
+
+<h2>Table of Contents</h2>
+<ul>
+    <li><a href="#glance">Overview</a></li>
+    <li><a href="#sec-rulesets">Rulesets</a></li>
+    <li><a href="#sec-rules">Rules</a></li>
+    <li><a href="#sec-plans">Closure plans</a></li>
+    <li><a href="#sec-notes">Design considerations</a></li>
+    <li><a href="#sec-ref">Terms reference</a></li>
+</ul>
+
+
+<!-- Overview -->
+
+<h2 id="glance">Overview</h2>
+ 
+<p>The following UML class diagram informally presents an overview of the vocabulary. Classes are rendered as UML classes, datatype properties as attributes and object properties as UML relations; minimum and maximum cardinalities and expected datatypes are also shown; note that <a href="#ClosureTaskList">spr:ClosureTaskList</a> and <a href="#RuleList">spr:RuleList</a> are refinements of RDF lists and as such are encoded using <code>rdf:first</code> and <code>rdf:rest</code> properties. The components of the vocabulary - namely <a href="#sec-rulesets">rulesets</a>, <a href="#sec-rules">rules</a> and <a href="#sec-plans">closure plans</a> - are detailed in the following sections.</p>
+
+<img style="max-width: 800px" width="100%" src="diagram.png" title="Ontology overview" alt="Class diagram showing ontology classes and properties" />
+
+<!-- Classes and Properties class (categories or types) and by property -->
+
+<p>The vocabulary namespace is <code>http://dkm.fbk.eu/springles/ruleset#</code>. The suggested prefix for referencing the vocabulary is <code>spr:</code>.</p>
+
+<p>A list of classes and properties is reported below, with links to their reference documentation:</p>
+
+<div class="azlist">
+<p>Classes: | <a href="#ClosureEvalTask">ClosureEvalTask</a> |  <a href="#ClosureFixPointTask">ClosureFixPointTask</a> |  <a href="#ClosureRepeatTask">ClosureRepeatTask</a> |  <a href="#ClosureSequenceTask">ClosureSequenceTask</a> |  <a href="#ClosureTask">ClosureTask</a> |  <a href="#ClosureTaskList">ClosureTaskList</a> |  <a href="#Parameter">Parameter</a> |  <a href="#Rule">Rule</a> |  <a href="#RuleList">RuleList</a> |  <a href="#Ruleset">Ruleset</a> | 
+</p>
+<p>Properties: | <a href="#bind">bind</a> |  <a href="#body">body</a> |  <a href="#closurePlan">closurePlan</a> |  <a href="#condition">condition</a> |  <a href="#default">default</a> |  <a href="#evalBackward">evalBackward</a> |  <a href="#evalForward">evalForward</a> |  <a href="#evalOf">evalOf</a> |  <a href="#fixPointOf">fixPointOf</a> |  <a href="#head">head</a> |  <a href="#macro">macro</a> |  <a href="#name">name</a> |  <a href="#parameterizedBy">parameterizedBy</a> |  <a href="#prologue">prologue</a> |  <a href="#repeatOf">repeatOf</a> |  <a href="#repeatOver">repeatOver</a> |  <a href="#sequenceOf">sequenceOf</a> |  <a href="#transform">transform</a> |  <a href="#triggerOf">triggerOf</a> | 
+</p>
+</div>
+
+
+<!-- Rulesets (TODO: transformers) -->
+
+<h2 id="sec-rulesets">Rulesets</h2>
+
+<p>A <b>ruleset</b> consists of a set of rules that are evaluated either in forward- or backward- chaining and jointly specify the type of inference provided by a Springles repository. A ruleset is an instance of class <a href="#Ruleset">Ruleset</a>; this must be explicitly stated in order for Springles to recognize a ruleset. An example of ruleset definition is shown below.</p>
+
+<div class="code"><pre>
+@prefix xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt; .
+@prefix spr: &lt;http://dkm.fbk.eu/springles/ruleset#&gt; .
+@prefix :    &lt;http://dkm.fbk.eu/springles/rdfs-merged#&gt; .
+
+:ruleset a spr:Ruleset ;
+    spr:parameterizedBy
+        [ spr:name "enable_tbox_rules" ; spr:default "true"^^xsd:boolean ] ;
+    spr:prologue """
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+        BASE <springles:> """ ;
+    spr:macro "HOME = &lt;<http://dkm.fbk.eu/springles/>&gt;" ;
+    spr:macro "DIFF(a,b,c) = FILTER ($a != $b && $a != $c && $b != $c)" ;
+    spr:evalBackward :r1 ;
+    spr:closurePlan :plan .
+</pre></div>
+
+<p>Backward-chaining rules (property <a href="#evalBackward">spr:evalBackward</a>) such as <code>r1</code> in the example are evaluated at query time through query rewriting (this feature is currently unsupported in Springles). Forward-chaining rules are evaluated each time a repository is modified in order to materialize a repository logical closure. The closure computation process is specified through a <b>closure plan</b> (property <a href="#closurePlan">closurePlan</a>), which decomposes the overall process in tasks and sub-tasks and allows to fine-tune and optimize the process.</p>
+
+<p>A ruleset is optionally associated to a number of ruleset parameters, a 'SPARQL prologue' and a set of 'macros':</p>
+<ul>
+<li><p><b>Parameters</b> (property <a href="#parameterizedBy">spr:parameterizedBy</a>) permit to inject user-supplied constant values to customize the evaluation of rules, such as parameter <code>enable_tbox_rules</code> in the example used to enable/disable RDFS rules for TBox reasoning. Each parameter is an instance of class <a href="#Parameter">spr:Parameter</a> and is characterized by a name (property <a href="#name">spr:name</a>) and a default value (property <a href="#default">spr:default</a>), both mandatory. When a ruleset is loaded in Springles, the values of parameters provided by the user (or their default value, when not specified) are used together with the binding inheritance mechanism (see below) to fix the values of certain SPARQL variables in rules and other SPARQL expressions, thus allowing to customize their behaviour.
+</p></li>
+<li><p>The <b>SPARQL prologue</b> (property <a href="#prologue">spr:prologue</a>) is a SPARQL expression that defines the namespaces and/or the base URIs for parsing SPARQL expressions in the ruleset. The syntax is the one of SPARQL: prefixes are declared as '<code>PREFIX pref: &lt;uri&gt;</code>', (as with prefixes <code>rdf:</code>, <code>rdfs</code> and <code>xsd:</code> in the example), while the base uri is declared as '<code>BASE &lt;uri&gt;</code>'.
+</p></li>
+<li><p><b>Macros</b> (property <a href="#macro">spr:macro</a>) are constants or functions (such as <code>HOME</code> and <code>DIFF(a,b,c)</code> in the example) which can be used inside SPARQL expressions in the ruleset to factorize SPARQL snippets and make ruleset definitions less verbose. The syntax for macro definitions is '<code>macro(arg1, ..., argN) = template'</code>. Name and arguments are identifiers, i.e., letter followed by letters, numbers or underscore. Arguments are optional; if absent, parenthesis can be omitted. If a macro accepts a parameter <code>P</code>, its template may reference <code>P</code> using syntax <code>#P</code>; at the same time, the macro cannot use a SPARQL variable <code>?P</code> with the same name (to avoid hard to spot errors caused by wrong typing). When a ruleset is loaded, macros are expanded by replacing their references in SPARQL expressions with the associated template, whose parameter placeholders are substituted with the values specified in the macro invocation.
+</p></li>
+</ul>
+
+<p>Additional ruleset properties such as a <code>rdfs:label</code> can be specified: while ignored by Springles, they can be used by tools to display or manipulate metadata about rulesets.</p>
+
+
+<!-- Rules -->
+
+<h2 id="sec-rules">Rules</h2>
+
+<p>An inference <b>rule</b> specifies using a SPARQL-based syntax how inferred statements can be deduced through the matching of statements already contained in the repository. An example of rule is reported below.</p>
+
+<div class="code"><pre>
+:rdfs11 a spr:Rule ;
+    spr:triggerOf ( :rdfs2 :rdfs3 :rdfs7 :rdfs9 :rdfs11 ) ;
+    spr:condition "?enable_tbox_rules" ;
+    spr:head """ GRAPH ?inference_graph { ?x rdfs:subClassOf ?z } """ ;
+    spr:body """ GRAPH ?graph { ?x rdfs:subClassOf ?y .
+                                ?y rdfs:subClassOf ?z . }
+                 $DIFF(?x, ?y, ?z)
+                 FILTER NOT EXISTS { GRAPH ?graph { ?x rdfs:subClassOf ?z } } """ .
+</pre></div>
+
+<p>A rule has a mandatory body, that has to be matched by statements in the repository, and a mandatory head, that specifies which statements have to be inferred if the body is matched:</p>
+<ul>
+<li><p>The <b>body</b> (property <a href="#body">spr:body</a>) is a SPARQL expression of the kind used in WHERE clauses (<a href="http://www.w3.org/TR/sparql11-query/#rGroupGraphPattern"><code>GroupGraphPattern</code></a> production in SPARQL 1.1 grammar). The body is evaluated against statements stored in the repository, setting all variables in the expression for which a ruleset parameter or an inherited binding (see <a href="#bindings">below</a>) is available with the corresponding value. In general, the body has the tasks of (1) implementing the premises of the rule; and (2) checking that the statements produced by the head are not already stated explicitly in the repository. Note that it is not necessary (and it may be detrimental to performances) to remove duplicates at this level, as this is already done efficiently by Springles engine. Note, also, that if the body is empty, the head will be always inferred and the rule will behave as an axiom.
+</p></li>
+<li><p>The <b>head</b> (property <a href="#head">spr:head</a>) is a SPARQL expression (a <a href="http://www.w3.org/TR/sparql11-query/#rGroupGraphPattern"><code>GroupGraphPattern</code></a> too) restricted to use only triple patterns (as in a SPARQL <code>CONSTRUCT</code> clause), plus the <code>GRAPH</code> keyword that permits to generate statements inside specific graphs (differently from a <code>CONSTRUCT</code> query). The head expression may reference variables, whose values derive either from the matched rule body or from ruleset parameters and/or inherited bindings (as <code>?inference_graph</code> in the example, see <a href='#bindings'>binding inheritance</a> later).
+</p></li>
+</ul>
+
+<p>A rule is optionally associated to a condition, a transformer and a list of triggered rules:</p>
+<ul>
+<li><p>The <b>condition</b> (property <a href="#condition">spr:condition</a>), if specified, is a generic SPARQL boolean expression (<a href="http://www.w3.org/TR/sparql11-query/#rConstraint">Constraint</a> production in SPARQL 1.1. grammar) that must be satisfied by ruleset parameters and inherited bindings in order for the rule to be possibly evaluated. In the example above, if ruleset parameter <code>enable_tbox_rules</code> is <code>false</code>, then rule <code>:rdfs11</code> will never be considered for evaluation. Note that the expression cannot query for statements stored in the repository.
+</p></li>
+<li><p>The <b>transformer</b> (property <a href="#transform">spr:transform</a>), if specified, is executed after the evaluation of the rule body and before the materialization of the rule head. It permits to invoke external Java code to implement specialized processing not possible or difficult/inefficient to realize in SPARQL. More precisely, the stream of solutions (tuples of variable bindings) extracted from the evaluation of the rule body is fed into the transformer, which produces another stream of solutions which is the one actually used to materialize the head. The transformer is identified by a SPARQL function call (<a href="http://www.w3.org/TR/sparql11-query/#rFunctionCall"><code>FunctionCall</code></a> production in SPARQL 1.1 grammar). Its URI identifies a Java static method implementing the transformer and is either in the form <code>&lt;springles:builtin_transformer&gt;</code> or <code>&lt;java:class_name.method_name&gt;</code>. Its arguments are used to configure the transformer and are SPARQL expressions evaluated based based on ruleset parameters and inherited bindings (access to statements in the repository is disallowed).
+</p></li>
+<li><p><b>Triggered rules</b> (property <a href="#triggerOf">spr:triggerOf</a>) are the rules that may fire as a consequence of the subject rule being fired, i.e., they are the successor of the rule in a <em>rule dependency graph</em>. This is an optional property that permit users to supply the inference engine with the result of a static analysis of rule dependencies, which is then exploited to avoid unnecessary rule evaluations. If this property is not supplied, the engine will conservatively assume that every rule in the plan may fire as a result of the subject rule being fired. Note that the value of the property is a <a href="#RuleList">RuleList</a> implemented as a specialization of RDF lists: a list is used in order to differentiate between the case the property is not supplied (e.g., because unknown) and the case there are no triggered rules (empty list); the order of rules in the list is irrelevant.
+</p></li>
+</ul>
+
+<p>A rule's head, body and condition expression may use the macros defined in the ruleset. This is shown in the rule body of the example, where macro <code>DIFF</code> is called. When loading the ruleset, it will be expanded with the string <code>FILTER ($x != $y && $x != $z && $y != $z)</code>, with macro parameters <code>a</code>, <code>b</code> and <code>c</code> replaced with supplied expressions <code>?x</code>, <code>?y</code> and <code>?z</code>. Note that, should one of those expression contain a comma, it must be surrounded by parenthesis <code>( ... )</code>, or it is interpreted as multiple parameter assignments.</p>
+
+
+<!-- Closure plans -->
+
+<h2 id="sec-plans">Closure plans</h2>
+
+<p>A closure plan instructs the system on how to compute and materialize a logical closure. A plan is decomposed into a number of <b>closure tasks</b>, arranged in a hierarchy. Execution of a plan starts from the <em>root</em> task identified by property <a href="#closurePlan">closurePlan</a> in the ruleset. Children tasks can then be executed as part of the execution of the parent task, that controls their execution according to a specific strategy (e.g., sequential vs fix-point execution); the process is repeated recursively for child tasks. Note that the topology of the task hierarchy is actually a DAG with a single root, i.e., it is allowed for a task to be included as a child in multiple positions of the hierarchy.</p>
+
+<p>An example of closure plan (implementing per-graph RDFS inference) is shown below. In the example, <code>:plan</code> is the root task referenced by the ruleset. It is a <a href="#ClosureRepeatTask">spr:ClosureRepeatTask</a> that executes a child task <code>:graph-closure</code> for each graph in the repository. In turn, task <code>graph-closure</code> is executed as the sequence of two tasks: <code>:add-axioms</code> and <code>:do-closure</code>. Note that the RDF definition of a task may be restricted by stating the minimum possible amount of statements (as happen in the example for task <code>:do-closure</code>), relying on the system to infer missing information when loading a ruleset based on the semantic constraints in the Springles Ruleset Vocabulary (e.g., to infer that the task type is <code>spr:ClosureFixPointTask</code>); this principle applies in general to the whole ruleset RDF definition.</p>
+
+<div class="code"><pre>
+:plan a spr:ClosureRepeatTask ;
+    spr:repeatOver """ SELECT ?graph WHERE { GRAPH ?graph { ?s ?p ?o } } " ;
+    spr:repeatOf :graph-closure .
+    
+:graph-closure a spr:ClosureSequenceTask ;
+    spr:bind "?inference_graph = IRI(concat(str(?graph), '-inf'))" ;
+    spr:sequenceOf ( :add-axioms :do-closure ) .
+
+:add-axioms a spr:ClosureEvalTask ;
+    spr:evalOf ( :rdf_axioms :rdfs_axioms ) .
+    
+:do-closure spr:fixPointOf [ spr:evalOf (
+        :rdf1 :rdfs2 :rdfs3 :rdfs4a :rdfs4b :rdfs5 :rdfs6
+        :rdfs7 :rdfs8 :rdfs9 :rdfs10 :rdfs11 :rdfs12 :rdfs13 ) ] .
+</pre></div>
+
+<h3 id="bindings">Binding inheritance mechanism</h3>
+
+<p>When a closure task is executed, it <em>inherits</em> a set of <b>variable bindings</b> (i.e., <code>variable = value</code> pairs) that are used to fix the values of matching variables in referenced rules and SPARQL expressions. Variable bindings are propagated in a top-down mode. This starts with the root task, which inherits a binding for each ruleset parameter, where the variable is the parameter name and the value is the one supplied by the user at configuration time (or the default value of the ruleset parameter). Each tasks can then define its own bindings, which are merged with (and possibly override) the ones inherited and are then propagated down the hierarchy. Binding definition is either implicit or explicit:</p>
+<ul>
+<li><p><b>Implicit binding definition</b> is associated to certain kinds of tasks, such as the <a href="#ClosureRepeatTask">spr:ClosureRepeatTask</a> task, which defines the bindings of loop variables in each iteration. This is shown in the example, where task <code>:plan</code> retrieves all the graphs in the repository with a query and then executes the child task <code>:graph-closure</code> binding variable <code>?graph</code> to a different (retrieved) graph URI each time.
+</p></li>
+<li><p><b>Explicit binding definition</b> is controlled by the user through the use of the <a href="#bind">spr:bind</a> property, which is supported for every type of closure task. The property takes as value a string expression of the form <code>variable = SPARQL expression</code>, where the SPARQL expression is evaluated based on all the bindings received in input by the task. This occurs in the example for task <code>:graph-closure</code>, which generates the URI of the graph where to store inferences and binds it to variable <code>?inference_graph</code>; this binding, together with the one for variable <code>?graph</code>, are then inherited by child tasks <code>:add-axioms</code> and <code>:do-closure</code>, and from them inherited by referenced rules <code>:rdf_axioms</code>, <code>:rdfs_axioms</code>, <code>:rdf1</code> ... <code>:rdfs13</code>.
+</p></li>
+</ul>
+
+<h3 id="tasks">Types of closure tasks</h3>
+
+<p>The following types of closure task are defined, each one with its own semantics:</p>
+<ul>
+<li><p><b>Eval</b> (class <a href="#ClosureEvalTask">spr:ClosureEvalTask</a>). It consists in the parallel evaluation of zero or more rules, specified using property <a href="#evalOf">spr:evalOf</a>. In case only a limited number <code>N</code> of rules can be evaluated in parallel (this is a configuration option of Springles which should be fixed based on the number of available CPU cores), rules are queued according to the order specified by <a href="#evalOf">spr:evalOf</a> and the first <code>N</code> rules are evaluated, starting the evaluation of another rule waiting in the queue each time the evaluation of a preceeding rule terminates. Inferred statements are buffered and written back to the repository only after all the rules have been evaluated, thus implying that each evaluated rule will not 'see' the inferences produced by other evaluated rules.
+</p></li>
+<li><p><b>Sequence</b> (class <a href="#ClosureEvalTask">spr:ClosureEvalTask</a>). It consists in the sequential execution of zero or more child tasks, specified using property <a href="#sequenceOf">spr:sequenceOf</a>. Note that execution is strictly sequential, in the sense execution of a child task is started only after the execution of the previous task completes.
+</p></li>
+<li><p><b>Fix point</b> (class <a href="#ClosureEvalTask">spr:ClosureEvalTask</a>). It consists in the fix-point execution of a child task, i.e., the child task is repeatedly executed until it produces no more inferred statements. The child task is specified using property <a href="#fixPointOf">spr:fixPointOf</a>.
+</p></li>
+<li><p><b>Repeat</b> (class <a href="#ClosureEvalTask">spr:ClosureEvalTask</a>). It realizes a sort of 'for-each' primitive that consists in the repeated execution of a child task, specified by property <a href="spr:repeatOf">spr:repeatOf</a>, for each tuple obtained from the evaluation of a <code>SELECT</code> query, specified by property <a href="#repeatOver">spr:repeatOver</a>. The query is executed once when the task is executed; query results are collected and bufferend and the child task is executed for each result tuple in the order they are returned by the query. Note that the SPARQL bindings in the result tuple are propagated to the child task as additional variable bindings, providing a way to influence the execution of the child task.
+</p></li>
+</ul>
+
+
+<!-- Design considerations -->
+
+<h2 id="sec-considerations">Design considerations</h2>
+
+<p>Concerning the ruleset conceptual model, a point worth of consideration is the relation between closure plans and rule dependencies encoded using property <a href="#triggerOf">spr:triggerOf</a>. The two mechanisms are orthogonal. The Springles engine will always stick to the closure plan when performing inference. Each time the plan asks for the execution of a rule, the engine checks whether the rule can possibly produce some inferred statement by consulting rule dependencies as encoded by <a href="#triggerOf">spr:triggerOf</a> properties and by checking which rules previously fired. If it is determined that no inference can be produced, then the rule is not executed at all, possibly leading to substantial time savings due to the rule body not being evaluated.</p>
+
+<p>Another aspect worth discussion is the relation between binding inheritance and macros. While bindings can be used in place of constant macros, they are though as a way to dinamically adapt a ruleset to inputs supplied from the user at configuration time or to the outcome of the execution of some closure task at inference time. Macros, on the other hand, are a static mechanism that can be used to save some key-stroke when writing a ruleset; in fact, the engine expands macros when a ruleset is loaded, and then gets rid of them.</p>
+
+<p>Concerning the way the model has been encoded in a vocabulary, it is worth noting that the Springles Ruleset Vocabulary has been designed with the goal to be easy and comfortable to use when writing a ruleset directly without the help of a tool (whose implementation as part of Springles is not envisioned). This justifies certain modelling solutions, such as: (1) the use of different properties to relate a task to its child tasks, so to allow the inference of the type of task and make ruleset specification less verbose; and (2) the use (by specialization) of RDF lists, which are handy in RDF syntaxes but surely not examples of good ontological modelling.</p>
+    
+    
+<!-- Reference -->
+  
+<h2 id="sec-reference">Terms reference</h2>
+
+<!-- Classes and Properties classes and properties --> 
+
+<div class="azlist">
+<p>Classes: | <a href="#ClosureEvalTask">ClosureEvalTask</a> |  <a href="#ClosureFixPointTask">ClosureFixPointTask</a> |  <a href="#ClosureRepeatTask">ClosureRepeatTask</a> |  <a href="#ClosureSequenceTask">ClosureSequenceTask</a> |  <a href="#ClosureTask">ClosureTask</a> |  <a href="#ClosureTaskList">ClosureTaskList</a> |  <a href="#Parameter">Parameter</a> |  <a href="#Rule">Rule</a> |  <a href="#RuleList">RuleList</a> |  <a href="#Ruleset">Ruleset</a> | 
+</p>
+<p>Properties: | <a href="#bind">bind</a> |  <a href="#body">body</a> |  <a href="#closurePlan">closurePlan</a> |  <a href="#condition">condition</a> |  <a href="#default">default</a> |  <a href="#evalBackward">evalBackward</a> |  <a href="#evalForward">evalForward</a> |  <a href="#evalOf">evalOf</a> |  <a href="#fixPointOf">fixPointOf</a> |  <a href="#head">head</a> |  <a href="#macro">macro</a> |  <a href="#name">name</a> |  <a href="#parameterizedBy">parameterizedBy</a> |  <a href="#prologue">prologue</a> |  <a href="#repeatOf">repeatOf</a> |  <a href="#repeatOver">repeatOver</a> |  <a href="#sequenceOf">sequenceOf</a> |  <a href="#transform">transform</a> |  <a href="#triggerOf">triggerOf</a> | 
+</p>
+</div>
+
+<div class="termlist"><h3>Classes and Properties (full detail)</h3>
+<div class='termdetails'><br />
+
+<h2>Classes</h2>
+ 
+
+
+<div class="specterm" id="ClosureEvalTask" about="http://dkm.fbk.eu/springles/ruleset#ClosureEvalTask" typeof="owl:Class">
+  			<h3>Class: spr:ClosureEvalTask</h3> 
+  			<em style="display: none" property="rdfs:label" >closure eval task</em>
+            <span property="rdfs:comment" >A closure task consisting in the evaluation of zero or more
+        rules, specified using mandatory property
+        <a href='#evalOf'>spr:evalOf</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#evalOf">spr:evalOf</a>
+ </td></tr>
+  			<tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about ="http://dkm.fbk.eu/springles/ruleset#ClosureEvalTask" rel="rdfs:subClassOf" resource="[_:N722ee34145cf4a0786a194ab80392919]"></span>
+ <span about="[_:N722ee34145cf4a0786a194ab80392919]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N722ee34145cf4a0786a194ab80392919]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#evalOf"><a href="#evalOf">spr:evalOf</a></span> must be set <em>at least</em> 
+  									<span about="[_:N722ee34145cf4a0786a194ab80392919]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureEvalTask">#</a>] <!-- ClosureEvalTask --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="ClosureFixPointTask" about="http://dkm.fbk.eu/springles/ruleset#ClosureFixPointTask" typeof="owl:Class">
+  			<h3>Class: spr:ClosureFixPointTask</h3> 
+  			<em style="display: none" property="rdfs:label" >closure fix-point task</em>
+            <span property="rdfs:comment" >A closure task consisting in the fix-point execution of a
+        child task, specified using mandatory property
+        <a href='#fixPointOf'>spr:fixPointOf</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#fixPointOf">spr:fixPointOf</a>
+ </td></tr>
+  			<tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about ="http://dkm.fbk.eu/springles/ruleset#ClosureFixPointTask" rel="rdfs:subClassOf" resource="[_:N57233f03a71c4ad683e01e46f3a9c99c]"></span>
+ <span about="[_:N57233f03a71c4ad683e01e46f3a9c99c]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N57233f03a71c4ad683e01e46f3a9c99c]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#fixPointOf"><a href="#fixPointOf">spr:fixPointOf</a></span> must be set <em>at least</em> 
+  									<span about="[_:N57233f03a71c4ad683e01e46f3a9c99c]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureFixPointTask">#</a>] <!-- ClosureFixPointTask --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="ClosureRepeatTask" about="http://dkm.fbk.eu/springles/ruleset#ClosureRepeatTask" typeof="owl:Class">
+  			<h3>Class: spr:ClosureRepeatTask</h3> 
+  			<em style="display: none" property="rdfs:label" >closure repeat task</em>
+            <span property="rdfs:comment" >A closure task consisting in the repeated execution of a
+        child task, specified by property <a href='#repeatOf'>spr:repeatOf</a>,
+        for each tuple obtained from the evaluation of a <code>SELECT</code>
+        query, specified by property
+        <a href='#repeatOver'>spr:repeatOver</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#repeatOver">spr:repeatOver</a>
+ <a href="#repeatOf">spr:repeatOf</a>
+ </td></tr>
+  			<tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about="http://dkm.fbk.eu/springles/ruleset#ClosureRepeatTask" rel="rdfs:subClassOf" resource="[_:Nba5424bd0aa94894aa08275070f63abc]"></span>
+ <span about="[_:Nba5424bd0aa94894aa08275070f63abc]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nba5424bd0aa94894aa08275070f63abc]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#repeatOver"><a href="#repeatOver">spr:repeatOver</a></span> must be set <em>at least</em> 
+  									<span about="[_:Nba5424bd0aa94894aa08275070f63abc]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) <br/> <span about ="http://dkm.fbk.eu/springles/ruleset#ClosureRepeatTask" rel="rdfs:subClassOf" resource="[_:N92f5b03a11854af289923a97113a7a78]"></span>
+ <span about="[_:N92f5b03a11854af289923a97113a7a78]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N92f5b03a11854af289923a97113a7a78]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#repeatOf"><a href="#repeatOf">spr:repeatOf</a></span> must be set <em>at least</em> 
+  									<span about="[_:N92f5b03a11854af289923a97113a7a78]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureRepeatTask">#</a>] <!-- ClosureRepeatTask --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="ClosureSequenceTask" about="http://dkm.fbk.eu/springles/ruleset#ClosureSequenceTask" typeof="owl:Class">
+  			<h3>Class: spr:ClosureSequenceTask</h3> 
+  			<em style="display: none" property="rdfs:label" >closure sequence task</em>
+            <span property="rdfs:comment" >A closure task consisting in the sequential execution of
+        zero or more child tasks, specified using mandatory property
+        <a href='#sequenceOf'>spr:sequenceOf</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#sequenceOf">spr:sequenceOf</a>
+ </td></tr>
+  			<tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about ="http://dkm.fbk.eu/springles/ruleset#ClosureSequenceTask" rel="rdfs:subClassOf" resource="[_:N9c35b9e0277f4068bd90a3ecdb915f61]"></span>
+ <span about="[_:N9c35b9e0277f4068bd90a3ecdb915f61]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N9c35b9e0277f4068bd90a3ecdb915f61]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#sequenceOf"><a href="#sequenceOf">spr:sequenceOf</a></span> must be set <em>at least</em> 
+  									<span about="[_:N9c35b9e0277f4068bd90a3ecdb915f61]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureSequenceTask">#</a>] <!-- ClosureSequenceTask --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="ClosureTask" about="http://dkm.fbk.eu/springles/ruleset#ClosureTask" typeof="owl:Class">
+  			<h3>Class: spr:ClosureTask</h3> 
+  			<em style="display: none" property="rdfs:label" >closure task</em>
+            <span property="rdfs:comment" >A generic task of the closure plan. Explicit definition of
+        variable bindings is supported for any type of task using property
+        <a href='#bind'>spr:bind</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#bind">spr:bind</a>
+ </td></tr>
+  			<tr><th>Used with:</th>
+ <td>  <a href="#closurePlan">spr:closurePlan</a>
+ <a href="#fixPointOf">spr:fixPointOf</a>
+ <a href="#repeatOf">spr:repeatOf</a>
+</td></tr> <tr><th>Has sub class</th>
+ <td>  <a href="#ClosureSequenceTask">spr:ClosureSequenceTask</a>
+ <a href="#ClosureFixPointTask">spr:ClosureFixPointTask</a>
+ <a href="#ClosureRepeatTask">spr:ClosureRepeatTask</a>
+ <a href="#ClosureEvalTask">spr:ClosureEvalTask</a>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureTask">#</a>] <!-- ClosureTask --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="ClosureTaskList" about="http://dkm.fbk.eu/springles/ruleset#ClosureTaskList" typeof="owl:Class">
+  			<h3>Class: spr:ClosureTaskList</h3> 
+  			<em style="display: none" property="rdfs:label" >closure task list</em>
+            <span property="rdfs:comment" >A list of closure tasks, defined by specializing and
+        constraining a generic RDF list.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			
+  			<tr><th>Used with:</th>
+ <td>  <a href="#sequenceOf">spr:sequenceOf</a>
+</td></tr> <tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"><a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#List">rdf:List</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about="http://dkm.fbk.eu/springles/ruleset#ClosureTaskList" rel="rdfs:subClassOf" resource="[_:Nec89571c2f96423b92633fcb3cf4cda8]"></span>
+ <span about="[_:Nec89571c2f96423b92633fcb3cf4cda8]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nec89571c2f96423b92633fcb3cf4cda8]" rel="owl:onProperty" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"><a href="#rest">rdf:rest</a></span> must be set <em></em> 
+  									<span about="[_:Nec89571c2f96423b92633fcb3cf4cda8]" property="owl:allValuesFrom" datatype="xsd:nonNegativeInteger" >http://dkm.fbk.eu/springles/ruleset#ClosureTaskList</span> time(s) <br/> <span about ="http://dkm.fbk.eu/springles/ruleset#ClosureTaskList" rel="rdfs:subClassOf" resource="[_:Nab1c91ea44224a7fad1e280a36d53b09]"></span>
+ <span about="[_:Nab1c91ea44224a7fad1e280a36d53b09]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nab1c91ea44224a7fad1e280a36d53b09]" rel="owl:onProperty" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#first"><a href="#first">rdf:first</a></span> must be set <em></em> 
+  									<span about="[_:Nab1c91ea44224a7fad1e280a36d53b09]" property="owl:allValuesFrom" datatype="xsd:nonNegativeInteger" >http://dkm.fbk.eu/springles/ruleset#ClosureTask</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#ClosureTaskList">#</a>] <!-- ClosureTaskList --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="Parameter" about="http://dkm.fbk.eu/springles/ruleset#Parameter" typeof="owl:Class">
+  			<h3>Class: spr:Parameter</h3> 
+  			<em style="display: none" property="rdfs:label" >parameter</em>
+            <span property="rdfs:comment" >A ruleset parameter characterized by a name (property
+        <a href='#name'>spr:name</a>) and a default value (property
+        <a href='#default'>spr:default</a>), whose value may be supplied by
+        users at repository configuration time.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#name">spr:name</a>
+ </td></tr>
+  			<tr><th>Used with:</th>
+ <td>  <a href="#parameterizedBy">spr:parameterizedBy</a>
+</td></tr> <tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about="http://dkm.fbk.eu/springles/ruleset#Parameter" rel="rdfs:subClassOf" resource="[_:Nc4fa1338fe9149d5b52bb05a52934bc4]"></span>
+ <span about="[_:Nc4fa1338fe9149d5b52bb05a52934bc4]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nc4fa1338fe9149d5b52bb05a52934bc4]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#name"><a href="#name">spr:name</a></span> must be set <em>at least</em> 
+  									<span about="[_:Nc4fa1338fe9149d5b52bb05a52934bc4]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) <br/> <span about ="http://dkm.fbk.eu/springles/ruleset#Parameter" rel="rdfs:subClassOf" resource="[_:Nf17dcde43be94d868836322a37fc9af7]"></span>
+ <span about="[_:Nf17dcde43be94d868836322a37fc9af7]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nf17dcde43be94d868836322a37fc9af7]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#default"><a href="#default">spr:default</a></span> must be set <em>at least</em> 
+  									<span about="[_:Nf17dcde43be94d868836322a37fc9af7]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#Parameter">#</a>] <!-- Parameter --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="Rule" about="http://dkm.fbk.eu/springles/ruleset#Rule" typeof="owl:Class">
+  			<h3>Class: spr:Rule</h3> 
+  			<em style="display: none" property="rdfs:label" >rule</em>
+            <span property="rdfs:comment" >An inference rule expressed using SPARQL, with mandatory
+        <a href='#head'>spr:head</a> and <a href='#body'>spr:body</a>, and
+        optional <a href='#condition'>spr:condition</a>, transformer (property
+        <a href='#transform'>spr:transform</a>) and list of triggered rules
+        (property <a href='#triggerOf'>spr:triggerOf</a>).</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#head">spr:head</a>
+ <a href="#transform">spr:transform</a>
+ <a href="#condition">spr:condition</a>
+ <a href="#triggerOf">spr:triggerOf</a>
+ <a href="#body">spr:body</a>
+ </td></tr>
+  			<tr><th>Used with:</th>
+ <td>  <a href="#evalBackward">spr:evalBackward</a>
+ <a href="#evalForward">spr:evalForward</a>
+</td></tr> <tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about="http://dkm.fbk.eu/springles/ruleset#Rule" rel="rdfs:subClassOf" resource="[_:Nbd35cf8688fc43a9ac9901bcacb11590]"></span>
+ <span about="[_:Nbd35cf8688fc43a9ac9901bcacb11590]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nbd35cf8688fc43a9ac9901bcacb11590]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#body"><a href="#body">spr:body</a></span> must be set <em>exactly</em> 
+  									<span about="[_:Nbd35cf8688fc43a9ac9901bcacb11590]" property="owl:cardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) <br/> <span about ="http://dkm.fbk.eu/springles/ruleset#Rule" rel="rdfs:subClassOf" resource="[_:Nec5380472ac640c4a81f7480be3d4249]"></span>
+ <span about="[_:Nec5380472ac640c4a81f7480be3d4249]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nec5380472ac640c4a81f7480be3d4249]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#head"><a href="#head">spr:head</a></span> must be set <em>exactly</em> 
+  									<span about="[_:Nec5380472ac640c4a81f7480be3d4249]" property="owl:cardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#Rule">#</a>] <!-- Rule --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="RuleList" about="http://dkm.fbk.eu/springles/ruleset#RuleList" typeof="owl:Class">
+  			<h3>Class: spr:RuleList</h3> 
+  			<em style="display: none" property="rdfs:label" >rule list</em>
+            <span property="rdfs:comment" >A (possibly empty) list of rules, defined by specializing
+        and constraining a generic RDF list.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			
+  			<tr><th>Used with:</th>
+ <td>  <a href="#triggerOf">spr:triggerOf</a>
+ <a href="#evalOf">spr:evalOf</a>
+</td></tr> <tr><th>Sub class of</th>
+ <td>  <span rel="rdfs:subClassOf" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"><a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#List">rdf:List</a></span>
+ </td></tr><tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about="http://dkm.fbk.eu/springles/ruleset#RuleList" rel="rdfs:subClassOf" resource="[_:N66a26457cd9a4713adea834ea4257baf]"></span>
+ <span about="[_:N66a26457cd9a4713adea834ea4257baf]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N66a26457cd9a4713adea834ea4257baf]" rel="owl:onProperty" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#first"><a href="#first">rdf:first</a></span> must be set <em></em> 
+  									<span about="[_:N66a26457cd9a4713adea834ea4257baf]" property="owl:allValuesFrom" datatype="xsd:nonNegativeInteger" >http://dkm.fbk.eu/springles/ruleset#Rule</span> time(s) <br/> <span about ="http://dkm.fbk.eu/springles/ruleset#RuleList" rel="rdfs:subClassOf" resource="[_:N277e350e47c64e68ad4218639661edf3]"></span>
+ <span about="[_:N277e350e47c64e68ad4218639661edf3]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:N277e350e47c64e68ad4218639661edf3]" rel="owl:onProperty" href="http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"><a href="#rest">rdf:rest</a></span> must be set <em></em> 
+  									<span about="[_:N277e350e47c64e68ad4218639661edf3]" property="owl:allValuesFrom" datatype="xsd:nonNegativeInteger" >http://dkm.fbk.eu/springles/ruleset#RuleList</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#RuleList">#</a>] <!-- RuleList --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="Ruleset" about="http://dkm.fbk.eu/springles/ruleset#Ruleset" typeof="owl:Class">
+  			<h3>Class: spr:Ruleset</h3> 
+  			<em style="display: none" property="rdfs:label" >ruleset</em>
+            <span property="rdfs:comment" >A ruleset consists of a set of rules, evaluated either in
+        backward- or forward- chaining. Backward evaluation (currently
+        unsupported) affects rules listed by property
+        <a href='#evalBackward'>spr:evalBackward</a>. Forward evaluation is
+        specified by supplying a closure plan with property
+        <a href='#closurePlan'>spr:closurePlan</a>. A ruleset is optionally
+        associated to a number of ruleset parameters via property
+        <a href='#parameterizedBy'>spr:parameterizedBy</a>, a 'SPARQL prologue'
+        via property <a href='#prologue'>spr:prologue</a> and a number of
+        'macros' via property <a href='#macro'>spr:macro</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Properties include:</th>
+ <td>  <a href="#evalBackward">spr:evalBackward</a>
+ <a href="#closurePlan">spr:closurePlan</a>
+ <a href="#parameterizedBy">spr:parameterizedBy</a>
+ <a href="#evalForward">spr:evalForward</a>
+ <a href="#macro">spr:macro</a>
+ <a href="#prologue">spr:prologue</a>
+ </td></tr>
+  			<tr><th class="restrictions">Restriction(s):</th>
+ <td>  <span about ="http://dkm.fbk.eu/springles/ruleset#Ruleset" rel="rdfs:subClassOf" resource="[_:Nc1b45030fc1e476e8489a7674b53c9b4]"></span>
+ <span about="[_:Nc1b45030fc1e476e8489a7674b53c9b4]" typeof="owl:Restriction"></span>The property 
+  									<span about="[_:Nc1b45030fc1e476e8489a7674b53c9b4]" rel="owl:onProperty" href="http://dkm.fbk.eu/springles/ruleset#closurePlan"><a href="#closurePlan">spr:closurePlan</a></span> must be set <em>at least</em> 
+  									<span about="[_:Nc1b45030fc1e476e8489a7674b53c9b4]" property="owl:minCardinality" datatype="xsd:nonNegativeInteger" >1</span> time(s) 
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#Ruleset">#</a>] <!-- Ruleset --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><h2>Properties</h2>
+ 
+
+
+<div class="specterm" id="bind" about="http://dkm.fbk.eu/springles/ruleset#bind" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:bind</h3> 
+  			<em style="display: none" property="rdfs:label" >bind</em>
+            <span property="rdfs:comment" >Declares a binding for the subject closure task. The value
+        is binding is a string of the form 'variable = SPARQL expression'. The
+        expression is evaluated only on the basis of inherited bindings.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#bind">#</a>] <!-- bind --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="body" about="http://dkm.fbk.eu/springles/ruleset#body" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:body</h3> 
+  			<em style="display: none" property="rdfs:label" >body</em>
+            <span property="rdfs:comment" >Specifies the body of the rule. The value is a SPARQL
+        <a href='http://www.w3.org/TR/sparql11-query/#rGroupGraphPattern'>
+        spr:GroupGraphPattern</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#body">#</a>] <!-- body --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="closurePlan" about="http://dkm.fbk.eu/springles/ruleset#closurePlan" typeof="owl:FunctionalProperty">
+  			<h3>Property: spr:closurePlan</h3> 
+  			<em style="display: none" property="rdfs:label" >closure plan</em>
+            <span property="rdfs:comment" >Specifies the mandatory closure plan associated to the 
+        ruleset.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#closurePlan">#</a>] <!-- closurePlan --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="condition" about="http://dkm.fbk.eu/springles/ruleset#condition" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:condition</h3> 
+  			<em style="display: none" property="rdfs:label" >condition</em>
+            <span property="rdfs:comment" >Specifies the optional rule condition. The value is a SPARQL
+        boolean expression satisfying the grammar production
+        <a href='http://www.w3.org/TR/sparql11-query/#rConstraint'>
+        spr:Constraint</a>. The expression is evaluated only considering inherited
+        variable bindings.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#condition">#</a>] <!-- condition --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="default" about="http://dkm.fbk.eu/springles/ruleset#default" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:default</h3> 
+  			<em style="display: none" property="rdfs:label" >default value</em>
+            <span property="rdfs:comment" >Specifies the default value of a parameter. Literal values
+        of type xsd:anyURI are injected as IRIs (instead of literals) in
+        SPARQL expressions.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2000/01/rdf-schema#Literal"><a href="http://www.w3.org/2000/01/rdf-schema#Literal">rdfs:Literal</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#default">#</a>] <!-- default --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="evalBackward" about="http://dkm.fbk.eu/springles/ruleset#evalBackward" typeof="owl:ObjectProperty">
+  			<h3>Property: spr:evalBackward</h3> 
+  			<em style="display: none" property="rdfs:label" >eval backward</em>
+            <span property="rdfs:comment" >Specifies the rules to be evaluated in backward-chaining.
+        Note that forward- and backward- evaluation of a rule are mutually
+        exclusive.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#evalBackward">#</a>] <!-- evalBackward --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="evalForward" about="http://dkm.fbk.eu/springles/ruleset#evalForward" typeof="owl:ObjectProperty">
+  			<h3>Property: spr:evalForward</h3> 
+  			<em style="display: none" property="rdfs:label" >eval forward</em>
+            <span property="rdfs:comment" >Specifies the rules to be evaluated in a forward-chaining
+        mode. If a closure plan is supplied, then this property can be omitted;
+        otherwise, the rules listed here are evaluated according to a basic plan
+        performing fix-point evaluation of all forward-chanining rules.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#evalForward">#</a>] <!-- evalForward --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="evalOf" about="http://dkm.fbk.eu/springles/ruleset#evalOf" typeof="owl:FunctionalProperty">
+  			<h3>Property: spr:evalOf</h3> 
+  			<em style="display: none" property="rdfs:label" >evaluation of</em>
+            <span property="rdfs:comment" >Specifies the list of rules to be evaluated in parallel as
+        part of the execution of a
+        <a href='#ClosureEvalTask'>spr:ClosureEvalTask</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureEvalTask"><a href="#ClosureEvalTask">spr:ClosureEvalTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#RuleList"><a href="#RuleList">spr:RuleList</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#evalOf">#</a>] <!-- evalOf --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="fixPointOf" about="http://dkm.fbk.eu/springles/ruleset#fixPointOf" typeof="owl:FunctionalProperty">
+  			<h3>Property: spr:fixPointOf</h3> 
+  			<em style="display: none" property="rdfs:label" >fix-point of</em>
+            <span property="rdfs:comment" >Specifies the sub-task to be executed in a fix-point mode
+        as part of the execution of a
+        <a href='#ClosureFixPointTask'>spr:ClosureFixPointTask</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureFixPointTask"><a href="#ClosureFixPointTask">spr:ClosureFixPointTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#fixPointOf">#</a>] <!-- fixPointOf --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="head" about="http://dkm.fbk.eu/springles/ruleset#head" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:head</h3> 
+  			<em style="display: none" property="rdfs:label" >head</em>
+            <span property="rdfs:comment" >Specifies the head of the rule. The value is a SPARQL
+        <a href='http://www.w3.org/TR/sparql11-query/#rGroupGraphPattern'>
+        spr:GroupGraphPattern</a> restricted to triple patterns and the
+        <code>GRAPH</code> keyword.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#head">#</a>] <!-- head --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="macro" about="http://dkm.fbk.eu/springles/ruleset#macro" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:macro</h3> 
+  			<em style="display: none" property="rdfs:label" >macro</em>
+            <span property="rdfs:comment" >Defines a macro using syntax
+        <code>macro(arg1, ..., argN) = template</code>. Arguments are optional,
+        in which case parenthesis can be omitted. Arguments can be referenced in
+        the template with the syntax <code>#arg</code>. As a safety measure, if
+        an argument <code>arg</code> is defined, no SPARQL variable
+        <code>?arg</code> can be used in the template. Macros can be used in
+        SPARQL expressions being the objects of <a href='#head'>spr:head</a>,
+        <a href='#body'>spr:body</a>, <a href='#condition'>spr:condition</a> and
+        <a href='#bind'>spr:bind</a> properties.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#macro">#</a>] <!-- macro --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="name" about="http://dkm.fbk.eu/springles/ruleset#name" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:name</h3> 
+  			<em style="display: none" property="rdfs:label" >name</em>
+            <span property="rdfs:comment" >Specifies the name of a ruleset parameter.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Parameter"><a href="#Parameter">spr:Parameter</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#name">#</a>] <!-- name --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="parameterizedBy" about="http://dkm.fbk.eu/springles/ruleset#parameterizedBy" typeof="owl:ObjectProperty">
+  			<h3>Property: spr:parameterizedBy</h3> 
+  			<em style="display: none" property="rdfs:label" >parameterized by</em>
+            <span property="rdfs:comment" >Specifies the (optional) parameters of the ruleset.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#Parameter"><a href="#Parameter">spr:Parameter</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#parameterizedBy">#</a>] <!-- parameterizedBy --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="prologue" about="http://dkm.fbk.eu/springles/ruleset#prologue" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:prologue</h3> 
+  			<em style="display: none" property="rdfs:label" >prologue</em>
+            <span property="rdfs:comment" >Specifies the optional SPARQL prologue, consisting of
+        namespace declarations (syntax <code>PREFIX pref: &lt;uri&gt;></code>)
+        and base URI declaration (syntax <code>BASE &lt;uri&gt;></code>).
+        </span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Ruleset"><a href="#Ruleset">spr:Ruleset</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#prologue">#</a>] <!-- prologue --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="repeatOf" about="http://dkm.fbk.eu/springles/ruleset#repeatOf" typeof="owl:FunctionalProperty">
+  			<h3>Property: spr:repeatOf</h3> 
+  			<em style="display: none" property="rdfs:label" >repeat of</em>
+            <span property="rdfs:comment" >Specifies the sub-task to be repeatedly executed as part of
+        the execution of a
+        <a href='#ClosureRepeatTask'>spr:ClosureRepeatTask</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureRepeatTask"><a href="#ClosureRepeatTask">spr:ClosureRepeatTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#ClosureTask"><a href="#ClosureTask">spr:ClosureTask</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#repeatOf">#</a>] <!-- repeatOf --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="repeatOver" about="http://dkm.fbk.eu/springles/ruleset#repeatOver" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:repeatOver</h3> 
+  			<em style="display: none" property="rdfs:label" >repeat over</em>
+            <span property="rdfs:comment" >Specifies the query whose results control the execution of a
+        child task in a
+        <a href='#ClosureRepeatTask'>spr:ClosureRepeatTask</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureRepeatTask"><a href="#ClosureRepeatTask">spr:ClosureRepeatTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#repeatOver">#</a>] <!-- repeatOver --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="sequenceOf" about="http://dkm.fbk.eu/springles/ruleset#sequenceOf" typeof="owl:FunctionalProperty">
+  			<h3>Property: spr:sequenceOf</h3> 
+  			<em style="display: none" property="rdfs:label" >sequence of</em>
+            <span property="rdfs:comment" >Specifies the list of child tasks to be executed
+        sequentially as part of the execution of a
+        <a href='#ClosureSequenceTask'>spr:ClosureSequenceTask</a>.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#ClosureSequenceTask"><a href="#ClosureSequenceTask">spr:ClosureSequenceTask</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#ClosureTaskList"><a href="#ClosureTaskList">spr:ClosureTaskList</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#sequenceOf">#</a>] <!-- sequenceOf --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="transform" about="http://dkm.fbk.eu/springles/ruleset#transform" typeof="owl:DatatypeProperty">
+  			<h3>Property: spr:transform</h3> 
+  			<em style="display: none" property="rdfs:label" >transform</em>
+            <span property="rdfs:comment" >Specifies the optional transformer associated to the rule.
+        The value is a SPARQL
+        <a href='http://www.w3.org/TR/sparql11-query/#rFunctionCall'>
+        spr:FunctionCall</a> expression whose URI is the transformer URI (either
+        <code>&lt;springles:builtin_function&gt;</code> or
+        <code>&lt;java:class_name.method_name&gt;</code>) and arguments are
+        evaluated based only on inherited variable bindings.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://www.w3.org/2001/XMLSchema#string"><a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#transform">#</a>] <!-- transform --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div><div class="specterm" id="triggerOf" about="http://dkm.fbk.eu/springles/ruleset#triggerOf" typeof="owl:ObjectProperty">
+  			<h3>Property: spr:triggerOf</h3> 
+  			<em style="display: none" property="rdfs:label" >trigger of</em>
+            <span property="rdfs:comment" >Specifies the (possibly empty) list of rule(s) that may fire
+        if the subject rule is fired. The property is optional and the order of
+        rules in the list is irrelevant.</span> <br /><table style="th { float: top; }">
+  			<!-- <tr><th>Status:</th>
+  			<td><span property="vs:status" >unknown</span></td></tr> -->
+  			<tr><th>Domain:</th>
+ <td>  <span rel="rdfs:domain" href="http://dkm.fbk.eu/springles/ruleset#Rule"><a href="#Rule">spr:Rule</a></span>
+ </td></tr>
+  			<tr><th>Range:</th>
+ <td>  <span rel="rdfs:range" href="http://dkm.fbk.eu/springles/ruleset#RuleList"><a href="#RuleList">spr:RuleList</a></span>
+ </td></tr>
+  			</table>
+  			
+  			<p class="backlink" style="float: right; font-size: small;">[<a href="#triggerOf">#</a>] <!-- triggerOf --> [<a href="#glance">back to top</a>]</p>
+  			<br class="backlink"/>
+  			</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+</div>
+
+</body>
+</html>
+
+

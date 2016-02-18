@@ -1,0 +1,48 @@
+http://dkm.fbk.eu/springles/config#SpringlesStore
+    eu.fbk.dkm.springles.store.SpringlesStore
+    eu.fbk.dkm.springles.store.SpringlesStore.getFactory;
+
+http://dkm.fbk.eu/springles/config#NullInferencer
+    eu.fbk.dkm.springles.inferencer.Inferencer
+    eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;
+
+http://dkm.fbk.eu/springles/config#VoidInferencer
+    eu.fbk.dkm.springles.inferencer.Inferencer
+    eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;
+
+http://dkm.fbk.eu/springles/config#NaiveInferencer
+    eu.fbk.dkm.springles.inferencer.Inferencer
+    eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;
+
+http://dkm.fbk.eu/springles/config#TestInferencer
+    eu.fbk.dkm.springles.inferencer.Inferencer
+    eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;    
+
+http://dkm.fbk.eu/springles/config#RepositoryBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#SailBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#MemoryStoreBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#NativeStoreBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#OwlimLiteBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#BigdataBackend
+    eu.fbk.dkm.springles.backend.Backend
+    eu.fbk.dkm.springles.backend.Backends.getFactory;
+
+http://dkm.fbk.eu/springles/config#Ruleset
+    eu.fbk.dkm.springles.ruleset.Ruleset
+    eu.fbk.dkm.springles.ruleset.Ruleset.getFactory
+    

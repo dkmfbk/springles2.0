@@ -1,0 +1,4 @@
+eu.fbk.dkm.springles.ruleset.rdfs-merged.ttl
+eu.fbk.dkm.springles.ruleset.rdfs-global-import.ttl
+eu.fbk.dkm.springles.ruleset.rdfs-graph-import.ttl
+eu.fbk.dkm.springles.ruleset.owl2rl-merged.ttl
