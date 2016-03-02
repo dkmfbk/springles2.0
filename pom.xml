@@ -449,6 +449,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${javadoc-plugin.version}</version>
         <configuration>
+         <additionalparam>-Xdoclint:none</additionalparam>
           <links>
             <link>http://java.sun.com/javase/6/docs/api/</link>
             <link>http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/</link>
@@ -770,7 +771,7 @@
     <pmd-plugin.version>2.7.1</pmd-plugin.version>
     <findbugs-plugin.version>2.5.2</findbugs-plugin.version>
     <javancss-plugin.version>2.0</javancss-plugin.version>
-    <javadoc-plugin.version>2.9</javadoc-plugin.version>
+    <javadoc-plugin.version>2.10.1</javadoc-plugin.version>
     <jxr-plugin.version>2.3</jxr-plugin.version>
     <cobertura-plugin.version>2.5.2</cobertura-plugin.version>
     <checkstyle-plugin.version>2.9.1</checkstyle-plugin.version>
