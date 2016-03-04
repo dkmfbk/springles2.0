@@ -357,6 +357,11 @@
       <version>${log4j.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+	  <groupId>eu.fbk.rdfpro</groupId>
+	  <artifactId>rdfpro-core</artifactId>
+	  <version>0.5.1</version>
+	</dependency>
   </dependencies>
 
   <build>

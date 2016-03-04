@@ -2,12 +2,6 @@ package eu.fbk.dkm.springles.inferencer;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Predicates;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.hash.Hasher;
-
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -19,6 +13,12 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.impl.MapBindingSet;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
+
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.hash.Hasher;
 
 import eu.fbk.dkm.internal.util.Selector;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -66,7 +66,11 @@ public final class Inferencers
     {
         return new VoidInferencer();
     }
-
+    public static Inferencer newRDFProInferencer (final Ruleset ruleset,
+            @Nullable final BindingSet rulesetBindings, final int maxConcurrentRules)
+    {
+        return new NaiveInferencer(ruleset, rulesetBindings, maxConcurrentRules);
+    }
     public static Inferencer newNaiveInferencer(final Ruleset ruleset,
             @Nullable final BindingSet rulesetBindings, final int maxConcurrentRules)
     {
@@ -90,7 +94,7 @@ public final class Inferencers
         final Selector s = Selector.select(graph, node);
         final URI type = Iterables.getOnlyElement(Iterables.filter(s.getAll(RDF.TYPE, URI.class),
                 Predicates.in(ImmutableList.of(SPC.NULL_INFERENCER, SPC.VOID_INFERENCER,
-                        SPC.NAIVE_INFERENCER,SPC.TEST_INFERENCER))));
+                        SPC.NAIVE_INFERENCER,SPC.TEST_INFERENCER,SPC.RDFPRO_INFERENCER))));
 
         final URI rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
         final Ruleset ruleset = rulesetURI == null ? null : Rulesets.lookup(rulesetURI);
@@ -141,7 +145,9 @@ public final class Inferencers
                     return newNaiveInferencer(ruleset, bindings, maxConcurrentRules);
                 } else if (SPC.TEST_INFERENCER.equals(type)) {
                     return newTestInferencer(ruleset, bindings, maxConcurrentRules);
-                } else {
+                } else if (SPC.RDFPRO_INFERENCER.equals(type)) {
+                    return newRDFProInferencer(ruleset, bindings, maxConcurrentRules);
+                }else {
                     throw new Error("Unexpected type: " + type);
                 }
             }

@@ -17,6 +17,10 @@ http://dkm.fbk.eu/springles/config#NaiveInferencer
 http://dkm.fbk.eu/springles/config#TestInferencer
     eu.fbk.dkm.springles.inferencer.Inferencer
     eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;    
+    
+http://dkm.fbk.eu/springles/config#RDFProInferencer
+    eu.fbk.dkm.springles.inferencer.Inferencer
+    eu.fbk.dkm.springles.inferencer.Inferencers.getFactory;    
 
 http://dkm.fbk.eu/springles/config#RepositoryBackend
     eu.fbk.dkm.springles.backend.Backend

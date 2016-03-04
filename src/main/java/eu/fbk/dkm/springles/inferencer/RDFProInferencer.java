@@ -1,17 +1,11 @@
 package eu.fbk.dkm.springles.inferencer;
 
-import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -20,47 +14,41 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.impl.ListBindingSet;
 import org.openrdf.query.impl.MapBindingSet;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
-import eu.fbk.dkm.springles.inferencer.Buffer.Appender;
 import eu.fbk.dkm.springles.ruleset.ClosureEvalTask;
 import eu.fbk.dkm.springles.ruleset.ClosureFixPointTask;
 import eu.fbk.dkm.springles.ruleset.ClosureRepeatTask;
 import eu.fbk.dkm.springles.ruleset.ClosureSequenceTask;
 import eu.fbk.dkm.springles.ruleset.ClosureTask;
-import eu.fbk.dkm.springles.ruleset.Rule;
-import eu.fbk.dkm.springles.ruleset.Ruleset;
+import eu.fbk.rdfpro.Rule;
+import eu.fbk.rdfpro.RuleEngine;
+import eu.fbk.rdfpro.Ruleset;
 import info.aduna.iteration.Iterations;
 
 // TODO: binding-aware rule activation/deactivation
 // TODO: test with scalable repository
 // TODO: semi-naive mode
 
-class NaiveInferencer extends AbstractInferencer
+class RDFProInferencer extends AbstractInferencer
 {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NaiveInferencer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RDFProInferencer.class);
 
     private static final int INITIAL_BUFFER_CAPACITY = 1024;
 
-    private final Ruleset ruleset;
+    private Ruleset ruleset;
 
     private BindingSet rulesetBindings;
 
@@ -68,22 +56,21 @@ class NaiveInferencer extends AbstractInferencer
 
     private final Map<Resource, RuleStatistics> statistics;
 
-    public NaiveInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
+    public RDFProInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
             final int maxConcurrentRules)
     {
-        ruleset.validate();
+        
 
         int concurrencyLevel = maxConcurrentRules;
         if (concurrencyLevel <= 0) {
             concurrencyLevel = Runtime.getRuntime().availableProcessors();
         }
 
-        this.ruleset = ruleset.isFrozen() ? ruleset : ruleset.clone();
-        this.rulesetBindings = ruleset.getParameterBindings(rulesetBindings);
+        this.ruleset = ruleset;
+        this.rulesetBindings = rulesetBindings;
         this.maxConcurrentRules = concurrencyLevel;
         this.statistics = Maps.newHashMap();
 
-        this.ruleset.freeze();
 
         for (final Rule rule : ruleset.getRules()) {
             this.statistics.put(rule.getID(), new RuleStatistics(rule.getID()));
@@ -94,7 +81,8 @@ class NaiveInferencer extends AbstractInferencer
     protected InferenceMode doInitialize(final String inferredContextPrefix, final Hasher hasher)
             throws Exception
     {
-        this.rulesetBindings = overrideBindings(this.rulesetBindings,
+    	/*
+    	 * this.rulesetBindings = overrideBindings(this.rulesetBindings,
                 new ListBindingSet(ImmutableList.of("prefix"), ValueFactoryImpl.getInstance()
                         .createLiteral(inferredContextPrefix)));
 
@@ -103,7 +91,9 @@ class NaiveInferencer extends AbstractInferencer
                 this.rulesetBindings.getBindingNames())) {
             hasher.putUnencodedChars(name).putUnencodedChars(this.rulesetBindings.getValue(name).stringValue());
         }
-
+        */
+        this.ruleset = ruleset.rewriteVariables(rulesetBindings);
+        
         return InferenceMode.FORWARD;
     }
 
@@ -191,7 +181,7 @@ class NaiveInferencer extends AbstractInferencer
         public final void updateClosure(final ClosureStatus closureStatus)
                 throws RepositoryException
         {
-            switch (closureStatus) {
+            /*switch (closureStatus) {
             case CURRENT:
                 return;
 
@@ -204,11 +194,11 @@ class NaiveInferencer extends AbstractInferencer
 
                     long time = System.currentTimeMillis();
                     this.buffer = Lists.newArrayListWithCapacity(INITIAL_BUFFER_CAPACITY);
-                    this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
+                    this.activeRules.addAll(RDFProInferencer.this.ruleset.getForwardRuleIDs());
                     this.lastBindings = null;
                     final long inferred = executeTask(
-                            NaiveInferencer.this.ruleset.getClosurePlan(),
-                            NaiveInferencer.this.rulesetBindings);
+                            RDFProInferencer.this.ruleset.getClosurePlan(),
+                            RDFProInferencer.this.rulesetBindings);
                     this.buffer = null;
                     time = System.currentTimeMillis() - time;
 
@@ -227,6 +217,12 @@ class NaiveInferencer extends AbstractInferencer
             default:
                 throw new Error("Unknown closure status: " + closureStatus);
             }
+            */
+        	RuleEngine engine = RuleEngine.create(ruleset);
+        	
+        	final Buffer buffer = new Buffer(this.context.getValueFactory());
+        	
+        	engine.eval(getBuffer());
         }
 
         protected final List<Statement> getBuffer()
@@ -337,11 +333,11 @@ class NaiveInferencer extends AbstractInferencer
             return result;
         }
 
-        protected long executeEval(final ClosureEvalTask task, final BindingSet bindings)
+        /*protected long executeEval(final ClosureEvalTask task, final BindingSet bindings)
                 throws QueryEvaluationException, RepositoryException
         {
             if (!bindings.equals(this.lastBindings)) {
-                this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
+                this.activeRules.addAll(RDFProInferencer.this.ruleset.getForwardRuleIDs());
                 this.lastBindings = bindings;
             }
 
@@ -349,7 +345,7 @@ class NaiveInferencer extends AbstractInferencer
 
             final Queue<Resource> pendingRuleIDs = new ArrayDeque<Resource>();
             for (final Resource ruleID : task.getRuleIDs()) {
-                final Rule rule = NaiveInferencer.this.ruleset.getRule(ruleID);
+                final Rule rule = RDFProInferencer.this.ruleset.getRule(ruleID);
                 if (!this.activeRules.contains(ruleID)) {
                     LOGGER.debug("[{}] Rule {} skipped because inactive", this.id, ruleID);
                 } else if (rule.getCondition() != null
@@ -368,7 +364,7 @@ class NaiveInferencer extends AbstractInferencer
             }
 
             final int numAuxiliaryTasks = this.context.getScheduler() == null ? 0 : Math.min(
-                    NaiveInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
+                    RDFProInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
             final List<Future<?>> futures = Lists.newArrayListWithCapacity(numAuxiliaryTasks);
             for (int i = 0; i < numAuxiliaryTasks; ++i) {
                 futures.add(this.context.getScheduler().submit(new Callable<Void>() {
@@ -416,7 +412,7 @@ class NaiveInferencer extends AbstractInferencer
                     if (ruleID == null) {
                         return;
                     }
-                    rule = NaiveInferencer.this.ruleset.getRule(ruleID);
+                    rule = RDFProInferencer.this.ruleset.getRule(ruleID);
                 }
 
                 long time = System.currentTimeMillis();
@@ -424,11 +420,11 @@ class NaiveInferencer extends AbstractInferencer
                 time = System.currentTimeMillis() - time;
 
                 synchronized (this) {
-                    NaiveInferencer.this.statistics.get(rule.getID()).recordActivations(count,
+                    RDFProInferencer.this.statistics.get(rule.getID()).recordActivations(count,
                             time);
                     if (count > 0) {
                         this.activeRules.addAll(Objects.firstNonNull(rule.getTriggeredRuleIDs(),
-                                NaiveInferencer.this.ruleset.getForwardRuleIDs()));
+                                RDFProInferencer.this.ruleset.getForwardRuleIDs()));
                     }
                 }
 
@@ -437,9 +433,9 @@ class NaiveInferencer extends AbstractInferencer
                             new Object[] { this.id, rule, time, count });
                 }
             }
-        }
+        }*/ 
 
-        protected int evaluateRule(final Rule rule, final BindingSet bindings, final Buffer buffer)
+       /* protected int evaluateRule(final Rule rule, final BindingSet bindings, final Buffer buffer)
                 throws QueryEvaluationException, RepositoryException
         {
             try {
@@ -457,7 +453,7 @@ class NaiveInferencer extends AbstractInferencer
                 throw new Error("Unexpected exception: " + ex.getMessage(), ex);
             }
         }
-
+*/
     }
 
     private final static class RuleStatistics
