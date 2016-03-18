@@ -13,13 +13,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Nullable;
 
-import sun.security.action.GetLongAction;
-
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import org.openrdf.IsolationLevel;
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
@@ -44,8 +37,6 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.Update;
 import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.query.algebra.Clear;
-import org.openrdf.query.algebra.Create;
-import org.openrdf.query.algebra.Load;
 import org.openrdf.query.impl.AbstractQuery;
 import org.openrdf.query.impl.AbstractUpdate;
 import org.openrdf.query.parser.QueryParserUtil;
@@ -62,8 +53,10 @@ import org.openrdf.rio.helpers.RDFHandlerBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.Iteration;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 //import eu.fbk.dkm.internal.springles.protocol.Options;
 import eu.fbk.dkm.internal.util.Iterations;
@@ -76,6 +69,8 @@ import eu.fbk.dkm.springles.SpringlesRepository;
 import eu.fbk.dkm.springles.TransactionMode;
 import eu.fbk.dkm.springles.base.SynchronizedTransaction.EndListener;
 import eu.fbk.dkm.springles.base.Transaction.Operation;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.Iteration;
 
 /**
  * Base implementation of <tt>SpringlesConnection</tt>.
@@ -785,11 +780,16 @@ public class SpringlesConnectionBase implements SpringlesConnection
                             clearClosure();
                             updateClosure();
                             return;
-                        } else if (command.equals("springles:clear-closure")) {
+                        }else if (command.equals("springles:clear-closure")) {
                             LOGGER.info("Handling 'clear graph springles:clear-closure' request");
                             clearClosure();
                             return;
-                        } else if (command.equals("springles:auto-closure")) {
+                        }else if (command.equals("rdfpro:update-closure")) {
+                            LOGGER.info("Handling 'clear graph rdfpro:update-closure' request");
+                            clearClosure();
+                            updateClosure();
+                            return;
+                        }else if (command.equals("springles:auto-closure")) {
                             LOGGER.info("Handling 'clear graph springles:auto-closure' request");
                             setTransactionMode(TransactionMode.WRITABLE_AUTO_CLOSURE);
                             return;
