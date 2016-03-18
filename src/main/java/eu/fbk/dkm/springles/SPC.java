@@ -144,7 +144,7 @@ public final class SPC
     /** Class <tt>:TestInferencer</tt>. */
     public static final URI TEST_INFERENCER = create("TestInferencer");
     
-    /** Class <tt>:TestInferencer</tt>. */
+    /** Class <tt>:RDFProInferencer</tt>. */
     public static final URI RDFPRO_INFERENCER = create("RDFProInferencer");
     
     /** Object property <tt>:hasRuleset</tt> (for {@link #NAIVE_INFERENCER}). */
