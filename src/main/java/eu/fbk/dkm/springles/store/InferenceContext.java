@@ -6,10 +6,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Sets;
-
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -20,8 +16,12 @@ import org.openrdf.query.Dataset;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import info.aduna.iteration.CloseableIteration;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Sets;
 
 import eu.fbk.dkm.internal.util.Contexts;
 import eu.fbk.dkm.internal.util.Iterations;
@@ -31,6 +31,7 @@ import eu.fbk.dkm.springles.base.QuerySpec;
 import eu.fbk.dkm.springles.base.QueryType;
 import eu.fbk.dkm.springles.base.Transaction;
 import eu.fbk.dkm.springles.inferencer.Inferencer;
+import info.aduna.iteration.CloseableIteration;
 
 /**
  * Implementation of {@link InferencerContext} on top of a {@link Transaction}.
@@ -52,7 +53,8 @@ import eu.fbk.dkm.springles.inferencer.Inferencer;
  */
 class InferenceContext implements Inferencer.Context
 {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(InferenceContext.class);
+	
     private final Transaction transaction;
 
     private final URIPrefix inferredContextPrefix;
@@ -233,9 +235,10 @@ class InferenceContext implements Inferencer.Context
         checkWritable();
 
         final Resource[] targetContexts = filter(contexts);
-
         if (targetContexts == Contexts.UNSPECIFIED) {
-            this.transaction.add(filter(statements), targetContexts);
+
+            //this.transaction.add(filter(statements), targetContexts);
+        	this.transaction.add(statements, targetContexts);
         } else if (targetContexts != Contexts.NONE) {
             this.transaction.add(statements, targetContexts);
         }
