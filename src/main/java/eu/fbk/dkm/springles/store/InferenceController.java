@@ -4,13 +4,13 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Preconditions;
-
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 import eu.fbk.dkm.internal.util.URIPrefix;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -51,7 +51,7 @@ final class InferenceController
         Preconditions.checkNotNull(closureStatus);
 
         this.context = new InferenceContext(transaction, inferredContextPrefix, scheduler);
-
+        LOGGER.info("INFERENCER::"+inferencer.toString());
         this.context.unlock(false);
         try {
             this.session = inferencer.newSession(transaction.getID(), closureStatus, this.context);
