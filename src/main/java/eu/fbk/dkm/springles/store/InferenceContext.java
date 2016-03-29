@@ -236,9 +236,7 @@ class InferenceContext implements Inferencer.Context
 
         final Resource[] targetContexts = filter(contexts);
         if (targetContexts == Contexts.UNSPECIFIED) {
-
-            //this.transaction.add(filter(statements), targetContexts);
-        	this.transaction.add(statements, targetContexts);
+            this.transaction.add(filter(statements), targetContexts);
         } else if (targetContexts != Contexts.NONE) {
             this.transaction.add(statements, targetContexts);
         }
