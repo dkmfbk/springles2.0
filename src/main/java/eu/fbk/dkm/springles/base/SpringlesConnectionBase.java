@@ -789,6 +789,10 @@ public class SpringlesConnectionBase implements SpringlesConnection
                             clearClosure();
                             updateClosure();
                             return;
+                        }else if (command.equals("rdfpro:clear-closure")) {
+                            LOGGER.info("Handling 'clear graph' request");
+                            clearClosure();
+                            return;
                         }else if (command.equals("springles:auto-closure")) {
                             LOGGER.info("Handling 'clear graph springles:auto-closure' request");
                             setTransactionMode(TransactionMode.WRITABLE_AUTO_CLOSURE);
