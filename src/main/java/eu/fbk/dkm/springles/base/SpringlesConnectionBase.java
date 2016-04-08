@@ -20,6 +20,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.BooleanQuery;
@@ -39,6 +40,8 @@ import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.query.algebra.Clear;
 import org.openrdf.query.impl.AbstractQuery;
 import org.openrdf.query.impl.AbstractUpdate;
+import org.openrdf.query.impl.ListBindingSet;
+import org.openrdf.query.impl.TupleQueryResultImpl;
 import org.openrdf.query.parser.QueryParserUtil;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
@@ -55,6 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -663,11 +667,20 @@ public class SpringlesConnectionBase implements SpringlesConnection
             TupleQueryResultHandlerException
     {
         Preconditions.checkNotNull(handler);
+        LOGGER.info("{}",query.getString());
         try {
             if (SpringlesRepository.PROTOCOL.equals(query.getLanguage())) {
             //    getTransaction(false, bindings).query(query, null, null, InferenceMode.NONE, 0,
               //          handler);
-            } else {
+            }else if(query.getString().toLowerCase().replaceAll("\\s+", "").equals("select?closurestatus{}")){
+            	List<String> variables = ImmutableList.of("closurestatus");
+            	handler.startQueryResult(variables);
+            	ClosureStatus cs = getClosureStatus();
+            	LOGGER.info("{}",cs);
+            	handler.handleSolution(new ListBindingSet(variables, new LiteralImpl(cs.toString())));
+            	handler.endQueryResult();
+            }else {
+            
                 getTransaction(false).query(query, dataset, bindings,
                         getActualInferenceMode(includeInferred), timeout, handler);
             }
@@ -708,11 +721,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
             final BindingSet bindings, final boolean includeInferred, final int timeout)
             throws QueryEvaluationException
     {
+    	LOGGER.info("{}",query.getString());
         try {
             if (SpringlesRepository.PROTOCOL.equals(query.getLanguage())) {
                return getTransaction(false).query(query, null, null,
                        InferenceMode.NONE, 0);
-            } else {
+            }else if(query.getString().toLowerCase().replaceAll("\\s+", "").equals("select?closurestatus{}")){
+            	List<String> variables = ImmutableList.of("closurestatus");
+            	ClosureStatus cs = getClosureStatus();
+            	LOGGER.info("{}",cs);
+            	return (T)new TupleQueryResultImpl(variables,ImmutableList.of(new ListBindingSet(variables, new LiteralImpl(cs.toString()))));     	
+            }else {
                 return getTransaction(false).query(query, dataset, bindings,
                         getActualInferenceMode(includeInferred), timeout);
             }
