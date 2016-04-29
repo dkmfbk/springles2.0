@@ -125,7 +125,7 @@ public final class Inferencers
             		//bindings.addBinding("global_inf",l);
                     
         	  FileReader f;
-        	  f=new FileReader("/Users/christian/Downloads/bind.ttl");
+        	  f=new FileReader("/Users/christian/Documents/file_tirocinio/bind.ttl");
 
         	  BufferedReader b;
         	  b=new BufferedReader(f);

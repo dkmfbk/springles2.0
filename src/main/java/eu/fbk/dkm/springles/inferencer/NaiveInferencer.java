@@ -67,6 +67,9 @@ class NaiveInferencer extends AbstractInferencer
     private final int maxConcurrentRules;
 
     private final Map<Resource, RuleStatistics> statistics;
+    
+    int cont = 0 ;
+
 
     public NaiveInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
             final int maxConcurrentRules)
@@ -197,23 +200,25 @@ class NaiveInferencer extends AbstractInferencer
 
             case STALE:
                 this.context.removeInferred(null, null, null, new Resource[] {});
-
+            	return;
             case POSSIBLY_INCOMPLETE:
                 try {
-                    LOGGER.debug("[{}] === Closure computation started ===", this.id);
+                    LOGGER.info("[{}] === Closure computation started ===", this.id);
 
                     long time = System.currentTimeMillis();
                     this.buffer = Lists.newArrayListWithCapacity(INITIAL_BUFFER_CAPACITY);
                     this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
+                    for(Resource r:activeRules)
+                    	LOGGER.info("{}",r.stringValue() );
                     this.lastBindings = null;
-                    final long inferred = executeTask(
+                    final long inferred =  executeTask(
                             NaiveInferencer.this.ruleset.getClosurePlan(),
                             NaiveInferencer.this.rulesetBindings);
                     this.buffer = null;
                     time = System.currentTimeMillis() - time;
 
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("[{}] === Closure computation completed after {} ms with "
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("[{}] === Closure computation completed after {} ms with "
                                 + "{} new inferences ===",
                                 new Object[] { this.id, time, inferred });
                     }
@@ -245,7 +250,7 @@ class NaiveInferencer extends AbstractInferencer
             if (!(task instanceof ClosureEvalTask)) {
                 LOGGER.debug("[{}] --- Executing {} ---", this.id, task);
             }
-
+            LOGGER.info("{} - {}",actualBindings.getBindingNames().toString(),cont);
             long result;
             if (task instanceof ClosureSequenceTask) {
                 result = executeSequence((ClosureSequenceTask) task, actualBindings);
@@ -279,7 +284,6 @@ class NaiveInferencer extends AbstractInferencer
         {
             long result = 0L;
             int iteration = 1;
-
             while (true) {
                 LOGGER.debug("[{}] Fix point iteration {} started", this.id, iteration);
 
@@ -292,8 +296,8 @@ class NaiveInferencer extends AbstractInferencer
 
                 result += inferred;
                 ++iteration;
-
-                if (inferred == 0L) {
+                ++cont;
+                if (inferred == 0L || cont > 100) {
                     break;
                 }
             }

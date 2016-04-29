@@ -233,7 +233,6 @@ class InferenceContext implements Inferencer.Context
     {
         checkAccessible();
         checkWritable();
-
         final Resource[] targetContexts = filter(contexts);
         if (targetContexts == Contexts.UNSPECIFIED) {
             this.transaction.add(filter(statements), targetContexts);

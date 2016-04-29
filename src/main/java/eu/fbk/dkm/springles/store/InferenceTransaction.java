@@ -9,15 +9,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicates;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -45,8 +36,14 @@ import org.openrdf.rio.RDFHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.EmptyIteration;
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Contexts;
@@ -61,6 +58,8 @@ import eu.fbk.dkm.springles.base.QueryType;
 import eu.fbk.dkm.springles.base.Transaction;
 import eu.fbk.dkm.springles.base.UpdateSpec;
 import eu.fbk.dkm.springles.inferencer.Inferencer;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.EmptyIteration;
 
 // LIMITATIONS
 // - backward reasoning cannot introduce new contexts (see ReadTransaction, can be easily removed)
@@ -183,6 +182,7 @@ class InferenceTransaction extends ForwardingTransaction
     private InferenceController getInferenceController(final boolean canCreate)
             throws RepositoryException
     {
+    	//LOGGER.info("{} {} {} {}",this.inferencer,this.inferredContextPrefix,this.scheduler,this.currentClosureStatus);
         if (this.controller == null && canCreate) {
             synchronized (this) {
                 if (this.controller == null) {
@@ -697,11 +697,15 @@ class InferenceTransaction extends ForwardingTransaction
     @Override
     public void updateClosure() throws RepositoryException
     {
-        if (this.inferencer.getInferenceMode().isForwardEnabled()
-                && this.currentClosureStatus != ClosureStatus.CURRENT) {
-            getInferenceController(true).updateClosure(this.currentClosureStatus);
+    	
+        
+        if (this.inferencer.getInferenceMode().isForwardEnabled() && this.currentClosureStatus != ClosureStatus.CURRENT) {
+        	LOGGER.info("LOG: {}",currentClosureStatus);
+            InferenceController controller= getInferenceController(true);
+            LOGGER.info("{}",controller.toString());
+            controller.updateClosure(this.currentClosureStatus);
             this.currentClosureStatus = ClosureStatus.CURRENT;
-            LOGGER.debug("[{}] Closure status after closure updated is {}", getID(),
+            LOGGER.info("[{}] Closure status after closure updated is {}", getID(),
                     this.currentClosureStatus);
         }
     }
@@ -719,11 +723,13 @@ class InferenceTransaction extends ForwardingTransaction
 
         boolean success = false;
         try {
-            LOGGER.debug("[{}] Clearing closure)", getID());
+        	LOGGER.info("PREFIXXX: {}" , inferredContextPrefix);
+            LOGGER.info("[{}] Clearing closure)", getID());
             final List<Resource> implicitContexts = Iterations.getAllElements(Iterations.filter(
                     getContextIDs(InferenceMode.FORWARD),
                     this.inferredContextPrefix.valueMatcher()));
             for (final Resource implicitContext : implicitContexts) {
+            	LOGGER.info("[{}]",implicitContext);
                 delegate().remove(null, null, null, new Resource[] { implicitContext });
             }
             success = true;
@@ -736,7 +742,7 @@ class InferenceTransaction extends ForwardingTransaction
                 } else {
                     this.currentClosureStatus = ClosureStatus.CURRENT;
                 }
-                LOGGER.debug("[{}] Closure status after closure cleared is {}", getID(),
+                LOGGER.info("[{}] Closure status after closure cleared is {}", getID(),
                         this.currentClosureStatus);
 
             } else {
