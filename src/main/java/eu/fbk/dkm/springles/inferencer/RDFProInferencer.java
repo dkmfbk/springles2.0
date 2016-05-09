@@ -44,7 +44,7 @@ class RDFProInferencer extends AbstractInferencer
 
     private final Map<Resource, RuleStatistics> statistics;
 
-    public RDFProInferencer(final URI rulesetURI, @Nullable final BindingSet rulesetBindings,
+    public RDFProInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
             final int maxConcurrentRules)  
     {
         
@@ -53,19 +53,12 @@ class RDFProInferencer extends AbstractInferencer
         if (concurrencyLevel <= 0) {
             concurrencyLevel = Runtime.getRuntime().availableProcessors();
         }
-        LOGGER.info("PATH:::"+rulesetURI.toString());
         
-        
-        
-        
-        
-        
-        
-        this.ruleset = Ruleset.fromRDF(rulesetURI.toString());
+        this.ruleset = ruleset;
         this.rulesetBindings = rulesetBindings;
         this.maxConcurrentRules = concurrencyLevel;
         this.statistics = Maps.newHashMap();
-
+        
 
         for (final Rule rule : ruleset.getRules()) {
             this.statistics.put(rule.getID(), new RuleStatistics(rule.getID()));
@@ -76,10 +69,10 @@ class RDFProInferencer extends AbstractInferencer
     protected InferenceMode doInitialize(final String inferredContextPrefix, final Hasher hasher)
             throws Exception
     {
-
-    	
+    	String name = rulesetBindings.getBindingNames().iterator().next();
+    	LOGGER.info("BIND {} {} ",rulesetBindings.getBinding(name).getValue().toString().length(),rulesetBindings.getBinding(name).getName().toString().length());
         this.ruleset = ruleset.rewriteVariables(rulesetBindings);
-        
+
         return InferenceMode.FORWARD;
     }
 
@@ -87,25 +80,20 @@ class RDFProInferencer extends AbstractInferencer
     public Session newSession(final String id, final ClosureStatus closureStatus,
             final Context context) throws RepositoryException
     {
-        return new NaiveSession(id, context);
+        return new RDFProSession(id, context);
     }
 
     @Override
     public void close() throws RepositoryException
     {
         if (LOGGER.isInfoEnabled()) {
-            final StringBuilder builder = new StringBuilder("Inference statistics:");
-            for (final Rule rule : this.ruleset.getRules()) {
-                builder.append("\n  ").append(this.statistics.get(rule.getID()).toString());
-            }
-            LOGGER.info(builder.toString());
-            LOGGER.info("Inference buffer statistics: " + Buffer.getStatistics());
+            LOGGER.info("Inference completed");
         }
     }
 
 
 
-    protected class NaiveSession extends AbstractSession
+    protected class RDFProSession extends AbstractSession
     {
 
         private final String id;
@@ -115,7 +103,7 @@ class RDFProInferencer extends AbstractInferencer
         private List<Statement> buffer;
 
 
-        public NaiveSession(final String id, final Context context)
+        public RDFProSession(final String id, final Context context)
         {
             this.id = id;
             this.context = context;
@@ -126,7 +114,7 @@ class RDFProInferencer extends AbstractInferencer
         public final void updateClosure(final ClosureStatus closureStatus)
                 throws RepositoryException
         {
-        	
+        	LOGGER.info("Elaborazione regole");
         	RuleEngine engine = RuleEngine.create(ruleset);
         	buffer  = new LinkedList<Statement>();
         	CloseableIteration<? extends Statement, RepositoryException> cl=  context.getStatements(null, null, null, true);

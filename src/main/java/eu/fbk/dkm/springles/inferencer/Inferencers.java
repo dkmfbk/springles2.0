@@ -1,7 +1,5 @@
 package eu.fbk.dkm.springles.inferencer;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 
 import javax.annotation.Nullable;
@@ -33,6 +31,7 @@ import eu.fbk.dkm.springles.InferenceMode;
 import eu.fbk.dkm.springles.SPC;
 import eu.fbk.dkm.springles.ruleset.Ruleset;
 import eu.fbk.dkm.springles.ruleset.Rulesets;
+import eu.fbk.dkm.springles.ruleset.RulesetsRDFPRO;
 
 /**
  * Static factory and utility methods operating on <tt>Inferencer</tt>s.
@@ -73,10 +72,10 @@ public final class Inferencers
     {
         return new VoidInferencer();
     }
-    public static Inferencer newRDFProInferencer (final URI ruleset_uri,
+    public static Inferencer newRDFProInferencer (final eu.fbk.rdfpro.Ruleset rdfpro_ruleset,
             @Nullable final BindingSet rulesetBindings, final int maxConcurrentRules)
     {
-        return new RDFProInferencer(ruleset_uri, rulesetBindings, maxConcurrentRules);
+        return new RDFProInferencer(rdfpro_ruleset, rulesetBindings, maxConcurrentRules);
     }
     public static Inferencer newNaiveInferencer(final Ruleset ruleset,
             @Nullable final BindingSet rulesetBindings, final int maxConcurrentRules)
@@ -108,6 +107,7 @@ public final class Inferencers
     static Factory<Inferencer> getFactory(final Graph graph, final Resource node) throws IOException
     {
     	 final Ruleset ruleset;
+    	 final eu.fbk.rdfpro.Ruleset rdfpro_ruleset;
     	 final int maxConcurrentRules;
     	 final MapBindingSet bindings;
     	 final URI rulesetURI;
@@ -120,33 +120,29 @@ public final class Inferencers
         	bindings = new MapBindingSet();
         	rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
 
-                    //URI l = ValueFactoryImpl.getInstance().createURI("ckr:global-inf");
-            		
-            		//bindings.addBinding("global_inf",l);
-                    
-        	  FileReader f;
-        	  f=new FileReader("/Users/christian/Documents/file_tirocinio/bind.ttl");
-
-        	  BufferedReader b;
-        	  b=new BufferedReader(f);
-        	  String bind =b.readLine();
-                    
-        	  URI l = ValueFactoryImpl.getInstance().createURI(bind.split(" ")[0]);
-      		
-      		  bindings.addBinding(bind.split(" ")[1],l);
-      		          	
+            rdfpro_ruleset = rulesetURI == null ? null : RulesetsRDFPRO.lookup(rulesetURI.toString());
+            	
+        	String bindingsString = s.get(SPC.HAS_BINDINGS, String.class, null);
+	        if (bindingsString != null) {
+	        	bindingsString = bindingsString.replaceAll("\\s+", "");
+		        URI l = ValueFactoryImpl.getInstance().createURI(bindingsString.split("=")[0]);
+		        bindings.addBinding(bindingsString.split("=")[1],l);
+	        }
+      		     
         	 ruleset= null;
         	 maxConcurrentRules = 0;
         }
-        else{
+        else if(SPC.NAIVE_INFERENCER.equals(type)){
 	        rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
 	        ruleset = rulesetURI == null ? null : Rulesets.lookup(rulesetURI);
-	        System.out.println(rulesetURI);
 	        maxConcurrentRules = s.get(SPC.HAS_MAX_CONCURRENT_RULES, Integer.class, 0);
-	
+	        for(Ruleset r : Rulesets.list()){
+	        	LOGGER.info("{}",r.getURL());
+	        }
 	        bindings = new MapBindingSet();
 	        if (ruleset != null) {
 	            for (final String parameter : ruleset.getParameters().keySet()) {
+	    	        
 	                final String capitalized = Character.toUpperCase(parameter.charAt(0))
 	                        + parameter.substring(1);
 	                for (final String localName : new String[] { parameter, "has" + capitalized,
@@ -174,7 +170,14 @@ public final class Inferencers
 	                }
 	            }
 	        }
+	        rdfpro_ruleset = null;
+        }else{
+        	ruleset = null;
+        	bindings = null;
+        	maxConcurrentRules = 0;
+        	rdfpro_ruleset = null;
         }
+
 
         return new Factory<Inferencer>() {
 
@@ -190,7 +193,7 @@ public final class Inferencers
                 } else if (SPC.TEST_INFERENCER.equals(type)) {
                     return newTestInferencer(ruleset, bindings, maxConcurrentRules);
                 } else if (SPC.RDFPRO_INFERENCER.equals(type)) {
-                    return newRDFProInferencer(rulesetURI, bindings, maxConcurrentRules);
+                    return newRDFProInferencer(rdfpro_ruleset, bindings, maxConcurrentRules);
                 }else {
                     throw new Error("Unexpected type: " + type);
                 }

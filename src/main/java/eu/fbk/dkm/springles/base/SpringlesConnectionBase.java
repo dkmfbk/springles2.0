@@ -73,6 +73,9 @@ import eu.fbk.dkm.springles.SpringlesRepository;
 import eu.fbk.dkm.springles.TransactionMode;
 import eu.fbk.dkm.springles.base.SynchronizedTransaction.EndListener;
 import eu.fbk.dkm.springles.base.Transaction.Operation;
+import eu.fbk.dkm.springles.ruleset.Ruleset;
+import eu.fbk.dkm.springles.ruleset.Rulesets;
+import eu.fbk.dkm.springles.ruleset.RulesetsRDFPRO;
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.Iteration;
 
@@ -411,7 +414,6 @@ public class SpringlesConnectionBase implements SpringlesConnection
                 LOGGER.debug("[{}] Transaction mode downgraded to {} for auto-committing, "
                         + "non auto-closure operation", this.id, mode);
             }
-
             final AtomicReference<String> idHolder = new AtomicReference<String>(null);
             final Transaction transaction = this.repository.getTransaction(mode, this.autoCommit,
                     new EndListener() {
@@ -672,13 +674,6 @@ public class SpringlesConnectionBase implements SpringlesConnection
             if (SpringlesRepository.PROTOCOL.equals(query.getLanguage())) {
             //    getTransaction(false, bindings).query(query, null, null, InferenceMode.NONE, 0,
               //          handler);
-            }else if(query.getString().toLowerCase().replaceAll("\\s+", "").equals("select?closurestatus{}")){
-            	List<String> variables = ImmutableList.of("closurestatus");
-            	handler.startQueryResult(variables);
-            	ClosureStatus cs = getClosureStatus();
-            	LOGGER.info("{}",cs);
-            	handler.handleSolution(new ListBindingSet(variables, new LiteralImpl(cs.toString())));
-            	handler.endQueryResult();
             }else {
             
                 getTransaction(false).query(query, dataset, bindings,
@@ -731,7 +726,27 @@ public class SpringlesConnectionBase implements SpringlesConnection
             	ClosureStatus cs = getClosureStatus();
             	LOGGER.info("{}",cs);
             	return (T)new TupleQueryResultImpl(variables,ImmutableList.of(new ListBindingSet(variables, new LiteralImpl(cs.toString()))));     	
-            }else {
+            }else if(query.getString().toLowerCase().replaceAll("\\s+", "").equals("select?listofruleset{}")){
+            	List<String> variables = ImmutableList.of("listofruleset");
+            	String list = "";
+            	int list_size = Rulesets.list().size();
+            	for (Ruleset r : Rulesets.list()) {
+            		if(list_size > 4)
+            			Rulesets.unregister(r.getID());
+            		list_size--;
+            	}
+            	Rulesets.load();
+            	list_size = Rulesets.list().size();
+            	for (Ruleset r : Rulesets.list()){
+            		if(list_size > 4)
+            			list += r.getID().stringValue() + "--" + r.getURL().toString().replaceAll("file:", "")+"\n";
+            		list_size--;
+            	}
+            		
+            	LOGGER.info("{}",list);
+            	return (T)new TupleQueryResultImpl(variables,ImmutableList.of(new ListBindingSet(variables, new LiteralImpl(list))));     	
+            }
+            else {
                 return getTransaction(false).query(query, dataset, bindings,
                         getActualInferenceMode(includeInferred), timeout);
             }
@@ -805,6 +820,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
                             return;
                         }else if (command.equals("rdfpro:update-closure")) {
                             LOGGER.info("Handling 'clear graph rdfpro:update-closure' request");
+                            RulesetsRDFPRO.load();
                             clearClosure();
                             updateClosure();
                             return;
@@ -1227,6 +1243,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         return getTransaction(false).getClosureStatus();
     }
+    
 
     @Override
     public final void updateClosure() throws RepositoryException

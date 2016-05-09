@@ -1,16 +1,8 @@
 package eu.fbk.dkm.springles.store;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
@@ -20,6 +12,10 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 
 //import eu.fbk.dkm.internal.springles.protocol.Settings;
 import eu.fbk.dkm.internal.util.Selector;
@@ -261,8 +257,8 @@ public class SpringlesStore extends SpringlesRepositoryBase
         final File closureMetadataFile = dataDir == null ? null : new File(getDataDir(),
                 "closure.status");
 
-        transaction = new InferenceTransaction(transaction, this.inferencer,
-                this.inferredContextPrefix, getScheduler(), closureMetadataFile);
+        transaction = new InferenceTransaction(transaction,
+                this.inferredContextPrefix,inferencer, getScheduler(), closureMetadataFile,this);
 
         return transaction;
     }
@@ -337,6 +333,7 @@ public class SpringlesStore extends SpringlesRepositoryBase
 
             final Factory<Inferencer> inferencerFactory = Factory.get(Inferencer.class, graph,
                     s.get(SPC.HAS_INFERENCER, Resource.class));
+                       
 
  /*           final Factory<List<Interceptor>> preInfFactory = Factory.get(Interceptor.class, graph,
                     s.getList(SPC.HAS_PRE_INFERENCE_INTERCEPTORS, Resource.class));

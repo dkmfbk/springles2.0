@@ -73,12 +73,13 @@ class InferenceTransaction extends ForwardingTransaction
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InferenceTransaction.class);
 
-    private static final Cache<Inferencer, ClosureStatus> CLOSURE_STATUS_CACHE = CacheBuilder
+    private static final Cache<Object, ClosureStatus> CLOSURE_STATUS_CACHE = CacheBuilder
             .newBuilder().weakKeys().build();
+    
 
     private final Transaction delegate;
 
-    private final Inferencer inferencer;
+    private volatile Inferencer inferencer;
 
     private final URIPrefix inferredContextPrefix;
 
@@ -92,27 +93,32 @@ class InferenceTransaction extends ForwardingTransaction
     private ClosureStatus currentClosureStatus;
 
     private volatile InferenceController controller;
+    
+    private final Object owner;
 
-    public InferenceTransaction(final Transaction delegate, final Inferencer inferencer,
-            final URIPrefix inferredContextURIPrefix,
-            @Nullable final ScheduledExecutorService scheduler, final File closureMetadataFile)
+    public InferenceTransaction(final Transaction delegate,
+            final URIPrefix inferredContextURIPrefix, Inferencer inferencer,
+            @Nullable final ScheduledExecutorService scheduler, final File closureMetadataFile, final Object owner)
             throws RepositoryException
     {
+    	Preconditions.checkNotNull(inferencer);
         Preconditions.checkNotNull(delegate);
-        Preconditions.checkNotNull(inferencer);
         Preconditions.checkNotNull(inferredContextURIPrefix);
 
         this.delegate = delegate;
-        this.inferencer = inferencer;
         this.inferredContextPrefix = inferredContextURIPrefix;
+        this.inferencer = inferencer;
         this.scheduler = scheduler;
         this.closureMetadataFile = closureMetadataFile;
         this.controller = null;
+        this.owner = owner;
+        
 
-        ClosureStatus status = CLOSURE_STATUS_CACHE.getIfPresent(this.inferencer);
+        ClosureStatus status = CLOSURE_STATUS_CACHE.getIfPresent(this.owner);
+        
         if (status == null) {
             status = readClosureMetadata();
-            CLOSURE_STATUS_CACHE.put(this.inferencer, status);
+            CLOSURE_STATUS_CACHE.put(this.owner, status);
         }
 
         this.originalClosureStatus = status;
@@ -150,7 +156,7 @@ class InferenceTransaction extends ForwardingTransaction
                 return ClosureStatus.STALE;
 
             } else {
-                LOGGER.info("[] Initial closure status load from file: {}", getID(), status);
+                LOGGER.info("[{}] Initial closure status load from file: {}", getID(), status);
                 return status;
             }
 
@@ -168,8 +174,11 @@ class InferenceTransaction extends ForwardingTransaction
         }
 
         try {
+        	
+        	String inferencer =  this.inferencer.toString().split("@")[0];
+        	inferencer = inferencer.substring(inferencer.lastIndexOf('.')+1,inferencer.length() );
             final String content = this.currentClosureStatus.toString() + " "
-                    + this.inferencer.getConfigurationDigest() + " " + emptyRepository;
+                    + this.inferencer.getConfigurationDigest() + " " + emptyRepository ;
             Files.write(content, this.closureMetadataFile, Charsets.UTF_8);
             LOGGER.info("[{}] Closure metadata saved to {}", getID(), this.closureMetadataFile);
 
@@ -182,7 +191,6 @@ class InferenceTransaction extends ForwardingTransaction
     private InferenceController getInferenceController(final boolean canCreate)
             throws RepositoryException
     {
-    	//LOGGER.info("{} {} {} {}",this.inferencer,this.inferredContextPrefix,this.scheduler,this.currentClosureStatus);
         if (this.controller == null && canCreate) {
             synchronized (this) {
                 if (this.controller == null) {
@@ -693,6 +701,7 @@ class InferenceTransaction extends ForwardingTransaction
     {
         return this.currentClosureStatus;
     }
+    
 
     @Override
     public void updateClosure() throws RepositoryException
@@ -700,13 +709,13 @@ class InferenceTransaction extends ForwardingTransaction
     	
         
         if (this.inferencer.getInferenceMode().isForwardEnabled() && this.currentClosureStatus != ClosureStatus.CURRENT) {
-        	LOGGER.info("LOG: {}",currentClosureStatus);
+     		        	
             InferenceController controller= getInferenceController(true);
+           
             LOGGER.info("{}",controller.toString());
             controller.updateClosure(this.currentClosureStatus);
             this.currentClosureStatus = ClosureStatus.CURRENT;
-            LOGGER.info("[{}] Closure status after closure updated is {}", getID(),
-                    this.currentClosureStatus);
+            
         }
     }
 
@@ -714,6 +723,7 @@ class InferenceTransaction extends ForwardingTransaction
     public void clearClosure() throws RepositoryException
     {
         // Must be acquired before issuing the operation.
+    	
         final InferenceController controller = getInferenceController(true);
 
         if (!this.inferencer.getInferenceMode().isForwardEnabled()
@@ -812,10 +822,11 @@ class InferenceTransaction extends ForwardingTransaction
 
         boolean emptyRepository = false;
         if (updateClosureMetadata) {
-            CLOSURE_STATUS_CACHE.invalidate(this.inferencer);
+            CLOSURE_STATUS_CACHE.invalidate(this.owner);
             emptyRepository = !delegate().hasStatement(null, null, null, InferenceMode.NONE);
             if (this.originalClosureStatus == ClosureStatus.CURRENT
                     || this.currentClosureStatus == ClosureStatus.STALE) {
+            	LOGGER.info("{}",currentClosureStatus);
                 writeClosureMetadata(emptyRepository);
             }
         }
@@ -827,7 +838,7 @@ class InferenceTransaction extends ForwardingTransaction
                     || this.currentClosureStatus == ClosureStatus.CURRENT) {
                 writeClosureMetadata(emptyRepository);
             }
-            CLOSURE_STATUS_CACHE.put(this.inferencer, this.currentClosureStatus);
+            CLOSURE_STATUS_CACHE.put(this.owner, this.currentClosureStatus);
         }
     }
 

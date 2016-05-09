@@ -248,7 +248,7 @@ class NaiveInferencer extends AbstractInferencer
             }
 
             if (!(task instanceof ClosureEvalTask)) {
-                LOGGER.debug("[{}] --- Executing {} ---", this.id, task);
+                LOGGER.info("[{}] --- Executing {} ---", this.id, task);
             }
             LOGGER.info("{} - {}",actualBindings.getBindingNames().toString(),cont);
             long result;
@@ -293,7 +293,7 @@ class NaiveInferencer extends AbstractInferencer
                     LOGGER.debug("[{}] Fix point iteration {} completed with {} new inferences",
                             new Object[] { this.id, iteration, inferred });
                 }
-
+                LOGGER.info("{}",inferred);
                 result += inferred;
                 ++iteration;
                 ++cont;
@@ -344,6 +344,7 @@ class NaiveInferencer extends AbstractInferencer
         protected long executeEval(final ClosureEvalTask task, final BindingSet bindings)
                 throws QueryEvaluationException, RepositoryException
         {
+        	LOGGER.info("executeEval [ {} ]",task);
             if (!bindings.equals(this.lastBindings)) {
                 this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
                 this.lastBindings = bindings;
