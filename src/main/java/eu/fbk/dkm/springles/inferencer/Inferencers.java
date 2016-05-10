@@ -119,7 +119,7 @@ public final class Inferencers
         if (SPC.RDFPRO_INFERENCER.equals(type)){
         	bindings = new MapBindingSet();
         	rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
-
+        	
             rdfpro_ruleset = rulesetURI == null ? null : RulesetsRDFPRO.lookup(rulesetURI.toString());
             	
         	String bindingsString = s.get(SPC.HAS_BINDINGS, String.class, null);
@@ -131,6 +131,8 @@ public final class Inferencers
       		     
         	 ruleset= null;
         	 maxConcurrentRules = 0;
+        	 if(rdfpro_ruleset == null)
+        		 return (Factory<Inferencer>) newVoidInferencer();
         }
         else if(SPC.NAIVE_INFERENCER.equals(type)){
 	        rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
@@ -170,6 +172,8 @@ public final class Inferencers
 	                }
 	            }
 	        }
+	        if(ruleset == null)
+       		 return (Factory<Inferencer>) newVoidInferencer();
 	        rdfpro_ruleset = null;
         }else{
         	ruleset = null;
