@@ -130,9 +130,7 @@ public final class Inferencers
 	        }
       		     
         	 ruleset= null;
-        	 maxConcurrentRules = 0;
-        	 if(rdfpro_ruleset == null)
-        		 return (Factory<Inferencer>) newVoidInferencer();
+        	 maxConcurrentRules = 0;  
         }
         else if(SPC.NAIVE_INFERENCER.equals(type)){
 	        rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
@@ -172,8 +170,6 @@ public final class Inferencers
 	                }
 	            }
 	        }
-	        if(ruleset == null)
-       		 return (Factory<Inferencer>) newVoidInferencer();
 	        rdfpro_ruleset = null;
         }else{
         	ruleset = null;
@@ -193,11 +189,17 @@ public final class Inferencers
                 } else if (SPC.VOID_INFERENCER.equals(type)) {
                     return newVoidInferencer();
                 } else if (SPC.NAIVE_INFERENCER.equals(type)) {
-                    return newNaiveInferencer(ruleset, bindings, maxConcurrentRules);
+                	if(ruleset != null)
+                		return newNaiveInferencer(ruleset, bindings, maxConcurrentRules);
+                	else
+                		return newVoidInferencer();
                 } else if (SPC.TEST_INFERENCER.equals(type)) {
                     return newTestInferencer(ruleset, bindings, maxConcurrentRules);
                 } else if (SPC.RDFPRO_INFERENCER.equals(type)) {
-                    return newRDFProInferencer(rdfpro_ruleset, bindings, maxConcurrentRules);
+                	if(rdfpro_ruleset != null)
+                		return newRDFProInferencer(rdfpro_ruleset, bindings, maxConcurrentRules);
+                	else
+                		return newVoidInferencer();
                 }else {
                     throw new Error("Unexpected type: " + type);
                 }

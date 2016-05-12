@@ -737,6 +737,9 @@ public class SpringlesConnectionBase implements SpringlesConnection
             	}
             	Rulesets.load();
             	list_size = Rulesets.list().size();
+            	LOGGER.info("{}",list_size);
+            	if(list_size-4 == 0)
+                	return (T)new TupleQueryResultImpl(variables,ImmutableList.of(new ListBindingSet(variables, new LiteralImpl("no-ruleset"))));     	
             	for (Ruleset r : Rulesets.list()){
             		if(list_size > 4)
             			list += r.getID().stringValue() + "--" + r.getURL().toString().replaceAll("file:", "")+"\n";
