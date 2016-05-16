@@ -3,24 +3,19 @@ package eu.fbk.dkm.springles.inferencer;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
 import com.google.common.hash.Hasher;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
-import eu.fbk.rdfpro.Rule;
 import eu.fbk.rdfpro.RuleEngine;
 import eu.fbk.rdfpro.Ruleset;
 import info.aduna.iteration.CloseableIteration;
@@ -42,8 +37,6 @@ class RDFProInferencer extends AbstractInferencer
 
     private final int maxConcurrentRules;
 
-    private final Map<Resource, RuleStatistics> statistics;
-
     public RDFProInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
             final int maxConcurrentRules)  
     {
@@ -57,12 +50,9 @@ class RDFProInferencer extends AbstractInferencer
         this.ruleset = ruleset;
         this.rulesetBindings = rulesetBindings;
         this.maxConcurrentRules = concurrencyLevel;
-        this.statistics = Maps.newHashMap();
         
 
-        for (final Rule rule : ruleset.getRules()) {
-            this.statistics.put(rule.getID(), new RuleStatistics(rule.getID()));
-        }
+        
     }
 
     @Override
@@ -139,41 +129,6 @@ class RDFProInferencer extends AbstractInferencer
       
     }
    
-    private final static class RuleStatistics
-    {
 
-        private final Resource ruleID;
-
-        private int activations;
-
-        private long statements;
-
-        private long time;
-
-        public RuleStatistics(final Resource ruleID)
-        {
-            this.ruleID = ruleID;
-            this.activations = 0;
-            this.statements = 0L;
-            this.time = 0L;
-        }
-
-        public void recordActivations(final long statements, final long time)
-        {
-            ++this.activations;
-            this.statements += statements;
-            this.time += time;
-        }
-
-        @Override
-        public String toString()
-        {
-            final String id = this.ruleID instanceof URI ? ((URI) this.ruleID).getLocalName()
-                    : this.ruleID.stringValue();
-            return String.format("%-20s %6d activation(s) %8d inf. statement(s) %8d ms total", id,
-                    this.activations, this.statements, this.time);
-        }
-
-    }
 
 }
