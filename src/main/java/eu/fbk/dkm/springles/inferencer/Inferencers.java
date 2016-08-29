@@ -8,10 +8,10 @@ import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.impl.MapBindingSet;
 import org.openrdf.repository.RepositoryException;
@@ -125,10 +125,12 @@ public final class Inferencers
         	String bindingsString = s.get(SPC.HAS_BINDINGS, String.class, null);
 	        if (bindingsString != null) {
 	        	bindingsString = bindingsString.replaceAll("\\s+", "");
-		        URI l = ValueFactoryImpl.getInstance().createURI(bindingsString.split("=")[0]);
-		        bindings.addBinding(bindingsString.split("=")[1],l);
+		        URI l = ValueFactoryImpl.getInstance().createURI(bindingsString.split("=")[1]);
+		        bindings.addBinding(bindingsString.split("=")[0],l);
 	        }
-      		     
+	        for (Binding b : bindings){
+            	LOGGER.info("INF-RDFPRO {}",b.getValue());
+            }
         	 ruleset= null;
         	 maxConcurrentRules = 0;  
         }
@@ -151,10 +153,15 @@ public final class Inferencers
 	                    final Value value = s.get(property, Value.class, null);
 	                    if (value != null) {
 	                        bindings.addBinding(parameter, value);
+	                        LOGGER.info("{}-{}",parameter,value);
+	                    }
+	                    for (Binding b : bindings){
+	                    	LOGGER.info("INF1 {}",b.getValue());
 	                    }
 	                }
 	            }
 	            final String bindingsString = s.get(SPC.HAS_BINDINGS, String.class, null);
+	            LOGGER.info("bindingString = {}" ,bindingsString);
 	            if (bindingsString != null) {
 	                for (final String line : Splitter.on('\n').trimResults().omitEmptyStrings()
 	                        .split(bindingsString)) {
@@ -162,10 +169,12 @@ public final class Inferencers
 	                    if (index > 0) {
 	                        final String parameter = line.substring(0, index).trim();
 	                        final String valueAsString = line.substring(index + 1);
-	                        final Value value = ruleset.getParameters().get(parameter) //
-	                        instanceof URI ? new URIImpl(valueAsString) : new LiteralImpl(
-	                                valueAsString);
+	                        LOGGER.info("valueAsString = {}" ,ruleset.getParameters().get(parameter));
+	                        final Value value =  new URIImpl(valueAsString);
 	                        bindings.addBinding(parameter, value);
+	                    }
+	                    for (Binding b : bindings){
+	                    	LOGGER.info("INF2 {}-{}",b.getValue());
 	                    }
 	                }
 	            }
