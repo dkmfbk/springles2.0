@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import eu.fbk.dkm.internal.util.Contexts;
@@ -231,7 +232,19 @@ class InferenceContext implements Inferencer.Context
     public synchronized void addInferred(final Iterable<? extends Statement> statements,
             final Resource... contexts) throws RepositoryException
     {
-        checkAccessible();
+ //GC
+    	//System.out.println("BEFORE -- "+transaction.size(InferenceMode.FORWARD));
+    	//System.out.println("BEFORE Statements N=  "+Iterables.size(statements));
+    	int numStatements = 0;
+        int numPresent = 0;
+        for (Statement s : statements) {
+        	++ numStatements;
+        	if (transaction.hasStatement(s.getSubject(), s.getPredicate(), s.getObject(), InferenceMode.FORWARD, s.getContext())) {
+        			++ numPresent;
+        	}
+        }
+// end GC
+    	checkAccessible();
         checkWritable();
         final Resource[] targetContexts = filter(contexts);
         if (targetContexts == Contexts.UNSPECIFIED) {
@@ -239,8 +252,12 @@ class InferenceContext implements Inferencer.Context
         } else if (targetContexts != Contexts.NONE) {
             this.transaction.add(statements, targetContexts);
         }
+        
+        
+       //System.out.println(" AFTER+++"+transaction.size(InferenceMode.FORWARD) + " #statements: " + numStatements + ", #present: " + numPresent);
     }
 
+    
     @Override
     public synchronized void removeInferred(final Iterable<? extends Statement> statements,
             final Resource... contexts) throws RepositoryException
