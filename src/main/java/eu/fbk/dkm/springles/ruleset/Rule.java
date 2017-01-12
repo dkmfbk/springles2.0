@@ -1,6 +1,9 @@
 package eu.fbk.dkm.springles.ruleset;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -33,14 +36,18 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.FunctionCall;
 import org.openrdf.query.algebra.Projection;
 import org.openrdf.query.algebra.ProjectionElem;
 import org.openrdf.query.algebra.ProjectionElemList;
+import org.openrdf.query.algebra.QueryModelNode;
+import org.openrdf.query.algebra.SameTerm;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.Var;
+import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 import info.aduna.iteration.CloseableIteration;
 
@@ -316,8 +323,10 @@ public final class Rule implements Cloneable
                 }
             }
             indexes[i][4] = queryNames.indexOf("_emit" + (i + 1));
+          ///  System.out.println("inside Rule  "+this.getID() + " "+ Arrays.toString(indexes[i]) + " " + i );
         }
-
+       // System.out.println("inside Rule  Values "+this.getID() + " "+ values );
+       // System.out.println("inside Rule  Patterns "+this.getID() + " "+ patterns );
         return indexes;
     }
 
@@ -527,7 +536,7 @@ try{
             field = "head";
             expr = s.get(SPR.HEAD, String.class, null);
             if (expr != null) {
-                this.head = Algebra.parseTupleExpr(expr, baseURI, namespaces);
+                this.head =normalizeVars( Algebra.parseTupleExpr(expr, baseURI, namespaces)); //GC patch aggiunta normalizedVars
             }
 
             field = "body";
@@ -692,5 +701,84 @@ try{
         void handle(Resource subj, URI pred, Value obj, Resource ctx) throws E;
 
     }
+    @Nullable
+    public static TupleExpr normalizeVars(@Nullable TupleExpr expr) {
 
+        if (expr == null) {
+            return null;
+        }
+
+        expr = expr.clone();
+        expr.setParentNode(null);
+
+        final Map<String, String> replacements = new HashMap<>();
+        final List<Filter> filtersToDrop = new ArrayList<>();
+        expr.visit(new QueryModelVisitorBase<RuntimeException>() {
+
+            @Override
+            public void meet(final SameTerm same) throws RuntimeException {
+                if (same.getParentNode() instanceof Filter && same.getLeftArg() instanceof Var
+                        && same.getRightArg() instanceof Var) {
+                    final Var leftVar = (Var) same.getLeftArg();
+                    final Var rightVar = (Var) same.getRightArg();
+                    if (leftVar.isAnonymous() || rightVar.isAnonymous()) {
+                        if (!rightVar.isAnonymous()) {
+                            replacements.put(leftVar.getName(), rightVar.getName());
+                        } else {
+                            replacements.put(rightVar.getName(), leftVar.getName());
+                        }
+                        filtersToDrop.add((Filter) same.getParentNode());
+                    }
+                }
+            }
+
+        });
+        expr.visit(new QueryModelVisitorBase<RuntimeException>() {
+
+            @Override
+            public void meet(final Var var) throws RuntimeException {
+                if (!var.hasValue()) {
+                    final String newName = replacements.get(var.getName());
+                    if (newName != null) {
+                        var.setName(newName);
+                    } else if (var.getName().startsWith("_const-")) {
+                        if (var.getParentNode() instanceof StatementPattern) {
+                            for (final Var var2 : ((StatementPattern) var.getParentNode())
+                                    .getVarList()) {
+                                if (var2.hasValue() && var.getName().startsWith(var2.getName())) {
+                                    var.setValue(var2.getValue());
+                                }
+                            }
+                        }
+                    } else if (var.getName().startsWith("-anon-")) {
+                        var.setName(var.getName().replace('-', '_'));
+                    } else {
+                        final int index = var.getName().indexOf('-');
+                        if (index >= 0) {
+                            var.setName(var.getName().substring(0, index));
+                        }
+                    }
+                }
+            }
+
+        });
+        for (final Filter filter : filtersToDrop) {
+            expr = (TupleExpr) replaceNode(expr, filter, filter.getArg());
+        }
+        return expr;
+    }
+        
+    public static QueryModelNode replaceNode(final QueryModelNode root,
+            final QueryModelNode current, final QueryModelNode replacement) {
+        final QueryModelNode parent = current.getParentNode();
+        if (parent == null) {
+            replacement.setParentNode(null);
+            return replacement;
+        } else {
+            parent.replaceChildNode(current, replacement);
+            current.setParentNode(null);
+            return root;
+        }
+    }
+    
 }
