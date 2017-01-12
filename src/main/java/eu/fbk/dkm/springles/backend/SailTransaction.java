@@ -124,7 +124,7 @@ public class SailTransaction extends AbstractBackendTransaction {
     public void query(final QuerySpec<?> query, @Nullable final Dataset dataset,
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout,
             final Object handler) throws QueryEvaluationException, RepositoryException {
-        final Object result = query(query, dataset, bindings, mode, timeout);
+            final Object result = query(query, dataset, bindings, mode, timeout);
 
         if (result instanceof TupleQueryResult) {
             final TupleQueryResult tupleResult = (TupleQueryResult) result;
@@ -153,7 +153,7 @@ public class SailTransaction extends AbstractBackendTransaction {
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout)
             throws QueryEvaluationException, RepositoryException {
         // Issue the query. Synchronization needed to access Sail connection.
-        CloseableIteration<? extends BindingSet, QueryEvaluationException> iteration;
+    	CloseableIteration<? extends BindingSet, QueryEvaluationException> iteration;
         synchronized (this) {
             try {
                 iteration = this.connection.evaluate(query.getExpression(),
@@ -242,7 +242,7 @@ public class SailTransaction extends AbstractBackendTransaction {
                 executeLoad((Load) expr);
             } else {
                 try {
-                    this.connection.startUpdate(new UpdateContext(expr, ds, bindings, false));
+                    this.connection. startUpdate(new UpdateContext(expr, ds, bindings, false));
                 } catch (final SailException ex) {
                     throw new RepositoryException(ex.getMessage(), ex);
                 }
@@ -327,6 +327,7 @@ public class SailTransaction extends AbstractBackendTransaction {
                             statement.getObject(), statement.getContext());
                 }
             }
+            LOGGER.info("Triple nel repository {}", connection.size());
         } catch (final SailException ex) {
             throw new RepositoryException(ex.getMessage(), ex);
         }
