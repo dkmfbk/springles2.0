@@ -57,6 +57,11 @@ public final class RulesetsRDFPRO
 
     public static Ruleset lookup(final String path)
     {
+    //	System.out.println("RulesetLookup path="+path);
+    	List<Ruleset>  listrs= RulesetsRDFPRO.list();
+    	for (Ruleset ruleset : listrs) {
+    //		System.out.println("Ruleset path="+ruleset);
+		}
         Preconditions.checkNotNull(path);
         //for(String s : REGISTERED_RULESETS.keySet())
         	//LOGGER.info(s);
@@ -83,6 +88,10 @@ public final class RulesetsRDFPRO
         try {
             metaURLs = Lists.newArrayList(Iterators.forEnumeration(Ruleset.class.getClassLoader()
                     .getResources("META-INF/rdfpro-rulesets")));
+            for (URL url : metaURLs) {
+            	
+			}
+           
         } catch (final IOException ex) {
             throw new Error("Unable to retrieve rulesets declarations");
         }
@@ -92,12 +101,14 @@ public final class RulesetsRDFPRO
             List<String> lines;
             try {
                 lines = Resources.readLines(metaURL, Charsets.UTF_8);
+            
             } catch (final Exception ex) {
                 LOGGER.error("Unable to scan rulesets declarations at " + metaURL + " - ignoring");
                 continue;
             }
 
             LOGGER.info("Processing rulesets declarations at " + metaURL);
+           
             for (final String line : lines) {
                 String path = line.trim();
                 if (RDFFormat.forFileName(path) != null) {
@@ -106,14 +117,16 @@ public final class RulesetsRDFPRO
                 } else {
                     path = path.replace('.', '/');
                 }
-
+              
                 final URL rulesetURL = Ruleset.class.getClassLoader().getResource(path);
+               
                 if (rulesetURL != null) {
                     try {
                         final Ruleset ruleset = Ruleset.fromRDF(rulesetURL.toString());
                         register(rulesetURL.toString(),ruleset);
                         ++counter;
                         LOGGER.info("Loaded ruleset from " + rulesetURL);
+                      
                     } catch (final Throwable ex) {
                         LOGGER.error("Failed to load ruleset from " + rulesetURL + ": " //
                                 + ex.getMessage() + " - ignoring", ex);
