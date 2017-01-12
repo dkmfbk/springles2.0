@@ -40,103 +40,36 @@ import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 public class SparqlQuery
 {
 
-    /**
-	 * @author   calabrese
-	 */
     public enum QueryForm
     {
-        /**
-		 * @uml.property  name="sELECT"
-		 * @uml.associationEnd  
-		 */
-        SELECT, /**
-		 * @uml.property  name="cONSTRUCT"
-		 * @uml.associationEnd  
-		 */
-        CONSTRUCT, /**
-		 * @uml.property  name="aSK"
-		 * @uml.associationEnd  
-		 */
-        ASK
+        SELECT, CONSTRUCT, ASK
     }
 
-    /**
-	 * @author   calabrese
-	 */
     public enum SelectModifier
     {
-        /**
-		 * @uml.property  name="dISTINCT"
-		 * @uml.associationEnd  
-		 */
-        DISTINCT, /**
-		 * @uml.property  name="rEDUCED"
-		 * @uml.associationEnd  
-		 */
-        REDUCED
+        DISTINCT, REDUCED
     };
 
-    /**
-	 * @uml.property  name="queryForm"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
     private QueryForm queryForm;
 
-    /**
-	 * @uml.property  name="selectModifier"
-	 * @uml.associationEnd  
-	 */
     private SelectModifier selectModifier;
 
-    /**
-	 * @uml.property  name="selectList"
-	 * @uml.associationEnd  multiplicity="(0 -1)" elementType="org.openrdf.query.algebra.ProjectionElem"
-	 */
     private List<ProjectionElem> selectList;
 
-    /**
-	 * @uml.property  name="constructExpression"
-	 * @uml.associationEnd  
-	 */
     private TupleExpr constructExpression;
 
-    /**
-	 * @uml.property  name="fromDataset"
-	 * @uml.associationEnd  
-	 */
     private Dataset fromDataset;
 
-    /**
-	 * @uml.property  name="whereExpression"
-	 * @uml.associationEnd  
-	 */
     private TupleExpr whereExpression;
 
-    /**
-	 * @uml.property  name="groupByList"
-	 * @uml.associationEnd  multiplicity="(0 -1)" elementType="org.openrdf.query.algebra.ProjectionElem"
-	 */
     private List<ProjectionElem> groupByList;
 
-    /**
-	 * @uml.property  name="havingCondition"
-	 * @uml.associationEnd  
-	 */
     private ValueExpr havingCondition;
 
-    /**
-	 * @uml.property  name="orderByList"
-	 */
     private List<OrderElem> orderByList;
 
-    /**
-	 * @uml.property  name="sliceOffset"
-	 */
     private Long sliceOffset;
 
-    /**
-	 * @uml.property  name="sliceLimit"
-	 */
     private Long sliceLimit;
 
     public SparqlQuery()
@@ -189,37 +122,21 @@ public class SparqlQuery
         return this.sliceOffset != null || this.sliceLimit != null;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="queryForm"
-	 */
     public QueryForm getQueryForm()
     {
         return this.queryForm;
     }
 
-    /**
-	 * @param queryForm
-	 * @uml.property  name="queryForm"
-	 */
     public void setQueryForm(final QueryForm queryForm)
     {
         this.queryForm = queryForm;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="selectModifier"
-	 */
     public SelectModifier getSelectModifier()
     {
         return this.selectModifier;
     }
 
-    /**
-	 * @param selectModifier
-	 * @uml.property  name="selectModifier"
-	 */
     public void setSelectModifier(final SelectModifier selectModifier)
     {
         this.selectModifier = selectModifier;
@@ -236,55 +153,31 @@ public class SparqlQuery
                 .<ProjectionElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="constructExpression"
-	 */
     public TupleExpr getConstructExpression()
     {
         return this.constructExpression;
     }
 
-    /**
-	 * @param constructExpression
-	 * @uml.property  name="constructExpression"
-	 */
     public void setConstructExpression(final TupleExpr constructExpression)
     {
         this.constructExpression = constructExpression;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="fromDataset"
-	 */
     public Dataset getFromDataset()
     {
         return this.fromDataset;
     }
 
-    /**
-	 * @param fromDataset
-	 * @uml.property  name="fromDataset"
-	 */
     public void setFromDataset(final Dataset fromDataset)
     {
         this.fromDataset = fromDataset;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="whereExpression"
-	 */
     public TupleExpr getWhereExpression()
     {
         return this.whereExpression;
     }
 
-    /**
-	 * @param whereExpression
-	 * @uml.property  name="whereExpression"
-	 */
     public void setWhereExpression(final TupleExpr whereExpression)
     {
         this.whereExpression = whereExpression;
@@ -301,19 +194,11 @@ public class SparqlQuery
                 .<ProjectionElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="havingCondition"
-	 */
     public ValueExpr getHavingCondition()
     {
         return this.havingCondition;
     }
 
-    /**
-	 * @param havingCondition
-	 * @uml.property  name="havingCondition"
-	 */
     public void setHavingCondition(final ValueExpr havingCondition)
     {
         this.havingCondition = havingCondition;
@@ -330,37 +215,21 @@ public class SparqlQuery
                 .<OrderElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="sliceOffset"
-	 */
     public Long getSliceOffset()
     {
         return this.sliceOffset;
     }
 
-    /**
-	 * @param sliceOffset
-	 * @uml.property  name="sliceOffset"
-	 */
     public void setSliceOffset(final Long sliceOffset)
     {
         this.sliceOffset = sliceOffset;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="sliceLimit"
-	 */
     public Long getSliceLimit()
     {
         return this.sliceLimit;
     }
 
-    /**
-	 * @param sliceLimit
-	 * @uml.property  name="sliceLimit"
-	 */
     public void setSliceLimit(final Long sliceLimit)
     {
         this.sliceLimit = sliceLimit;
