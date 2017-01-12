@@ -48,22 +48,10 @@ public final class Selector
         }
     }
 
-    /**
-	 * @uml.property  name="graph"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
     private final Graph graph;
 
-    /**
-	 * @uml.property  name="node"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
     private final Resource node;
 
-    /**
-	 * @uml.property  name="contexts"
-	 * @uml.associationEnd  multiplicity="(0 -1)"
-	 */
     private final Resource[] contexts;
 
     protected Selector(final Graph graph, final Resource node, final Resource[] contexts)
