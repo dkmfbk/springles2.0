@@ -540,20 +540,21 @@ final class SynchronizedTransaction extends ForwardingTransaction
             return iteration;
 
         } else {
-            final TupleQueryResult wrappedIteration = new TupleQueryResultImpl(
-                    iteration.getBindingNames(), iteration) {
+            TupleQueryResult wrappedIteration = new TupleQueryResultImpl(
+        	//final MutableTupleQueryResult wrappedIteration = new MutableTupleQueryResult(
+                   iteration.getBindingNames(), iteration) {
 
-             
-                public void handleClose() throws QueryEvaluationException
+               @Override
+                protected void handleClose() throws QueryEvaluationException
                 {
                     try {
-                        super.close();
+                        super.handleClose();
                     } finally {
                         try {
                             SynchronizedTransaction.this.pendingIterations.remove(iteration);
                             endReadOperation();
                         } catch (final RepositoryException ex) {
-                            throw new QueryEvaluationException(ex);
+                         
                         }
                     }
                 }
@@ -1021,6 +1022,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
         } catch (QueryEvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		} finally {
             this.threadStatus.set(ThreadStatus.OUTSIDE_EXECUTE);
             if (writeOperation) {
@@ -1029,7 +1031,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
                 endReadOperation();
             }
         }
-		return null;
+		
     }
 
     /**
