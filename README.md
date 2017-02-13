@@ -5,6 +5,19 @@ SParql-based Rule Inference over Named Graphs Layer Extending Sesame)
 # Developers Guide
 
 **SPRINGLES** is developed using **MAVEN** (http://maven.apache.org). You need a basic understanding of MAVEN in order to compile the code and generate the documentation.
+The code has been developed with **Eclipse Neon**
+
+# Requirments
+
+  - Java 1.8
+  - Eclipse Neon
+  - Maven
+
+# Installation
+
+Download the code from Git as a zip file.
+unzip the files
+Open Eclipe and import it as a Existing Maven project
 
 # MAVEN instructions
 
