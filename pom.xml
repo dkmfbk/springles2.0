@@ -449,6 +449,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${javadoc-plugin.version}</version>
         <configuration>
+        <additionalparam>-Xdoclint:none</additionalparam>
           <links>
             <link>http://java.sun.com/javase/6/docs/api/</link>
             <link>http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/</link>
