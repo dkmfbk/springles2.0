@@ -60,7 +60,7 @@ class RDFProInferencer extends AbstractInferencer
             throws Exception
     {
     	String name = rulesetBindings.getBindingNames().iterator().next();
-    	LOGGER.info("BIND {} {} ",rulesetBindings.getBinding(name).getValue().toString().length(),rulesetBindings.getBinding(name).getName().toString().length());
+    	LOGGER.info("RDFProInferencerdoInitialize BIND {} {} ",rulesetBindings.getBinding(name).getValue().toString().length(),rulesetBindings.getBinding(name).getName().toString().length());
         this.ruleset = ruleset.rewriteVariables(rulesetBindings);
 
         return InferenceMode.FORWARD;
@@ -104,7 +104,7 @@ class RDFProInferencer extends AbstractInferencer
         public final void updateClosure(final ClosureStatus closureStatus)
                 throws RepositoryException
         {
-        	LOGGER.info("Elaborazione regole");
+        	LOGGER.info("RDFProInferencer Elaborazioneregole");
         	RuleEngine engine = RuleEngine.create(ruleset);
         	buffer  = new LinkedList<Statement>();
         	CloseableIteration<? extends Statement, RepositoryException> cl=  context.getStatements(null, null, null, true);
