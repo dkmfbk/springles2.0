@@ -1,5 +1,6 @@
 package eu.fbk.dkm.internal.util;
 
+import org.openrdf.IsolationLevel;
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -13,6 +14,7 @@ import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.UpdateContext;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.slf4j.Logger;
@@ -122,6 +124,31 @@ public final class Flushing {
         }
 
         @Override
+		public void addStatement(UpdateContext modify, Resource subj, URI pred, Value obj, Resource... contexts)
+				throws SailException {
+			// TODO Auto-generated method stub
+			super.addStatement(modify, subj, pred, obj, contexts);
+		}
+
+		@Override
+		public void begin() throws SailException {
+			// TODO Auto-generated method stub
+			super.begin();
+		}
+
+		@Override
+		public void begin(IsolationLevel level) throws SailException {
+			// TODO Auto-generated method stub
+			super.begin(level);
+		}
+
+		@Override
+		public void startUpdate(UpdateContext modify) throws SailException {
+			// TODO Auto-generated method stub
+			super.startUpdate(modify);
+		}
+
+		@Override
         public void clear(final Resource... contexts) throws SailException {
             super.clear(contexts);
             this.dirty = true;
@@ -158,13 +185,20 @@ public final class Flushing {
             this.dirty = true;
         }
 
-  //      @Override
- //       public void executeUpdate(final UpdateExpr updateExpr, final Dataset dataset,
- //               final BindingSet bindings, final boolean includeInferred) throws SailException {
-  //          flushIfDirty();
-   //         super.executeUpdate(updateExpr, dataset, bindings, includeInferred);
-    //        this.dirty = true;
-     //   }
+       
+      public void executeUpdate(final UpdateExpr updateExpr, final Dataset dataset,
+              final BindingSet bindings, final boolean includeInferred) throws SailException {
+        flushIfDirty();
+           super.startUpdate(new UpdateContext(updateExpr, dataset, bindings, true));
+           this.dirty = true;
+       }
+
+	
+		public void removeStatement(UpdateContext modify, Resource subj, URI pred, Value obj, Resource... contexts)
+				throws SailException {
+			// TODO Auto-generated method stub
+			super.removeStatement(modify, subj, pred, obj, contexts);
+		}
 
     }
 
