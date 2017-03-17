@@ -111,11 +111,11 @@ public final class Inferencers
     	 final int maxConcurrentRules;
     	 final MapBindingSet bindings;
     	 final URI rulesetURI;
-    	 
+    	  
         final Selector s = Selector.select(graph, node);
         final URI type = Iterables.getOnlyElement(Iterables.filter(s.getAll(RDF.TYPE, URI.class),
                 Predicates.in(ImmutableList.of(SPC.NULL_INFERENCER, SPC.VOID_INFERENCER,
-                        SPC.NAIVE_INFERENCER,SPC.TEST_INFERENCER,SPC.RDFPRO_INFERENCER))));
+                		SPC.NAIVE_INFERENCER,SPC.TEST_INFERENCER,SPC.RDFPRO_INFERENCER))));
         if (SPC.RDFPRO_INFERENCER.equals(type)){
         	bindings = new MapBindingSet();
         	rulesetURI = s.get(SPC.HAS_RULESET, URI.class, null);
@@ -129,7 +129,7 @@ public final class Inferencers
 		        bindings.addBinding(bindingsString.split("=")[0],l);
 	        }
 	        for (Binding b : bindings){
-            	LOGGER.info("INF-RDFPRO {}",b.getValue());
+            	LOGGER.info("INF-RDFPRO {} {}",b.getName(),b.getValue());
             }
         	 ruleset= null;
         	 maxConcurrentRules = 0;  
