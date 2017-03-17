@@ -296,7 +296,7 @@ class InferenceTransaction extends ForwardingTransaction
         } else if (query.getType() == QueryType.TUPLE) {
             final TupleQueryResult emptyResult = new TupleQueryResultImpl(
                     ImmutableList.copyOf(query.getExpression().getBindingNames()),
-                    Collections.<BindingSet>emptyList());
+                    (CloseableIteration<? extends BindingSet, QueryEvaluationException>) Collections.<BindingSet>emptyList());
             if (handler == null) {
                 return (T) emptyResult;
             } else {
@@ -309,7 +309,7 @@ class InferenceTransaction extends ForwardingTransaction
 
         } else if (query.getType() == QueryType.GRAPH) {
             final GraphQueryResult emptyResult = new GraphQueryResultImpl(query.getNamespaces(),
-                    Collections.<Statement>emptyList());
+                    (CloseableIteration<? extends Statement, ? extends QueryEvaluationException>) Collections.<Statement>emptyList());
             if (handler == null) {
                 return (T) emptyResult;
             } else {
