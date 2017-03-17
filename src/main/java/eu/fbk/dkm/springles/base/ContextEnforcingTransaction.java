@@ -9,6 +9,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
+
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -294,7 +295,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
         final Resource[] targetContexts = rewriteAndFilter(contexts);
 
         if (targetContexts == Contexts.NONE) {
-            LOGGER.debug("[{}] add() operation not executed "
+            LOGGER.info("[{}] add() operation not executed "
                     + "as no explicit context is affected", getID());
         } else if (targetContexts == Contexts.UNSPECIFIED) {
             delegate().add(rewriteAndFilter(statements), targetContexts);
