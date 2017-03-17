@@ -28,6 +28,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 import com.google.common.io.OutputSupplier;
@@ -108,7 +109,7 @@ public abstract class RDFSource<E extends Exception>
             }
         }
 
-        return new RDFDeserializerSource(Files.newInputStreamSupplier(file), editedOptions);
+        return new RDFDeserializerSource(Files.asByteSource(file), editedOptions);
     }
 
     public static RDFSource<RDFParseException> deserializeFrom(final URL url,
@@ -305,10 +306,13 @@ public abstract class RDFSource<E extends Exception>
 
     public void serializeTo(final RDFFormat format, final File file) throws E, IOException
     {
-        serializeTo(format, Files.newOutputStreamSupplier(file));
+        serializeTo(format, Files.asByteSink(file, FileWriteMode.APPEND).openStream());
+    	/// serializeTo(format, Files.newOutputStreamSupplier(file));
     }
 
-    public void serializeTo(final RDFFormat format, final OutputSupplier<?> supplier) throws E,
+   
+
+	public void serializeTo(final RDFFormat format, final OutputSupplier<?> supplier) throws E,
             IOException
     {
         final Object output = supplier.getOutput();
@@ -385,10 +389,6 @@ public abstract class RDFSource<E extends Exception>
 
         private final Object source;
 
-        /**
-		 * @uml.property  name="options"
-		 * @uml.associationEnd  
-		 */
         private final RDFParseOptions options;
 
         public RDFDeserializerSource(final Object source, final RDFParseOptions options)
@@ -524,8 +524,7 @@ public abstract class RDFSource<E extends Exception>
                     continue;
                 }
 
-                final RDFFormat actualFormat = Rio.getParserFormatForFileName(entry.getName(),
-                        format);
+                final RDFFormat actualFormat = Rio.getParserFormatForFileName(entry.getName());
 
                 try {
                     // Prevent parser (Xerces) from closing the input stream.
