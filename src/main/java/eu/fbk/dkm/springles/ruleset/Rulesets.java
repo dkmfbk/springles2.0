@@ -10,6 +10,7 @@ import java.util.Map;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.Rio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +112,7 @@ public final class Rulesets
             LOGGER.info("Processing rulesets declarations at " + metaURL);
             for (final String line : lines) {
                 String path = line.trim();
-                if (RDFFormat.forFileName(path) != null) {
+                if (Rio.getParserFormatForFileName(path) != null) {
                     final int index = Math.max(0, path.lastIndexOf('.'));
                     path = path.substring(0, index).replace('.', '/') + path.substring(index);
                 } else {
