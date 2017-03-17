@@ -28,8 +28,6 @@ public abstract class AbstractInferencer implements Inferencer
 
         } catch (final RuntimeException ex) {
             throw ex;
-        } catch (final RepositoryException ex) {
-            throw ex;
         } catch (final Exception ex) {
             throw new RepositoryException(ex.getMessage(), ex);
         }
