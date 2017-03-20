@@ -1,6 +1,9 @@
 package eu.fbk.dkm.springles.inferencer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -125,8 +128,16 @@ public final class Inferencers
         	String bindingsString = s.get(SPC.HAS_BINDINGS, String.class, null);
 	        if (bindingsString != null) {
 	        	bindingsString = bindingsString.replaceAll("\\s+", "");
-		        URI l = ValueFactoryImpl.getInstance().createURI(bindingsString.split("=")[1]);
-		        bindings.addBinding(bindingsString.split("=")[0],l);
+	        	
+	        	 String[] items = bindingsString.split(",");
+	             List<String> itemList = new ArrayList<String>(Arrays.asList(items));
+	             
+	             for (String bindString : itemList) {
+	            	 URI l = ValueFactoryImpl.getInstance().createURI(bindString.split("=")[1]);
+	 		        bindings.addBinding(bindString.split("=")[0],l);
+	            	 
+				}
+		        
 	        }
 	        for (Binding b : bindings){
             	LOGGER.info("INF-RDFPRO {} {}",b.getName(),b.getValue());
