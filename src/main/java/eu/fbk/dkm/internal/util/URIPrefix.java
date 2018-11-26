@@ -7,11 +7,11 @@ import java.io.Serializable;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.URIImpl;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 public final class URIPrefix implements Serializable, Comparable<URIPrefix>
 {
@@ -22,13 +22,13 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
 
     private final boolean isFullURI;
 
-    private transient URI fullURI;
+    private transient IRI fullURI;
 
     private transient Predicate<Value> valueMatcher;
 
     private transient Predicate<Statement> contextMatcher;
 
-    public static URIPrefix from(final URI uri)
+    public static URIPrefix from(final IRI uri)
     {
         return new URIPrefix(uri, uri.stringValue());
     }
@@ -38,11 +38,11 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
         if (string.endsWith("*")) {
             return new URIPrefix(null, string.substring(0, string.length() - 1));
         } else {
-            return new URIPrefix(new URIImpl(string), string);
+            return new URIPrefix(SimpleValueFactory.getInstance().createIRI(string), string);
         }
     }
 
-    private URIPrefix(final URI uri, final String prefix)
+    private URIPrefix(final IRI uri, final String prefix)
     {
         this.fullURI = uri;
         this.isFullURI = uri != null;
@@ -61,7 +61,7 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
         return this.isFullURI;
     }
 
-    public URI asFullURI()
+    public IRI asFullURI()
     {
         Preconditions.checkState(this.isFullURI);
         return this.fullURI;
@@ -75,16 +75,14 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
 
     public boolean matches(final Value value)
     {
-        return value instanceof URI
-                && (this.isFullURI ? value.equals(this.fullURI) : value.stringValue().startsWith(
-                        this.prefix));
+        return value instanceof IRI && (this.isFullURI ? value.equals(this.fullURI)
+                : value.stringValue().startsWith(this.prefix));
     }
 
-    public boolean matches(final URI uri)
+    public boolean matches(final IRI uri)
     {
-        return uri != null
-                && (this.isFullURI ? uri.equals(this.fullURI) : uri.stringValue().startsWith(
-                        this.prefix));
+        return uri != null && (this.isFullURI ? uri.equals(this.fullURI)
+                : uri.stringValue().startsWith(this.prefix));
     }
 
     public Predicate<Value> valueMatcher()
@@ -108,7 +106,7 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
                     @Override
                     public boolean apply(final Value value)
                     {
-                        return value instanceof URI
+                        return value instanceof IRI
                                 && value.stringValue().startsWith(URIPrefix.this.prefix);
                     }
 
@@ -143,7 +141,7 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
                     public boolean apply(final Statement statement)
                     {
                         final Resource context = statement.getContext();
-                        return context instanceof URI
+                        return context instanceof IRI
                                 && context.stringValue().startsWith(URIPrefix.this.prefix);
                     }
 
@@ -185,7 +183,7 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
     @Override
     public int hashCode()
     {
-        return this.prefix.hashCode() ^ (isFullURI() ? 1 : -1);
+        return this.prefix.hashCode() ^ (this.isFullURI() ? 1 : -1);
     }
 
     @Override
@@ -194,11 +192,11 @@ public final class URIPrefix implements Serializable, Comparable<URIPrefix>
         return this.isFullURI ? this.prefix : this.prefix + "*";
     }
 
-    private void readObject(final ObjectInputStream ois) throws IOException,
-            ClassNotFoundException
+    private void readObject(final ObjectInputStream ois) throws IOException, ClassNotFoundException
     {
         ois.defaultReadObject();
-        this.fullURI = this.isFullURI ? new URIImpl(this.prefix) : null;
+        this.fullURI = this.isFullURI ? SimpleValueFactory.getInstance().createIRI(this.prefix)
+                : null;
     }
 
 }

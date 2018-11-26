@@ -4,9 +4,9 @@ import java.io.File;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.InferenceMode;
 import eu.fbk.dkm.springles.base.QueryType;
@@ -24,7 +24,8 @@ import eu.fbk.dkm.springles.base.Transaction;
  * setter methods.</li>
  * <li>Initialization, through method {@link #initialize(File)} that specifies the data directory
  * where the backend can store its data (this is the same data directory the enclosing Springles
- * repository is initialized with and may be <tt>null</tt> in case of transient repositories).</li>
+ * repository is initialized with and may be <tt>null</tt> in case of transient
+ * repositories).</li>
  * <li>Access to backend properties ({@link #isWritable()} and {@link #getValueFactory()}) and
  * creation of transactions ({@link #newTransaction(String, boolean)}) through which data in the
  * backend can be read, queried or modified. Note that properties can be accessed only after
@@ -46,7 +47,7 @@ import eu.fbk.dkm.springles.base.Transaction;
  * Implementations of this class must be thread safe, implementing suitable synchronization
  * mechanism if necessary.
  * </p>
- * 
+ *
  * @apiviz.landmark
  * @apiviz.uses eu.fbk.dkm.springles.base.Transaction - - - <<create>>
  */
@@ -56,7 +57,7 @@ public interface Backend
     /**
      * Initializes the backend. This method is called to initialize the backend, supplying the
      * data directory where the backend can store its data.
-     * 
+     *
      * @param dataDir
      *            an optional data directory where the backend can persist its RDF data
      * @throws RepositoryException
@@ -68,7 +69,7 @@ public interface Backend
      * Specifies whether the backend supports write access (delete / add statements). This method
      * is called only after the backend is initialized, as the writable status may depend on the
      * data directory supplied at initialization time.
-     * 
+     *
      * @return <tt>true</tt> if the backend supports write access
      */
     boolean isWritable();
@@ -76,7 +77,7 @@ public interface Backend
     /**
      * Returns the <tt>ValueFactory</tt> associated to the backend. This method is called only
      * after the backend is initialized.
-     * 
+     *
      * @return the <tt>ValueFactory</tt> associated to the backend
      */
     ValueFactory getValueFactory();
@@ -85,9 +86,9 @@ public interface Backend
      * Creates a new transaction manipulating data in the backend. The returned transaction is not
      * expected to support inference ({@link InferenceMode} parameters and closure-related
      * operations are ignored) as well as named queries and update operations (methods
-     * {@link Transaction#query(URI, QueryType, InferenceMode, Object...)} and
-     * {@link Transaction#update(URI, InferenceMode, Object...)} are unsupported).
-     * 
+     * {@link Transaction#query(IRI, QueryType, InferenceMode, Object...)} and
+     * {@link Transaction#update(IRI, InferenceMode, Object...)} are unsupported).
+     *
      * @param id
      *            the ID of the created transaction
      * @param writable
@@ -103,7 +104,7 @@ public interface Backend
      * Closes the backend. This method is called to close the backend and release the associated
      * resources. For some <tt>Backend</tt> implementations, properly closing the backend is
      * mandatory in order to avoid data losses (see specific implementation details).
-     * 
+     *
      * @throws RepositoryException
      *             on failure
      */

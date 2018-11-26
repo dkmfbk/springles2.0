@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project>
+
+    <publishDate position="bottom" format="yyyy/MM/dd"/>
+
+    <skin>
+        <groupId>lt.velykis.maven.skins</groupId>
+        <artifactId>reflow-maven-skin</artifactId>
+        <version>1.1.1</version>
+    </skin>
+
+    <body>
+        <head>
+            <link href="${site-root}/css/custom.css" rel="stylesheet" />
+            <link rel="icon" type="image/png" href="${site-root}/images/rdfpro-150.png" />
+        </head>
+
+        <menu name="About">
+            <item name="Home" href="index.html"/>
+            <item name="Processing Model" href="model.html"/>
+            <item name="Publications" href="publications.html"/>
+            <item name="License" href="license.html"/>
+            <item name="Third-party licenses" href="third-party.html"/>
+            <item name="Team" href="team-list.html"/>
+        </menu>
+
+        <menu name="Tool">
+            <item name="Download" href="install.html"/>
+            <item name="Usage" href="usage.html"/>
+            <item name="Web interface" href="web-interface.html"/>
+            <item name="Example (SemDev)" href="example.html"/>
+            <item name="Examples (SAC)" href="examples_sac.html"/>
+        </menu>
+
+        <menu name="Libraries">
+            <item name="RDFpro" href="rdfprolib.html"/>
+            <item name="TQL" href="tql.html"/>
+            <item name="JSONLD" href="jsonld.html"/>
+            <item name="Javadoc" href="apidocs/index.html"/>
+        </menu>
+
+        <menu name="Maven Reports" ref="reports" inherit="top"/>
+
+        <menu ref="modules" inherit="top"/>
+
+        <menu ref="parent" inherit="top"/>
+
+        <menu name="Links">
+            <item name="GitHub project" href="https://github.com/dkmfbk/rdfpro"/>
+            <item name="Online demo" href="https://knowledgestore2.fbk.eu/rdfpro-demo/"/>
+            <item name="Video tour" href="https://www.youtube.com/watch?v=Vd2FCVRL8fk"/>
+            <item name="Issue tracker" href="https://github.com/dkmfbk/rdfpro/issues"/>
+            <item name="Contact authors" href="mailto:rdfproATfbkDOTeu"/>
+        </menu>
+    </body>
+
+    <custom>
+        <reflowSkin>
+
+            <endContent>
+                ${site.topbar}
+                <script type="text/javascript" src="$resourcePath/js/custom.js"></script>
+            </endContent>
+
+            <highlightJs>true</highlightJs>
+            <highlightJsTheme>googlecode</highlightJsTheme>
+            <imgLightbox>true</imgLightbox>
+            <smoothScroll>false</smoothScroll>
+            <bootstrapCss>true</bootstrapCss>
+            <bootstrapIcons>true</bootstrapIcons>
+            <html5Anchor>true</html5Anchor>
+            <markPageHeader>true</markPageHeader>
+            <!--<protocolRelativeURLs>true</protocolRelativeURLs>-->
+            <skinAttribution>true</skinAttribution>
+            <brand>
+                <name>
+                    <![CDATA[
+                        <img src='${site-root}/images/rdfpro.png' />
+                        <span>RDF<sub>pro</sub></span>
+                    ]]>
+                </name>
+                <href>${site-root}</href>
+            </brand>
+            <titleTemplate>%2$s | %1$s</titleTemplate>
+            <toc>none</toc>
+            <!--
+              <toc>top</toc>
+              <tocTopMax>6</tocTopMax>
+              <tocTopFlatten>false</tocTopFlatten>
+            -->
+            <topNav>About|Tool|Libraries|Maven Reports|Modules|Parent Project|Links</topNav>
+
+            <bottomNav maxSpan="8">
+                <column>About</column>
+                <column>Tool</column>
+                <column>Libraries</column>
+                <column>Links</column>
+            </bottomNav>
+
+            <breadcrumbs>false</breadcrumbs>
+            <bottomDescription quote="false">
+                <![CDATA[
+        RDFpro is public domain software developed within:<br/><br/>
+        <a href="http://dkm.fbk.eu/"><img src="${site-root}/images/fbkdkm.png"/></a>&nbsp;&nbsp;
+        <a href="http://www.newsreader-project.eu/"><img src="${site-root}/images/newsreader.png"/></a><br/>
+
+        <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+          ga('create', 'UA-59727692-1', 'auto');
+          ga('send', 'pageview');
+
+        </script>
+        ]]>
+            </bottomDescription>
+            <!--<shortTitle>generate</shortTitle>-->
+            <titleTemplate>%1$s - %2$s</titleTemplate>
+            <pages>
+                <index>
+                    <shortTitle>Home</shortTitle>
+                    <markPageHeader>false</markPageHeader>
+                    <sections>
+                        <body/>
+                        <columns>3</columns>
+                    </sections>
+                </index>
+                <web-interface>
+                    <markPageHeader>false</markPageHeader>
+                </web-interface>
+                <taglist>
+                    <html5Anchor>false</html5Anchor>
+                </taglist>
+                <license>
+                    <highlightJs>false</highlightJs>
+                </license>
+                <install>
+                    <highlightJs>false</highlightJs>
+                </install>
+            </pages>
+        </reflowSkin>
+    </custom>
+</project>

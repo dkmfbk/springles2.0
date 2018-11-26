@@ -12,29 +12,28 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.NamespaceImpl;
-import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.impl.ListBindingSet;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.ExceptionConvertingIteration;
+import org.eclipse.rdf4j.common.iteration.FilterIteration;
+import org.eclipse.rdf4j.common.iteration.Iteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleNamespace;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.GraphQueryResult;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.impl.ListBindingSet;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.ExceptionConvertingIteration;
-import info.aduna.iteration.FilterIteration;
-import info.aduna.iteration.Iteration;
 
 public final class Iterations
 {
@@ -88,13 +87,13 @@ public final class Iterations
                 final Value pred = bindings.getValue("predicate");
                 final Value obj = bindings.getValue("object");
                 final Value context = bindings.getValue("context");
-                if (!(subj instanceof Resource) || !(pred instanceof URI) || obj == null
+                if (!(subj instanceof Resource) || !(pred instanceof IRI) || obj == null
                         || context != null && !(context instanceof Resource)) {
                     return null;
                 } else if (context == null) {
-                    return valueFactory.createStatement((Resource) subj, (URI) pred, obj);
+                    return valueFactory.createStatement((Resource) subj, (IRI) pred, obj);
                 } else {
-                    return valueFactory.createStatement((Resource) subj, (URI) pred, obj,
+                    return valueFactory.createStatement((Resource) subj, (IRI) pred, obj,
                             (Resource) context);
                 }
             }
@@ -144,8 +143,9 @@ public final class Iterations
             @Override
             protected Value[] convertToValues(final Namespace namespace) throws Exception
             {
-                return new Value[] { new LiteralImpl(namespace.getPrefix(), XMLSchema.STRING),
-                        new LiteralImpl(namespace.getName(), XMLSchema.STRING) };
+                final ValueFactory vf = SimpleValueFactory.getInstance();
+                return new Value[] { vf.createLiteral(namespace.getPrefix(), XMLSchema.STRING),
+                        vf.createLiteral(namespace.getName(), XMLSchema.STRING) };
             }
 
         };
@@ -171,7 +171,8 @@ public final class Iterations
                         final Value prefix = bindings.getValue(prefixBindingName);
                         final Value name = bindings.getValue(nameBindingName);
                         if (prefix instanceof Literal && name instanceof Literal) {
-                            this.next = new NamespaceImpl(prefix.stringValue(), name.stringValue());
+                            this.next = new SimpleNamespace(prefix.stringValue(),
+                                    name.stringValue());
                         }
                     }
                     return false;
@@ -181,7 +182,7 @@ public final class Iterations
             @Override
             public Namespace next() throws E
             {
-                if (!hasNext()) {
+                if (!this.hasNext()) {
                     throw new NoSuchElementException();
                 }
                 final Namespace result = this.next;
@@ -253,7 +254,7 @@ public final class Iterations
             @Override
             public Iterator<T> iterator()
             {
-                return asIterator(iteration);
+                return Iterations.asIterator(iteration);
             }
 
         };
@@ -302,7 +303,7 @@ public final class Iterations
             @Override
             public T next() throws E
             {
-                if (!hasNext()) {
+                if (!this.hasNext()) {
                     throw new NoSuchElementException();
                 }
                 final T result = this.next;
@@ -380,7 +381,7 @@ public final class Iterations
                     ((CloseableIteration<?, ?>) iteration).close();
                 }
             } catch (final Throwable ex) {
-                LOGGER.warn("Unexpected error caught while closing iteration.", ex);
+                Iterations.LOGGER.warn("Unexpected error caught while closing iteration.", ex);
             }
         }
     }
@@ -396,8 +397,8 @@ public final class Iterations
     {
     }
 
-    private abstract static class ResultAdapter<R, T> implements
-            CloseableIteration<R, QueryEvaluationException>
+    private abstract static class ResultAdapter<R, T>
+            implements CloseableIteration<R, QueryEvaluationException>
     {
 
         private final Iteration<? extends T, ? extends Exception> iteration;
@@ -415,7 +416,7 @@ public final class Iterations
         {
             try {
                 while (this.next == null && this.iteration.hasNext()) {
-                    this.next = convert(this.iteration.next());
+                    this.next = this.convert(this.iteration.next());
                 }
                 return this.next != null;
 
@@ -431,7 +432,7 @@ public final class Iterations
         public final R next() throws QueryEvaluationException
         {
             try {
-                if (!hasNext()) {
+                if (!this.hasNext()) {
                     throw new NoSuchElementException();
                 }
                 final R result = this.next;
@@ -492,7 +493,7 @@ public final class Iterations
         @Override
         protected BindingSet convert(final T element) throws Exception
         {
-            return new ListBindingSet(this.bindingNames, convertToValues(element));
+            return new ListBindingSet(this.bindingNames, this.convertToValues(element));
         }
 
         protected Value[] convertToValues(final T element) throws Exception
@@ -508,8 +509,7 @@ public final class Iterations
 
         private final Map<String, String> namespaces;
 
-        public GraphQueryResultAdapter(
-                final Iteration<? extends T, ? extends Exception> iteration,
+        public GraphQueryResultAdapter(final Iteration<? extends T, ? extends Exception> iteration,
                 final Map<String, String> namespaces)
         {
             super(iteration);

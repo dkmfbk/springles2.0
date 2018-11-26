@@ -9,21 +9,20 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.UpdateExpr;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.CloseableIteration;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Contexts;
@@ -58,15 +57,15 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
     /** The underlying transaction this wrapper delegates to. */
     private final Transaction delegate;
 
-    /** The URI assigned to Sesame null context. */
-    private final URI nullContextURI;
+    /** The IRI assigned to Sesame null context. */
+    private final IRI nullContextURI;
 
-    /** The URI prefix satisfied by the URIs of inferred Sesame contexts. */
+    /** The IRI prefix satisfied by the IRIs of inferred Sesame contexts. */
     private final URIPrefix inferredContextPrefix;
 
     /**
      * Creates a new instance wrapping the transaction specified.
-     * 
+     *
      * @param delegate
      *            the transaction this wrapper delegates to
      * @param nullContextURI
@@ -74,7 +73,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      * @param inferredContextPrefix
      *            the URI prefix satisfied by the URIs of inferred contexts
      */
-    public ContextEnforcingTransaction(final Transaction delegate, final URI nullContextURI,
+    public ContextEnforcingTransaction(final Transaction delegate, final IRI nullContextURI,
             final URIPrefix inferredContextPrefix)
     {
         Preconditions.checkNotNull(delegate);
@@ -99,7 +98,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      * Rewrites the contexts in the supplied array, replacing the null context with
      * {@link #nullContextURI}. The input array is not changed and is returned in case rewriting
      * is unnecessary.
-     * 
+     *
      * @param contexts
      *            the array of context identifiers to be rewritten
      * @return the rewritten contexts array
@@ -114,7 +113,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      * Rewrites and filters the supplied context array, replacing the null context with
      * {@link #nullContextURI} and removing inferred contexts. A warning message is logged in case
      * removal occurs. The input array is not changed.
-     * 
+     *
      * @param contexts
      *            the context array to rewrite and filter
      * @return the resulting context array, possibly the input array unchanged
@@ -135,11 +134,11 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      * context {@link #nullContextURI} and removing statements in inferred contexts. The method
      * wraps the supplied iterable, so to filter and rewrite statements at iteration time. A
      * warning message is logged in case statement removal occurs.
-     * 
+     *
      * @param iterable
      *            the statement <tt>Iterable</tt> to process
-     * @return a statement
-     *         <tt>Iterable<tt> that operates rewriting and filtering at iteration time
+     * @return a statement <tt>Iterable<tt> that operates rewriting and filtering at iteration
+     *         time
      * @see Contexts#rewriteAndFilter(Iterable, org.openrdf.model.ValueFactory, Resource,
      *      com.google.common.base.Predicate, String)
      */
@@ -148,7 +147,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
         final String message = "Detected write request affecting inferred statements. {} inferred "
                 + "statements removed from the operation target. Operation will be performed on "
                 + "remaining statements (if any).";
-        return Contexts.rewriteAndFilter(iterable, getValueFactory(), this.nullContextURI,
+        return Contexts.rewriteAndFilter(iterable, this.getValueFactory(), this.nullContextURI,
                 this.inferredContextPrefix.valueMatcher(), message);
     }
 
@@ -162,16 +161,18 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
             final Object handler) throws QueryEvaluationException, RepositoryException
     {
         final Dataset actualDataset = dataset != null ? dataset : query.getDataset();
-        final Entry<TupleExpr, Dataset> entry = Algebra.rewriteDefaultContext(
-                query.getExpression(), actualDataset, this.nullContextURI);
+        final Entry<TupleExpr, Dataset> entry = Algebra
+                .rewriteDefaultContext(query.getExpression(), actualDataset, this.nullContextURI);
 
         if (entry.getKey() == query.getExpression() && entry.getValue() == actualDataset) {
-            delegate().query(query, dataset, bindings, mode, timeout, handler);
+            this.delegate().query(query, dataset, bindings, mode, timeout, handler);
         } else {
-            LOGGER.debug("[{}] Query modified to replace null context in dataset "
-                    + "with corresponding URI", getID());
-            delegate().query(QuerySpec.from(query.getType(), entry.getKey(), entry.getValue()),
-                    null, bindings, mode, timeout, handler);
+            ContextEnforcingTransaction.LOGGER
+                    .info("[{}] Query modified to replace null context in dataset "
+                            + "with corresponding URI", this.getID());
+            this.delegate().query(
+                    QuerySpec.from(query.getType(), entry.getKey(), entry.getValue()), null,
+                    bindings, mode, timeout, handler);
         }
     }
 
@@ -185,15 +186,16 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
             throws QueryEvaluationException, RepositoryException
     {
         final Dataset actualDataset = dataset != null ? dataset : query.getDataset();
-        final Entry<TupleExpr, Dataset> entry = Algebra.rewriteDefaultContext(
-                query.getExpression(), actualDataset, this.nullContextURI);
+        final Entry<TupleExpr, Dataset> entry = Algebra
+                .rewriteDefaultContext(query.getExpression(), actualDataset, this.nullContextURI);
 
         if (entry.getKey() == query.getExpression() && entry.getValue() == actualDataset) {
-            return delegate().query(query, dataset, bindings, mode, timeout);
+            return this.delegate().query(query, dataset, bindings, mode, timeout);
         } else {
-            LOGGER.debug("[{}] Query modified to replace null context in dataset "
-                    + "with corresponding URI", getID());
-            return delegate().query(
+            ContextEnforcingTransaction.LOGGER
+                    .info("[{}] Query modified to replace null context in dataset "
+                            + "with corresponding URI", this.getID());
+            return this.delegate().query(
                     QuerySpec.from(query.getType(), entry.getKey(), entry.getValue()), null,
                     bindings, mode, timeout);
         }
@@ -204,21 +206,21 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      */
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
-        return delegate().getStatements(subj, pred, obj, mode, rewrite(contexts));
+        return this.delegate().getStatements(subj, pred, obj, mode, this.rewrite(contexts));
     }
 
     /**
      * {@inheritDoc} Delegates, replacing the null context with the corresponding URI.
      */
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        return delegate().hasStatement(subj, pred, obj, mode, rewrite(contexts));
+        return this.delegate().hasStatement(subj, pred, obj, mode, this.rewrite(contexts));
     }
 
     /**
@@ -228,7 +230,7 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
     public long size(final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        return delegate().size(mode, rewrite(contexts));
+        return this.delegate().size(mode, this.rewrite(contexts));
     }
 
     /**
@@ -263,20 +265,22 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
                 final boolean exprModified = entry.getKey() != expr
                         || entry.getValue() != exprDataset;
                 modified |= exprModified;
-                if (exprModified && LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Update modified to replace null context "
-                            + "with corresponding URI", getID());
+                if (exprModified && ContextEnforcingTransaction.LOGGER.isInfoEnabled()) {
+                    ContextEnforcingTransaction.LOGGER
+                            .info("[{}] Update modified to replace null context "
+                                    + "with corresponding URI", this.getID());
                 }
             }
         }
 
         if (!modified) {
-            delegate().update(update, dataset, bindings, mode);
+            this.delegate().update(update, dataset, bindings, mode);
         } else if (!exprs.isEmpty()) {
-            delegate().update(UpdateSpec.from(exprs, datasets, update.getNamespaces()), null,
+            this.delegate().update(UpdateSpec.from(exprs, datasets, update.getNamespaces()), null,
                     bindings, mode);
         } else {
-            LOGGER.info("[{}] Update not executed as affects inferred contexts only", getID());
+            ContextEnforcingTransaction.LOGGER.info(
+                    "[{}] Update not executed as affects inferred contexts only", this.getID());
         }
     }
 
@@ -291,15 +295,16 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
     {
         Preconditions.checkNotNull(statements); // fail-fast
 
-        final Resource[] targetContexts = rewriteAndFilter(contexts);
+        final Resource[] targetContexts = this.rewriteAndFilter(contexts);
 
         if (targetContexts == Contexts.NONE) {
-            LOGGER.debug("[{}] add() operation not executed "
-                    + "as no explicit context is affected", getID());
+            ContextEnforcingTransaction.LOGGER.info(
+                    "[{}] add() operation not executed " + "as no explicit context is affected",
+                    this.getID());
         } else if (targetContexts == Contexts.UNSPECIFIED) {
-            delegate().add(rewriteAndFilter(statements), targetContexts);
+            this.delegate().add(this.rewriteAndFilter(statements), targetContexts);
         } else {
-            delegate().add(statements, targetContexts);
+            this.delegate().add(statements, targetContexts);
         }
     }
 
@@ -314,15 +319,16 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
     {
         Preconditions.checkNotNull(statements); // fail-fast
 
-        final Resource[] targetContexts = rewriteAndFilter(contexts);
+        final Resource[] targetContexts = this.rewriteAndFilter(contexts);
 
         if (targetContexts == Contexts.NONE) {
-            LOGGER.debug("[{}] remove() operation not executed "
-                    + "as no explicit context is affected", getID());
+            ContextEnforcingTransaction.LOGGER.info(
+                    "[{}] remove() operation not executed " + "as no explicit context is affected",
+                    this.getID());
         } else if (targetContexts == Contexts.UNSPECIFIED) {
-            delegate().remove(rewriteAndFilter(statements), targetContexts);
+            this.delegate().remove(this.rewriteAndFilter(statements), targetContexts);
         } else {
-            delegate().remove(statements, targetContexts);
+            this.delegate().remove(statements, targetContexts);
         }
     }
 
@@ -330,28 +336,30 @@ final class ContextEnforcingTransaction extends ForwardingTransaction
      * {@inheritDoc}
      */
     @Override
-    public void remove(@Nullable final Resource subject, @Nullable final URI predicate,
+    public void remove(@Nullable final Resource subject, @Nullable final IRI predicate,
             @Nullable final Value object, final Resource... contexts) throws RepositoryException
     {
-        final Resource[] targetContexts = rewriteAndFilter(contexts);
+        final Resource[] targetContexts = this.rewriteAndFilter(contexts);
 
         if (targetContexts == Contexts.NONE) {
-            LOGGER.debug("[{}] remove() operation (with wildcards) not executed "
-                    + "as no explicit context is affected", getID());
+            ContextEnforcingTransaction.LOGGER
+                    .info("[{}] remove() operation (with wildcards) not executed "
+                            + "as no explicit context is affected", this.getID());
 
         } else if (targetContexts == Contexts.UNSPECIFIED) {
-            LOGGER.debug("[{}] retrieving explicit contexts to perform remove() operation",
-                    getID());
-            final List<Resource> explicitContexts = Iterations.getAllElements(Iterations.filter(
-                    delegate().getContextIDs(InferenceMode.NONE),
-                    Predicates.not(this.inferredContextPrefix.valueMatcher())));
+            ContextEnforcingTransaction.LOGGER.info(
+                    "[{}] retrieving explicit contexts to perform remove() operation",
+                    this.getID());
+            final List<Resource> explicitContexts = Iterations.getAllElements(
+                    Iterations.filter(this.delegate().getContextIDs(InferenceMode.NONE),
+                            Predicates.not(this.inferredContextPrefix.valueMatcher())));
             for (final Resource explicitContext : explicitContexts) {
                 // XXX is iterating the best strategy here?
-                delegate().remove(subject, predicate, object, explicitContext);
+                this.delegate().remove(subject, predicate, object, explicitContext);
             }
 
         } else {
-            delegate().remove(subject, predicate, object, contexts);
+            this.delegate().remove(subject, predicate, object, contexts);
         }
     }
 

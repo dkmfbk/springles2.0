@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
@@ -20,9 +20,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ import eu.fbk.dkm.springles.base.SynchronizedTransaction.EndListener;
 
 /**
  * Base implementation of <tt>SpringlesRepository</tt>.
- * 
+ *
  * @apiviz.landmark
  * @apiviz.uses eu.fbk.dkm.springles.base.SpringlesConnectionBase - - <<create>>
  */
@@ -54,7 +54,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     private final String id;
 
-    private final URI nullContextURI;
+    private final IRI nullContextURI;
 
     private final URIPrefix inferredContextPrefix;
 
@@ -102,7 +102,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     // CONSTRUCTION
 
-    protected SpringlesRepositoryBase(final String id, final URI nullContextURI,
+    protected SpringlesRepositoryBase(final String id, final IRI nullContextURI,
             final String inferredContextPrefix, final Supplier<String> transactionIDSupplier)
     {
         Preconditions.checkNotNull(id);
@@ -142,7 +142,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
     }
 
     @Override
-    public final URI getNullContextURI()
+    public final IRI getNullContextURI()
     {
         return this.nullContextURI;
     }
@@ -164,7 +164,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
     @Override
     public final void setDataDir(final File dataDir)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.dataDir = dataDir;
     }
 
@@ -175,7 +175,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     public final void setBufferingEnabled(final boolean bufferingEnabled)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.bufferingEnabled = bufferingEnabled;
     }
 
@@ -186,7 +186,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     public final void setMaxConcurrentTransactions(final int maxConcurrentTransactions)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.maxConcurrentTransactions = maxConcurrentTransactions;
     }
 
@@ -197,7 +197,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     public final void setMaxTransactionExecutionTime(final long maxTransactionExecutionTime)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.maxTransactionExecutionTime = maxTransactionExecutionTime;
     }
 
@@ -208,7 +208,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     public final void setMaxTransactionIdleTime(final long maxTransactionIdleTime)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.maxTransactionIdleTime = maxTransactionIdleTime;
     }
 
@@ -219,7 +219,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
     public final void setScheduler(final ScheduledExecutorService scheduler)
     {
-        Preconditions.checkState(!isInitialized());
+        Preconditions.checkState(!this.isInitialized());
         this.scheduler = scheduler;
     }
 
@@ -262,7 +262,8 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             try {
                 this.semaphore = new Semaphore(
                         this.maxConcurrentTransactions > 0 ? this.maxConcurrentTransactions
-                                : Short.MAX_VALUE, false);
+                                : Short.MAX_VALUE,
+                        false);
                 if (this.scheduler == null && this.maxTransactionExecutionTime > 0
                         && this.maxTransactionIdleTime > 0) {
                     final ThreadFactory factory = new ThreadFactoryBuilder().setDaemon(true)
@@ -274,7 +275,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
                 final AtomicReference<ValueFactory> factory = new AtomicReference<ValueFactory>();
                 final AtomicReference<InferenceMode> mode = new AtomicReference<InferenceMode>();
                 // this.valueFactory = doInitialize();
-                this.writable = doInitialize(factory, mode);
+                this.writable = this.doInitialize(factory, mode);
                 this.valueFactory = factory.get();
                 this.supportedInferenceMode = mode.get();
 
@@ -282,7 +283,8 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
                 Preconditions.checkNotNull(this.supportedInferenceMode);
 
                 success = true;
-                LOGGER.info("[{}] Repository initialized, data dir: {}", this.id, this.dataDir);
+                SpringlesRepositoryBase.LOGGER.info("[{}] Repository initialized, data dir: {}",
+                        this.id, this.dataDir);
 
             } finally {
                 synchronized (this) {
@@ -338,25 +340,25 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
                         + "for repository initialization to complete", ex);
             }
             if (this.status != Status.CLOSED) {
-                shutDown();
+                this.shutDown();
             }
             return;
         }
 
         if (executeShutdown) {
             // it is guaranteed a single thread can enter here
-            closePendingConnections();
-            rollbackPendingTransactions();
+            this.closePendingConnections();
+            this.rollbackPendingTransactions();
             try {
-                doShutdown();
+                this.doShutdown();
             } catch (final Throwable ex) {
-                LOGGER.error("[" + this.id + "] Got an exception performing shutdown. Ignoring",
-                        ex);
+                SpringlesRepositoryBase.LOGGER.error(
+                        "[" + this.id + "] Got an exception performing shutdown. Ignoring", ex);
             }
             if (this.schedulerToBeClosed) {
                 this.scheduler.shutdown();
             }
-            LOGGER.info("[" + this.id + "] Repository shutted down");
+            SpringlesRepositoryBase.LOGGER.info("[" + this.id + "] Repository shutted down");
             synchronized (this) {
                 this.status = Status.CLOSED;
                 this.statusLatch.countDown();
@@ -376,7 +378,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
      * Hook for performing subclass specific initialization logic. This method is called as part
      * of the execution of {@link #initialize()} and is synchronized externally. Exceptions thrown
      * by this method will cause the initialization of the repository to fail.
-     * 
+     *
      * @param valueFactoryHolder
      *            a reference to the repository <tt>ValueFactory</tt> to be set by the method
      * @param inferenceModeHolder
@@ -431,10 +433,10 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
 
         final String id = this.id + ":con" + this.connectionCounter.incrementAndGet();
 
-        final SpringlesConnection connection = createConnection(id);
+        final SpringlesConnection connection = this.createConnection(id);
         this.pendingConnections.add(connection);
 
-        LOGGER.debug("[{}] Connection created, transaction mode: {}", id,
+        SpringlesRepositoryBase.LOGGER.info("[{}] Connection created, transaction mode: {}", id,
                 connection.getTransactionMode());
 
         return connection;
@@ -444,7 +446,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
      * Hook for the creation of {@link SpringlesConnection}s. The default implementation creates a
      * {@link SpringlesConnectionBase}. Subclasses may override this method to return specific
      * subclasses of {@link SpringlesConnectionBase}.
-     * 
+     *
      * @param id
      *            the ID of the connection to create
      * @return a new, possibly subclass-specific, repository connection
@@ -459,7 +461,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
     synchronized void onConnectionClosed(final SpringlesConnectionBase connection)
     {
         this.pendingConnections.remove(connection);
-        LOGGER.debug("[{}] Connection closed", connection.getID());
+        SpringlesRepositoryBase.LOGGER.info("[{}] Connection closed", connection.getID());
     }
 
     private void closePendingConnections()
@@ -473,14 +475,14 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             return;
         }
 
-        LOGGER.debug("[{}] Forcing closure of {} pending connections", this.id,
-                connectionsToClose.size());
+        SpringlesRepositoryBase.LOGGER.info("[{}] Forcing closure of {} pending connections",
+                this.id, connectionsToClose.size());
 
         for (final SpringlesConnection connection : connectionsToClose) {
             try {
                 connection.close();
             } catch (final Throwable ex) {
-                LOGGER.error("[" + connection.getID()
+                SpringlesRepositoryBase.LOGGER.error("[" + connection.getID()
                         + "] Got exception while closing connection. Ignoring", ex);
             }
         }
@@ -495,7 +497,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
         Preconditions.checkNotNull(name);
 
         synchronized (this) {
-            Preconditions.checkState(isInitialized());
+            Preconditions.checkState(this.isInitialized());
             final TransactionHolder holder = this.namedTransactions.get(name);
             if (holder != null) {
                 if (autoCommit != holder.isAutoCommit() || mode != holder.getTransactionMode()) {
@@ -506,7 +508,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             }
         }
 
-        final Transaction transaction = getTransaction(mode, autoCommit, new EndListener() {
+        final Transaction transaction = this.getTransaction(mode, autoCommit, new EndListener() {
 
             @Override
             public void transactionEnded(final boolean committed,
@@ -518,11 +520,12 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
         });
 
         synchronized (this) {
-            Preconditions.checkState(isInitialized()); // repository may have been closed
+            Preconditions.checkState(this.isInitialized()); // repository may have been closed
             if (!autoCommit) {
-                this.namedTransactions.put(name, new TransactionHolder(transaction, mode,
-                        autoCommit));
-                LOGGER.debug("[{}] Transaction bound to name '{}'", transaction.getID(), name);
+                this.namedTransactions.put(name,
+                        new TransactionHolder(transaction, mode, autoCommit));
+                SpringlesRepositoryBase.LOGGER.info("[{}] Transaction bound to name '{}'",
+                        transaction.getID(), name);
             }
             return transaction;
         }
@@ -531,10 +534,10 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
     final Transaction getTransaction(final TransactionMode mode, final boolean autoCommit,
             final EndListener listener) throws RepositoryException
     {
-        Preconditions.checkState(isInitialized());
+        Preconditions.checkState(this.isInitialized());
         Preconditions.checkNotNull(mode);
 
-        final TransactionMode actualMode = selectTransactionMode(mode);
+        final TransactionMode actualMode = this.selectTransactionMode(mode);
         final int numPermits = actualMode == TransactionMode.READ_ONLY ? 1
                 : this.maxConcurrentTransactions;
 
@@ -549,9 +552,9 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
         Transaction transaction = null;
         try {
             synchronized (this) {
-                Preconditions.checkState(isInitialized());
+                Preconditions.checkState(this.isInitialized());
 
-                transaction = createTransactionStack(transactionID, autoCommit, actualMode,
+                transaction = this.createTransactionStack(transactionID, autoCommit, actualMode,
                         new EndListener() {
 
                             @Override
@@ -585,9 +588,10 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             }
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[" + transactionID + "] Transaction created, auto-commit: " + autoCommit
-                    + ", mode: " + actualMode);
+        if (SpringlesRepositoryBase.LOGGER.isInfoEnabled()) {
+            SpringlesRepositoryBase.LOGGER
+                    .info("[" + transactionID + "] Transaction created, auto-commit: " + autoCommit
+                            + ", mode: " + actualMode);
         }
 
         return transaction;
@@ -612,12 +616,13 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             final boolean autoCommit, final TransactionMode transactionMode,
             final EndListener listener) throws RepositoryException
     {
-        Transaction transaction = createTransactionRoot(transactionID, transactionMode, autoCommit);
+        Transaction transaction = this.createTransactionRoot(transactionID, transactionMode,
+                autoCommit);
 
-        transaction = new ContextEnforcingTransaction(transaction, getNullContextURI(),
+        transaction = new ContextEnforcingTransaction(transaction, this.getNullContextURI(),
                 this.inferredContextPrefix);
 
-        transaction = decorateTransactionInternally(transaction, transactionMode, autoCommit);
+        transaction = this.decorateTransactionInternally(transaction, transactionMode, autoCommit);
 
         final boolean writable = transactionMode != TransactionMode.READ_ONLY;
         final boolean autoClosure = transactionMode == TransactionMode.WRITABLE_AUTO_CLOSURE;
@@ -630,7 +635,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
                     autoClosure, listener);
         }
 
-        transaction = decorateTransactionExternally(transaction, transactionMode, autoCommit);
+        transaction = this.decorateTransactionExternally(transaction, transactionMode, autoCommit);
 
         if (this.bufferingEnabled && !autoCommit && transactionMode != TransactionMode.READ_ONLY) {
             transaction = new BufferingTransaction(transaction);
@@ -643,7 +648,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
      * Hook for the creation of root (un-decorated) transactions. This must be implemented by
      * subclasses and is called each time a new transaction is created. It is a responsibility of
      * the returned transaction to properly handle inference.
-     * 
+     *
      * @param transactionID
      *            a string identifier for the new transaction
      * @param transactionMode
@@ -669,7 +674,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
      * context-filtering so to exclude modifications of inferred statements. The default
      * implementation of this method returns the supplied transaction unchanged. Subclasses may
      * override the method decorating the transaction as they wish.
-     * 
+     *
      * @param transaction
      *            the transaction to decorate
      * @param transactionMode
@@ -700,7 +705,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
      * with synchronization, auto-commit and auto-closure support. The default implementation of
      * this method returns the supplied transaction unchanged. Subclasses may override the method
      * decorating the transaction as they wish.
-     * 
+     *
      * @param transaction
      *            the transaction to decorate
      * @param transactionMode
@@ -732,14 +737,14 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
             return;
         }
 
-        LOGGER.debug("[{}] Forcing rollback of {} pending transactions", this.id,
-                transactionsToRollback.size());
+        SpringlesRepositoryBase.LOGGER.info("[{}] Forcing rollback of {} pending transactions",
+                this.id, transactionsToRollback.size());
 
         for (final Transaction transaction : transactionsToRollback) {
             try {
                 transaction.end(false);
             } catch (final Throwable ex) {
-                LOGGER.error("[" + transaction.getID()
+                SpringlesRepositoryBase.LOGGER.error("[" + transaction.getID()
                         + "] Got exception while closing transaction. Ignoring", ex);
             }
         }
@@ -748,7 +753,7 @@ public abstract class SpringlesRepositoryBase implements SpringlesRepository
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this).add("nullContextURI", this.nullContextURI)
+        return MoreObjects.toStringHelper(this).add("nullContextURI", this.nullContextURI)
                 .add("inferredContextPrefix", this.inferredContextPrefix)
                 .add("supportedInferenceMode", this.supportedInferenceMode)
                 .add("writable", this.writable).add("bufferingEnabled", this.bufferingEnabled)

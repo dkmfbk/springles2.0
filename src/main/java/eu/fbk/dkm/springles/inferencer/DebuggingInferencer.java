@@ -7,9 +7,9 @@ import javax.annotation.Nullable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -42,7 +42,7 @@ final class DebuggingInferencer extends ForwardingInferencer
 
     /**
      * Creates a new wrapper instance using the wrapped inference and logger supplied
-     * 
+     *
      * @param delegate
      *            the wrapped inferencer
      * @param logger
@@ -82,8 +82,8 @@ final class DebuggingInferencer extends ForwardingInferencer
         this.initialized = true;
 
         if (this.logger.isDebugEnabled()) {
-            this.logger.debug("Inferencer initialized: inference mode = " + getInferenceMode()
-                    + ", configuration digest = " + getConfigurationDigest());
+            this.logger.debug("Inferencer initialized: inference mode = " + this.getInferenceMode()
+                    + ", configuration digest = " + this.getConfigurationDigest());
         }
     }
 
@@ -169,7 +169,7 @@ final class DebuggingInferencer extends ForwardingInferencer
         /**
          * Creates a new wrapper instance, using the wrapped inference session and logger
          * supplied.
-         * 
+         *
          * @param delegate
          *            the wrapped inferencer session
          * @param logger
@@ -189,7 +189,7 @@ final class DebuggingInferencer extends ForwardingInferencer
          * Helper method for logging invocations of
          * {@link #statementsAdded(Iterable, Resource...)} and
          * {@link #statementsRemoved(Iterable, Resource...)}.
-         * 
+         *
          * @param operation
          *            the operation being put in the log message, e.g., <tt>addition</tt> or
          *            <tt>removal</tt>
@@ -201,10 +201,10 @@ final class DebuggingInferencer extends ForwardingInferencer
         private void logNotification(final String operation,
                 final Iterable<? extends Statement> statements, final Resource[] contexts)
         {
-            final String sizeString = statements == null ? "an unprecised number of" : ""
-                    + Iterables.size(statements);
-            final String contextsString = contexts.length == 0 ? "" : " in contexts "
-                    + Arrays.toString(contexts);
+            final String sizeString = statements == null ? "an unprecised number of"
+                    : "" + Iterables.size(statements);
+            final String contextsString = contexts.length == 0 ? ""
+                    : " in contexts " + Arrays.toString(contexts);
             this.logger.debug("[{}] Inference session notified of {} of {} statements{}",
                     new Object[] { this.id, operation, sizeString, contextsString });
         }
@@ -212,7 +212,7 @@ final class DebuggingInferencer extends ForwardingInferencer
         /**
          * Helper method for logging invocations of {@link #rewriteQuery(QuerySpec, boolean)} and
          * {@link #rewriteUpdate(UpdateSpec, boolean)}.
-         * 
+         *
          * @param expression
          *            the {@link QuerySpec} or {@link UpdateSpec} being rewritten
          * @param closureStatus
@@ -223,10 +223,13 @@ final class DebuggingInferencer extends ForwardingInferencer
         private void logRewrite(final Object expression, final ClosureStatus closureStatus,
                 final boolean forwardInferenceEnabled)
         {
-            this.logger.debug("[{}] Rewriting {} with forward inference {} "
-                    + "and current closure status {}:\n{}", new Object[] { this.id,
-                    expression instanceof QuerySpec<?> ? "query" : "update",
-                    forwardInferenceEnabled ? "enabled" : "disabled", closureStatus, expression });
+            this.logger.debug(
+                    "[{}] Rewriting {} with forward inference {} "
+                            + "and current closure status {}:\n{}",
+                    new Object[] { this.id,
+                            expression instanceof QuerySpec<?> ? "query" : "update",
+                            forwardInferenceEnabled ? "enabled" : "disabled", closureStatus,
+                            expression });
         }
 
         /**
@@ -240,7 +243,7 @@ final class DebuggingInferencer extends ForwardingInferencer
             Preconditions.checkState(!this.closed);
 
             if (this.logger.isDebugEnabled()) {
-                logNotification("addition", statements, contexts);
+                this.logNotification("addition", statements, contexts);
             }
 
             this.delegate.statementsAdded(statements, contexts);
@@ -257,7 +260,7 @@ final class DebuggingInferencer extends ForwardingInferencer
             Preconditions.checkState(!this.closed);
 
             if (this.logger.isDebugEnabled()) {
-                logNotification("removal", statements, contexts);
+                this.logNotification("removal", statements, contexts);
             }
 
             this.delegate.statementsRemoved(statements, contexts);
@@ -272,8 +275,9 @@ final class DebuggingInferencer extends ForwardingInferencer
             Preconditions.checkState(!this.closed);
 
             if (this.logger.isDebugEnabled()) {
-                this.logger.debug("[{}] Notifying inference session of statements cleared, "
-                        + "{} closure", this.id, onlyClosure ? "excluding" : "including");
+                this.logger.debug(
+                        "[{}] Notifying inference session of statements cleared, " + "{} closure",
+                        this.id, onlyClosure ? "excluding" : "including");
             }
 
             this.delegate.statementsCleared(onlyClosure);
@@ -292,7 +296,7 @@ final class DebuggingInferencer extends ForwardingInferencer
             Preconditions.checkState(!this.closed);
 
             if (this.logger.isDebugEnabled()) {
-                logRewrite(query, closureStatus, forwardInferenceEnabled);
+                this.logRewrite(query, closureStatus, forwardInferenceEnabled);
             }
 
             return this.delegate.rewriteQuery(query, closureStatus, forwardInferenceEnabled);
@@ -302,16 +306,15 @@ final class DebuggingInferencer extends ForwardingInferencer
          * {@inheritDoc} Delegates and logs, checking parameters and closed status.
          */
         @Override
-        public UpdateSpec rewriteUpdate(final UpdateSpec update,
-                final ClosureStatus closureStatus, final boolean forwardInferenceEnabled)
-                throws RepositoryException
+        public UpdateSpec rewriteUpdate(final UpdateSpec update, final ClosureStatus closureStatus,
+                final boolean forwardInferenceEnabled) throws RepositoryException
         {
             Preconditions.checkNotNull(update);
             Preconditions.checkNotNull(closureStatus);
             Preconditions.checkState(!this.closed);
 
             if (this.logger.isDebugEnabled()) {
-                logRewrite(update, closureStatus, forwardInferenceEnabled);
+                this.logRewrite(update, closureStatus, forwardInferenceEnabled);
             }
 
             return this.delegate.rewriteUpdate(update, closureStatus, forwardInferenceEnabled);

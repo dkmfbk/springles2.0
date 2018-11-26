@@ -6,8 +6,8 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Preconditions;
 
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 
 import eu.fbk.dkm.springles.base.Transaction;
@@ -39,7 +39,7 @@ final class DebuggingBackend extends ForwardingBackend
 
     /**
      * Creates a new wrapper instance using the wrapped backend and logger specified.
-     * 
+     *
      * @param delegate
      *            the wrapped backend
      * @param logger
@@ -77,9 +77,9 @@ final class DebuggingBackend extends ForwardingBackend
         this.delegate.initialize(dataDir);
         this.initialized = true;
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("Backend initialized: data dir = " + dataDir + ", writable = "
-                    + isWritable() + ", value factory = " + getValueFactory());
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("Backend initialized: data dir = " + dataDir + ", writable = "
+                    + this.isWritable() + ", value factory = " + this.getValueFactory());
         }
     }
 
@@ -122,7 +122,7 @@ final class DebuggingBackend extends ForwardingBackend
 
         final Transaction transaction = this.delegate.newTransaction(id, writable);
         Preconditions.checkNotNull(transaction);
-        this.logger.debug("[{}] Backend transaction created, writable = {}", id, writable);
+        this.logger.info("[{}] Backend transaction created, writable = {}", id, writable);
 
         return Transactions.debuggingTransaction(transaction, this.logger);
     }
@@ -138,7 +138,7 @@ final class DebuggingBackend extends ForwardingBackend
 
         try {
             this.delegate.close();
-            this.logger.debug("Backend closed");
+            this.logger.info("Backend closed");
         } finally {
             this.closed = true;
         }

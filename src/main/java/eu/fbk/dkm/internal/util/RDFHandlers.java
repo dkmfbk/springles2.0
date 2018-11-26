@@ -6,22 +6,21 @@ import java.util.Map;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.NamespaceImpl;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.QueryResultHandlerException;
-import org.openrdf.query.TupleQueryResultHandler;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.helpers.RDFHandlerBase;
-import org.openrdf.rio.helpers.RDFHandlerWrapper;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleNamespace;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.QueryResultHandlerException;
+import org.eclipse.rdf4j.query.TupleQueryResultHandler;
+import org.eclipse.rdf4j.query.TupleQueryResultHandlerException;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.helpers.AbstractRDFHandler;
+import org.eclipse.rdf4j.rio.helpers.RDFHandlerWrapper;
 
 public final class RDFHandlers
 {
@@ -35,7 +34,7 @@ public final class RDFHandlers
             final boolean enableHandleNamespace, final boolean enableHandleStatement,
             final boolean enableEndRDF)
     {
-        return new RDFHandlerBase() {
+        return new AbstractRDFHandler() {
 
             @Override
             public void startRDF() throws RDFHandlerException
@@ -77,7 +76,7 @@ public final class RDFHandlers
             final Predicate<? super Namespace> namespacePredicate,
             final Predicate<? super Statement> statementPredicate, final boolean enableEndRDF)
     {
-        return new RDFHandlerBase() {
+        return new AbstractRDFHandler() {
 
             @Override
             public void startRDF() throws RDFHandlerException
@@ -91,7 +90,7 @@ public final class RDFHandlers
             public void handleNamespace(final String prefix, final String uri)
                     throws RDFHandlerException
             {
-                final Namespace namespace = new NamespaceImpl(prefix, uri);
+                final Namespace namespace = new SimpleNamespace(prefix, uri);
                 if (namespacePredicate == null || namespacePredicate.apply(namespace)) {
                     handler.handleNamespace(prefix, uri);
                 }
@@ -116,8 +115,7 @@ public final class RDFHandlers
         };
     }
 
-    public static RDFHandler transform(
-            final RDFHandler handler,
+    public static RDFHandler transform(final RDFHandler handler,
             final Function<? super Statement, ? extends Iterable<? extends Statement>> //
             statementFunction,
             final Function<? super Namespace, ? extends Namespace> namespaceFunction)
@@ -129,7 +127,7 @@ public final class RDFHandlers
                     throws RDFHandlerException
             {
                 if (namespaceFunction != null) {
-                    Namespace namespace = new NamespaceImpl(prefix, uri);
+                    Namespace namespace = new SimpleNamespace(prefix, uri);
                     namespace = namespaceFunction.apply(namespace);
                     if (namespace != null) {
                         super.handleNamespace(namespace.getPrefix(), namespace.getName());
@@ -169,26 +167,28 @@ public final class RDFHandlers
 
         } else if (contexts.length == 1) {
             final Resource context = contexts[0];
-            return new RDFHandlerBase() {
+            return new AbstractRDFHandler() {
 
                 @Override
                 public void handleStatement(final Statement statement) throws RDFHandlerException
                 {
-                    handler.handleStatement(new ContextStatementImpl(statement.getSubject(),
-                            statement.getPredicate(), statement.getObject(), context));
+                    handler.handleStatement(SimpleValueFactory.getInstance().createStatement(
+                            statement.getSubject(), statement.getPredicate(),
+                            statement.getObject(), context));
                 }
 
             };
 
         } else {
-            return new RDFHandlerBase() {
+            return new AbstractRDFHandler() {
 
                 @Override
                 public void handleStatement(final Statement statement) throws RDFHandlerException
                 {
                     for (final Resource context : contexts) {
-                        handler.handleStatement(new ContextStatementImpl(statement.getSubject(),
-                                statement.getPredicate(), statement.getObject(), context));
+                        handler.handleStatement(SimpleValueFactory.getInstance().createStatement(
+                                statement.getSubject(), statement.getPredicate(),
+                                statement.getObject(), context));
                     }
                 }
 
@@ -225,13 +225,14 @@ public final class RDFHandlers
                     final Value pred = bindings.getValue("predicate");
                     final Value obj = bindings.getValue("object");
                     final Value context = bindings.getValue("context");
-                    if (subj instanceof Resource && pred instanceof URI) {
+                    if (subj instanceof Resource && pred instanceof IRI) {
                         if (context == null) {
-                            handler.handleStatement(new StatementImpl((Resource) subj, (URI) pred,
-                                    obj));
+                            handler.handleStatement(SimpleValueFactory.getInstance()
+                                    .createStatement((Resource) subj, (IRI) pred, obj));
                         } else if (context instanceof Resource) {
-                            handler.handleStatement(new ContextStatementImpl((Resource) subj,
-                                    (URI) pred, obj, (Resource) context));
+                            handler.handleStatement(
+                                    SimpleValueFactory.getInstance().createStatement(
+                                            (Resource) subj, (IRI) pred, obj, (Resource) context));
                         }
                     }
                 } catch (final RDFHandlerException ex) {
@@ -249,19 +250,19 @@ public final class RDFHandlers
                 }
             }
 
-			@Override
-			public void handleBoolean(boolean arg0)
-					throws QueryResultHandlerException {
-				// TODO Auto-generated method stub
-				
-			}
+            @Override
+            public void handleBoolean(final boolean arg0) throws QueryResultHandlerException
+            {
+                // TODO Auto-generated method stub
 
-			@Override
-			public void handleLinks(List<String> arg0)
-					throws QueryResultHandlerException {
-				// TODO Auto-generated method stub
-				
-			}
+            }
+
+            @Override
+            public void handleLinks(final List<String> arg0) throws QueryResultHandlerException
+            {
+                // TODO Auto-generated method stub
+
+            }
 
         };
     }

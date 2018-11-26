@@ -19,13 +19,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.query.parser.ParsedUpdate;
-import org.openrdf.query.parser.QueryParserFactory;
-import org.openrdf.query.parser.QueryParserRegistry;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.query.algebra.UpdateExpr;
+import org.eclipse.rdf4j.query.parser.ParsedUpdate;
+import org.eclipse.rdf4j.query.parser.QueryParserFactory;
+import org.eclipse.rdf4j.query.parser.QueryParserRegistry;
 
 import eu.fbk.dkm.internal.util.SparqlRenderer;
 
@@ -109,7 +109,7 @@ public final class UpdateSpec implements Serializable
     /**
      * Returns an <tt>UpdateSpec</tt> for the specified SPARQL update string. This is a
      * convenience method corresponding to <tt>from(string, QueryLanguage.SPARQL, null)</tt>.
-     * 
+     *
      * @param string
      *            the update string, in SPARQL and without relative URIs
      * @return the corresponding <tt>UpdateSpec</tt>
@@ -118,13 +118,13 @@ public final class UpdateSpec implements Serializable
      */
     public static UpdateSpec from(final String string) throws MalformedQueryException
     {
-        return from(string, QueryLanguage.SPARQL, null);
+        return UpdateSpec.from(string, QueryLanguage.SPARQL, null);
     }
 
     /**
      * Returns an <tt>UpdateSpec</tt> for the supplied update string, language and optional base
      * URI.
-     * 
+     *
      * @param string
      *            the update string
      * @param language
@@ -144,10 +144,11 @@ public final class UpdateSpec implements Serializable
         final List<Object> cacheKey = ImmutableList.of(string, language,
                 Strings.nullToEmpty(baseURI));
 
-        UpdateSpec result = CACHE.getIfPresent(cacheKey);
+        UpdateSpec result = UpdateSpec.CACHE.getIfPresent(cacheKey);
 
         if (result == null) {
-            final QueryParserFactory factory = QueryParserRegistry.getInstance().get(language);
+            final QueryParserFactory factory = QueryParserRegistry.getInstance().get(language)
+                    .get();
 
             if (factory == null) {
                 result = new UpdateSpec(string, language, baseURI, false, null, null, null);
@@ -156,8 +157,8 @@ public final class UpdateSpec implements Serializable
                 final ParsedUpdate parsedUpdate = factory.getParser().parseUpdate(string, baseURI);
                 final List<UpdateExpr> exprs = parsedUpdate.getUpdateExprs();
                 final Map<String, String> namespaces = parsedUpdate.getNamespaces();
-                final List<Dataset> datasets = Lists.newArrayListWithCapacity(parsedUpdate
-                        .getUpdateExprs().size());
+                final List<Dataset> datasets = Lists
+                        .newArrayListWithCapacity(parsedUpdate.getUpdateExprs().size());
                 for (final UpdateExpr expr : parsedUpdate.getUpdateExprs()) {
                     datasets.add(parsedUpdate.getDatasetMapping().get(expr));
                 }
@@ -165,7 +166,7 @@ public final class UpdateSpec implements Serializable
                         namespaces);
             }
 
-            CACHE.put(cacheKey, result);
+            UpdateSpec.CACHE.put(cacheKey, result);
         }
 
         return result;
@@ -175,7 +176,7 @@ public final class UpdateSpec implements Serializable
      * Returns an <tt>UpdateSpec</tt> for the algebraic expressions and corresponding datasets
      * specified. This is a convenience methods corresponding to
      * <tt>from(expressions, datasets, Collections.emptyMap())</tt>.
-     * 
+     *
      * @param expressions
      *            the algebraic expressions for the statements of the update operation
      * @param datasets
@@ -186,13 +187,13 @@ public final class UpdateSpec implements Serializable
     public static UpdateSpec from(final Iterable<UpdateExpr> expressions,
             final Iterable<Dataset> datasets)
     {
-        return from(expressions, datasets, Collections.<String, String>emptyMap());
+        return UpdateSpec.from(expressions, datasets, Collections.<String, String>emptyMap());
     }
 
     /**
      * Returns an <tt>UpdateSpec</tt> for the algebraic expressions, the corresponding datasets
      * and the namespace declarations specified.
-     * 
+     *
      * @param expressions
      *            the algebraic expressions for the statements of the update operation
      * @param datasets
@@ -215,11 +216,11 @@ public final class UpdateSpec implements Serializable
 
         final List<Object> cacheKey = ImmutableList.of(string, QueryLanguage.SPARQL, "");
 
-        UpdateSpec result = CACHE.getIfPresent(cacheKey);
+        UpdateSpec result = UpdateSpec.CACHE.getIfPresent(cacheKey);
         if (result == null) {
             result = new UpdateSpec(string, QueryLanguage.SPARQL, null, true, expressions,
                     datasets, namespaces);
-            CACHE.put(cacheKey, result);
+            UpdateSpec.CACHE.put(cacheKey, result);
         }
 
         return result;
@@ -227,7 +228,7 @@ public final class UpdateSpec implements Serializable
 
     /**
      * Private constructor, accepting parameters for all the object properties.
-     * 
+     *
      * @param string
      *            the update string
      * @param language
@@ -254,8 +255,8 @@ public final class UpdateSpec implements Serializable
         this.baseURI = baseURI;
         this.rendered = rendered;
         this.expressions = expressions == null ? null : ImmutableList.copyOf(expressions);
-        this.datasets = datasets == null ? null : Collections.unmodifiableList(Lists
-                .newArrayList(datasets));
+        this.datasets = datasets == null ? null
+                : Collections.unmodifiableList(Lists.newArrayList(datasets));
         this.namespaces = namespaces == null ? null : ImmutableMap.copyOf(namespaces);
     }
 
@@ -266,8 +267,8 @@ public final class UpdateSpec implements Serializable
     private void checkParsed()
     {
         if (this.expressions == null) {
-            throw new UnsupportedOperationException("Operation unsupported for language "
-                    + this.language);
+            throw new UnsupportedOperationException(
+                    "Operation unsupported for language " + this.language);
         }
     }
 
@@ -275,7 +276,7 @@ public final class UpdateSpec implements Serializable
      * Returns the update string. The returned string is expressed in language
      * {@link #getLanguage()} and possibly automatically rendered ({@link #isRendered()}
      * <tt>true</tt>) from a supplied algebraic expression.
-     * 
+     *
      * @return the update string
      */
     public String getString()
@@ -287,7 +288,7 @@ public final class UpdateSpec implements Serializable
      * Returns the language the update string is expressed in. If the string has been
      * automatically rendered from a supplied algebraic expression, the language is
      * {@link QueryLanguage#SPARQL}.
-     * 
+     *
      * @return the language
      */
     public QueryLanguage getLanguage()
@@ -299,7 +300,7 @@ public final class UpdateSpec implements Serializable
      * Returns the optional base URI to be used to interpret relative URIs in the update string.
      * The base URI can be <tt>null</tt>, in which case it is assumed that the update string does
      * not contain relative URIs.
-     * 
+     *
      * @return the base URI, possibly null
      */
     @Nullable
@@ -311,7 +312,7 @@ public final class UpdateSpec implements Serializable
     /**
      * Returns <tt>true</tt> if the update string has been rendered starting from a supplied
      * algebraic expression.
-     * 
+     *
      * @return <tt>true</tt> if the update string has been rendered
      */
     public boolean isRendered()
@@ -323,7 +324,7 @@ public final class UpdateSpec implements Serializable
      * Returns <tt>true</tt> if the algebraic representation of the update operation is available.
      * This representation may be unavailable in case an update string has been supplied, whose
      * language has not an associated Sesame parser.
-     * 
+     *
      * @return <tt>true</tt> if the algebraic representation is available
      */
     public boolean isParsed()
@@ -336,53 +337,53 @@ public final class UpdateSpec implements Serializable
      * THE RESULT. As expressions must be cached for performance reasons, modifying them would
      * affect all subsequent operations reusing the same expressions, so CLONE THE EXPRESSIONS
      * BEFORE MODIFYING THEM.
-     * 
+     *
      * @return the algebraic expressions for this update operation
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public List<UpdateExpr> getExpressions() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.expressions;
     }
 
     /**
      * Returns the datasets associated to the statements of the update operation.
-     * 
+     *
      * @return the datasets
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public List<Dataset> getDatasets() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.datasets;
     }
 
     /**
      * Returns the namespace declarations for the update operation.
-     * 
+     *
      * @return a map of prefix -> namespace declarations
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public Map<String, String> getNamespaces() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.namespaces;
     }
 
     /**
      * Splits a compound update operation into a list of atomic (single-statements) operations.
-     * 
+     *
      * @return a list of update operations, one for each update statement in this operation
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public List<UpdateSpec> explode() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         final int size = this.expressions.size();
         if (size == 1) {
             return Collections.singletonList(this);
@@ -399,7 +400,7 @@ public final class UpdateSpec implements Serializable
     /**
      * Returns an <tt>UpdateSpec</tt> with the same statements of this specification, all being
      * associated to the dataset specified.
-     * 
+     *
      * @param dataset
      *            the dataset to be enforced, <tt>null</tt> to associate to an unspecified dataset
      * @return the resulting <tt>UpdateSpec</tt> object (possibly <tt>this</tt> if no change is
@@ -409,13 +410,13 @@ public final class UpdateSpec implements Serializable
      */
     public UpdateSpec enforceDataset(final Dataset dataset) throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
 
         if (Iterables.all(this.datasets, Predicates.equalTo(dataset))) {
             return this;
         } else {
-            return from(this.expressions, Collections.nCopies(this.datasets.size(), dataset),
-                    this.namespaces);
+            return UpdateSpec.from(this.expressions,
+                    Collections.nCopies(this.datasets.size(), dataset), this.namespaces);
         }
     }
 
@@ -456,7 +457,7 @@ public final class UpdateSpec implements Serializable
 
     /**
      * Overrides deserialization, reusing cached <tt>UpdateSpec</tt>s where possible.
-     * 
+     *
      * @return the object to return as result of deserialization
      * @throws ObjectStreamException
      *             declared as mandated by serialization API
@@ -465,10 +466,10 @@ public final class UpdateSpec implements Serializable
     {
         final List<Object> cacheKey = ImmutableList.of(this.string, this.language,
                 Strings.nullToEmpty(this.baseURI));
-        UpdateSpec result = CACHE.getIfPresent(cacheKey);
+        UpdateSpec result = UpdateSpec.CACHE.getIfPresent(cacheKey);
         if (result == null) {
             result = this;
-            CACHE.put(cacheKey, this);
+            UpdateSpec.CACHE.put(cacheKey, this);
         }
         return result;
     }

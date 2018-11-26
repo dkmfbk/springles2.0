@@ -3,7 +3,7 @@ package eu.fbk.dkm.springles.inferencer;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.InferenceMode;
 
@@ -23,12 +23,10 @@ public abstract class AbstractInferencer implements Inferencer
             final Hasher hasher = Hashing.md5().newHasher();
 
             this.inferredContextPrefix = inferredContextPrefix;
-            this.inferenceMode = doInitialize(inferredContextPrefix, hasher);
+            this.inferenceMode = this.doInitialize(inferredContextPrefix, hasher);
             this.configurationDigest = hasher.hash().toString();
 
         } catch (final RuntimeException ex) {
-            throw ex;
-        } catch (final RepositoryException ex) {
             throw ex;
         } catch (final Exception ex) {
             throw new RepositoryException(ex.getMessage(), ex);

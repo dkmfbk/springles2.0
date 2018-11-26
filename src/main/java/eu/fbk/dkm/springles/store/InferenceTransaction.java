@@ -18,35 +18,34 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.QueryResultUtil;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.TupleQueryResultHandler;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.query.algebra.QueryModelNode;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.query.impl.TupleQueryResultImpl;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.EmptyIteration;
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.GraphQueryResult;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.QueryResults;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.TupleQueryResultHandler;
+import org.eclipse.rdf4j.query.TupleQueryResultHandlerException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.query.algebra.QueryModelNode;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.UpdateExpr;
+import org.eclipse.rdf4j.query.impl.IteratingGraphQueryResult;
+import org.eclipse.rdf4j.query.impl.IteratingTupleQueryResult;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.EmptyIteration;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Contexts;
@@ -74,12 +73,12 @@ class InferenceTransaction extends ForwardingTransaction
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InferenceTransaction.class);
 
-    private static final Cache<Inferencer, ClosureStatus> CLOSURE_STATUS_CACHE = CacheBuilder
+    private static final Cache<Object, ClosureStatus> CLOSURE_STATUS_CACHE = CacheBuilder
             .newBuilder().weakKeys().build();
 
     private final Transaction delegate;
 
-    private final Inferencer inferencer;
+    private volatile Inferencer inferencer;
 
     private final URIPrefix inferredContextPrefix;
 
@@ -94,26 +93,30 @@ class InferenceTransaction extends ForwardingTransaction
 
     private volatile InferenceController controller;
 
-    public InferenceTransaction(final Transaction delegate, final Inferencer inferencer,
-            final URIPrefix inferredContextURIPrefix,
-            @Nullable final ScheduledExecutorService scheduler, final File closureMetadataFile)
-            throws RepositoryException
+    private final Object owner;
+
+    public InferenceTransaction(final Transaction delegate,
+            final URIPrefix inferredContextURIPrefix, final Inferencer inferencer,
+            @Nullable final ScheduledExecutorService scheduler, final File closureMetadataFile,
+            final Object owner) throws RepositoryException
     {
-        Preconditions.checkNotNull(delegate);
         Preconditions.checkNotNull(inferencer);
+        Preconditions.checkNotNull(delegate);
         Preconditions.checkNotNull(inferredContextURIPrefix);
 
         this.delegate = delegate;
-        this.inferencer = inferencer;
         this.inferredContextPrefix = inferredContextURIPrefix;
+        this.inferencer = inferencer;
         this.scheduler = scheduler;
         this.closureMetadataFile = closureMetadataFile;
         this.controller = null;
+        this.owner = owner;
 
-        ClosureStatus status = CLOSURE_STATUS_CACHE.getIfPresent(this.inferencer);
+        ClosureStatus status = InferenceTransaction.CLOSURE_STATUS_CACHE.getIfPresent(this.owner);
+
         if (status == null) {
-            status = readClosureMetadata();
-            CLOSURE_STATUS_CACHE.put(this.inferencer, status);
+            status = this.readClosureMetadata();
+            InferenceTransaction.CLOSURE_STATUS_CACHE.put(this.owner, status);
         }
 
         this.originalClosureStatus = status;
@@ -129,7 +132,8 @@ class InferenceTransaction extends ForwardingTransaction
     private ClosureStatus readClosureMetadata() throws RepositoryException
     {
         if (this.closureMetadataFile == null || !this.closureMetadataFile.exists()) {
-            LOGGER.info("[{}] Initial closure status set to {}", getID(), ClosureStatus.STALE);
+            InferenceTransaction.LOGGER.info("[{}] Initial closure status set to {}", this.getID(),
+                    ClosureStatus.STALE);
             return ClosureStatus.STALE;
         }
 
@@ -141,42 +145,53 @@ class InferenceTransaction extends ForwardingTransaction
             final boolean empty = Boolean.parseBoolean(tokens[2]);
 
             if (!digest.equals(this.inferencer.getConfigurationDigest())) {
-                LOGGER.info("[{}] Inferencer configuration changed: initial closure status is {}",
-                        getID(), ClosureStatus.STALE);
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Inferencer configuration changed: initial closure status is {}",
+                        this.getID(), ClosureStatus.STALE);
                 return ClosureStatus.STALE;
 
-            } else if (empty != !this.delegate.hasStatement(null, null, null, InferenceMode.NONE)) {
-                LOGGER.info("[{}] Repository has been cleared (possibly transient repository): "
-                        + "initial closure status is {}", getID(), ClosureStatus.STALE);
+            } else if (empty != !this.delegate.hasStatement(null, null, null,
+                    InferenceMode.NONE)) {
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Repository has been cleared (possibly transient repository): "
+                                + "initial closure status is {}",
+                        this.getID(), ClosureStatus.STALE);
                 return ClosureStatus.STALE;
 
             } else {
-                LOGGER.info("[] Initial closure status load from file: {}", getID(), status);
+                InferenceTransaction.LOGGER.info("[{}] Initial closure status load from file: {}",
+                        this.getID(), status);
                 return status;
             }
 
         } catch (final IOException ex) {
-            throw new RepositoryException("Could not read closure metadata from "
-                    + this.closureMetadataFile, ex);
+            throw new RepositoryException(
+                    "Could not read closure metadata from " + this.closureMetadataFile, ex);
         }
     }
 
     private void writeClosureMetadata(final boolean emptyRepository) throws RepositoryException
     {
         if (this.closureMetadataFile == null) {
-            LOGGER.info("[{}] Closure metadata not persisted for transient repository", getID());
+            InferenceTransaction.LOGGER.info(
+                    "[{}] Closure metadata not persisted for transient repository", this.getID());
             return;
         }
 
         try {
+
+            String inferencer = this.inferencer.toString().split("@")[0];
+            inferencer = inferencer.substring(inferencer.lastIndexOf('.') + 1,
+                    inferencer.length());
             final String content = this.currentClosureStatus.toString() + " "
                     + this.inferencer.getConfigurationDigest() + " " + emptyRepository;
             Files.write(content, this.closureMetadataFile, Charsets.UTF_8);
-            LOGGER.info("[{}] Closure metadata saved to {}", getID(), this.closureMetadataFile);
+            InferenceTransaction.LOGGER.info("[{}] Closure metadata saved to {}", this.getID(),
+                    this.closureMetadataFile);
 
         } catch (final IOException ex) {
-            throw new RepositoryException("Could not write closure metadata to "
-                    + this.closureMetadataFile, ex);
+            throw new RepositoryException(
+                    "Could not write closure metadata to " + this.closureMetadataFile, ex);
         }
     }
 
@@ -205,15 +220,15 @@ class InferenceTransaction extends ForwardingTransaction
     {
         Preconditions.checkNotNull(handler);
 
-        queryHelper(query, dataset, bindings, mode, timeout, handler);
+        this.queryHelper(query, dataset, bindings, mode, timeout, handler);
     }
 
     @Override
     public <T> T query(final QuerySpec<T> query, final Dataset dataset, final BindingSet bindings,
-            final InferenceMode mode, final int timeout) throws QueryEvaluationException,
-            RepositoryException
+            final InferenceMode mode, final int timeout)
+            throws QueryEvaluationException, RepositoryException
     {
-        return queryHelper(query, dataset, bindings, mode, timeout, null);
+        return this.queryHelper(query, dataset, bindings, mode, timeout, null);
     }
 
     private <T> T queryHelper(final QuerySpec<T> query, final Dataset dataset,
@@ -228,37 +243,39 @@ class InferenceTransaction extends ForwardingTransaction
         if (actualDataset != null && (mode.isBackwardEnabled() || !mode.isForwardEnabled())) {
             actualQuery = actualQuery.enforceDataset(actualDataset);
             actualDataset = null;
-            LOGGER.debug("[{}] Query modified to enforce supplied dataset", getID());
+            InferenceTransaction.LOGGER.info("[{}] Query modified to enforce supplied dataset",
+                    this.getID());
         }
 
         if (mode.isBackwardEnabled()) {
             final QuerySpec<T> old = actualQuery;
-            actualQuery = getInferenceController(true).rewriteQuery(old,
+            actualQuery = this.getInferenceController(true).rewriteQuery(old,
                     this.currentClosureStatus, mode.isForwardEnabled());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[{}] Rewritten query for backward inference is {}", getID(),
-                        actualQuery == null ? "null" : actualQuery != old ? "different"
-                                : "unchanged");
+            if (InferenceTransaction.LOGGER.isInfoEnabled()) {
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Rewritten query for backward inference is {}", this.getID(),
+                        actualQuery == null ? "null"
+                                : actualQuery != old ? "different" : "unchanged");
             }
         }
 
         if (!mode.isForwardEnabled() && actualQuery != null) {
             final QuerySpec<T> old = actualQuery;
-            actualQuery = excludeInferredGraphs(actualQuery);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[{}] Rewritten query to exclude closure is {}", getID(),
-                        actualQuery == null ? "null" : actualQuery != old ? "different"
-                                : "unchanged");
+            actualQuery = this.excludeInferredGraphs(actualQuery);
+            if (InferenceTransaction.LOGGER.isInfoEnabled()) {
+                InferenceTransaction.LOGGER.info("[{}] Rewritten query to exclude closure is {}",
+                        this.getID(), actualQuery == null ? "null"
+                                : actualQuery != old ? "different" : "unchanged");
             }
         }
 
         if (actualQuery == null) {
-            LOGGER.debug("[{}] Returning trivial result", getID());
-            return trivialResult(query, handler);
+            InferenceTransaction.LOGGER.info("[{}] Returning trivial result", this.getID());
+            return InferenceTransaction.trivialResult(query, handler);
         } else if (handler == null) {
-            return delegate().query(actualQuery, actualDataset, bindings, mode, timeout);
+            return this.delegate().query(actualQuery, actualDataset, bindings, mode, timeout);
         } else {
-            delegate().query(actualQuery, actualDataset, bindings, mode, timeout, handler);
+            this.delegate().query(actualQuery, actualDataset, bindings, mode, timeout, handler);
             return null;
         }
     }
@@ -286,27 +303,30 @@ class InferenceTransaction extends ForwardingTransaction
             return (T) Boolean.FALSE;
 
         } else if (query.getType() == QueryType.TUPLE) {
-            final TupleQueryResult emptyResult = new TupleQueryResultImpl(
+            final TupleQueryResult emptyResult = new IteratingTupleQueryResult(
                     ImmutableList.copyOf(query.getExpression().getBindingNames()),
-                    Collections.<BindingSet>emptyList());
+                    (CloseableIteration<? extends BindingSet, QueryEvaluationException>) Collections
+                            .<BindingSet>emptyList());
             if (handler == null) {
                 return (T) emptyResult;
             } else {
                 try {
-                    QueryResultUtil.report(emptyResult, (TupleQueryResultHandler) handler);
+                    QueryResults.report(emptyResult, (TupleQueryResultHandler) handler);
                 } catch (final TupleQueryResultHandlerException ex) {
                     throw new QueryEvaluationException(ex);
                 }
             }
 
         } else if (query.getType() == QueryType.GRAPH) {
-            final GraphQueryResult emptyResult = new GraphQueryResultImpl(query.getNamespaces(),
-                    Collections.<Statement>emptyList());
+            final GraphQueryResult emptyResult = new IteratingGraphQueryResult(
+                    query.getNamespaces(),
+                    (CloseableIteration<? extends Statement, ? extends QueryEvaluationException>) Collections
+                            .<Statement>emptyList());
             if (handler == null) {
                 return (T) emptyResult;
             } else {
                 try {
-                    QueryResultUtil.report(emptyResult, (RDFHandler) handler);
+                    QueryResults.report(emptyResult, (RDFHandler) handler);
                 } catch (final RDFHandlerException ex) {
                     throw new QueryEvaluationException(ex);
                 }
@@ -321,18 +341,19 @@ class InferenceTransaction extends ForwardingTransaction
             final InferenceMode mode) throws RepositoryException
     {
         if (mode.isBackwardEnabled()) {
-            LOGGER.debug("[{}] Retrieving contexts using query", getID());
+            InferenceTransaction.LOGGER.info("[{}] Retrieving contexts using query", this.getID());
             final String query = "SELECT DISTINCT ?context "
                     + "WHERE { GRAPH ?context { ?subject ?predicate ?object } }";
             return Iterations.asRepositoryIteration(Iterations.project(
-                    readWithQuery(QueryType.TUPLE, query, mode), "context", Resource.class));
+                    this.readWithQuery(QueryType.TUPLE, query, mode), "context", Resource.class));
 
         } else if (mode.isForwardEnabled()) {
-            return delegate().getContextIDs(mode);
+            return this.delegate().getContextIDs(mode);
 
         } else {
-            LOGGER.debug("[{}] Retrieving contexts filtering out inferred ones", getID());
-            return Iterations.filter(delegate().getContextIDs(mode),
+            InferenceTransaction.LOGGER
+                    .info("[{}] Retrieving contexts filtering out inferred ones", this.getID());
+            return Iterations.filter(this.delegate().getContextIDs(mode),
                     Predicates.not(this.inferredContextPrefix.valueMatcher()));
         }
     }
@@ -353,81 +374,86 @@ class InferenceTransaction extends ForwardingTransaction
      */
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
-        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts : Contexts.filter(
-                contexts, this.inferredContextPrefix.valueMatcher(), null);
+        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts
+                : Contexts.filter(contexts, this.inferredContextPrefix.valueMatcher(), null);
 
         if (!mode.isBackwardEnabled()) {
             if (actualContexts == Contexts.NONE) {
-                LOGGER.debug("[{}] Reporting no statements after filtering inferred contexts",
-                        getID());
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Reporting no statements after filtering inferred contexts",
+                        this.getID());
                 return new EmptyIteration<Statement, RepositoryException>();
 
             } else if (mode.isForwardEnabled() || actualContexts != Contexts.UNSPECIFIED) {
-                return delegate().getStatements(subj, pred, obj, mode, actualContexts);
+                return this.delegate().getStatements(subj, pred, obj, mode, actualContexts);
 
             } else if (subj instanceof BNode || obj instanceof BNode) {
-                LOGGER.debug("[{}] Retrieving statements filtering out inferred ones", getID());
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Retrieving statements filtering out inferred ones", this.getID());
                 return Iterations.filter(
-                        delegate().getStatements(subj, pred, obj, mode, actualContexts),
+                        this.delegate().getStatements(subj, pred, obj, mode, actualContexts),
                         Predicates.not(this.inferredContextPrefix.contextMatcher()));
             }
         }
 
-        LOGGER.debug("[{}] Retrieving statements using query", getID());
-        final String queryString = composeQuery(List.class, subj, pred, obj, actualContexts,
-                mode.isBackwardEnabled());
+        InferenceTransaction.LOGGER.info("[{}] Retrieving statements using query", this.getID());
+        final String queryString = InferenceTransaction.composeQuery(List.class, subj, pred, obj,
+                actualContexts, mode.isBackwardEnabled());
         return Iterations.asRepositoryIteration(Iterations.asGraphQueryResult(
-                readWithQuery(QueryType.TUPLE, queryString, mode),
-                Collections.<String, String>emptyMap(), getValueFactory()));
+                this.readWithQuery(QueryType.TUPLE, queryString, mode),
+                Collections.<String, String>emptyMap(), this.getValueFactory()));
     }
 
     /**
      * {@inheritDoc} Works similarly to
-     * {@link #getStatements(Resource, URI, Value, InferenceMode, Resource...)}, with the only
+     * {@link #getStatements(Resource, IRI, Value, InferenceMode, Resource...)}, with the only
      * exception that a boolean ASK query is issued instead of a SELECT tuple one.
      */
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts : Contexts.filter(
-                contexts, this.inferredContextPrefix.valueMatcher(), null);
+        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts
+                : Contexts.filter(contexts, this.inferredContextPrefix.valueMatcher(), null);
 
         if (!mode.isBackwardEnabled()) {
             if (actualContexts == Contexts.NONE) {
-                LOGGER.debug("[{}] Reporting no statements exists after filtering "
-                        + "inferred contexts", getID());
+                InferenceTransaction.LOGGER
+                        .info("[{}] Reporting no statements exists after filtering "
+                                + "inferred contexts", this.getID());
                 return false;
 
             } else if (mode.isForwardEnabled() || actualContexts != Contexts.UNSPECIFIED) {
-                return delegate().hasStatement(subj, pred, obj, mode, actualContexts);
+                return this.delegate().hasStatement(subj, pred, obj, mode, actualContexts);
 
             } else if (subj instanceof BNode || obj instanceof BNode) {
-                return Iterations.getFirst(getStatements(subj, pred, obj, mode, actualContexts),
-                        null) != null;
+                return Iterations.getFirst(
+                        this.getStatements(subj, pred, obj, mode, actualContexts), null) != null;
             }
         }
 
-        LOGGER.debug("[{}] Checking for statement existence using query", getID());
-        final String queryString = composeQuery(Boolean.class, subj, pred, obj, actualContexts,
-                mode.isBackwardEnabled());
-        return readWithQuery(QueryType.BOOLEAN, queryString, mode);
+        InferenceTransaction.LOGGER.info("[{}] Checking for statement existence using query",
+                this.getID());
+        final String queryString = InferenceTransaction.composeQuery(Boolean.class, subj, pred,
+                obj, actualContexts, mode.isBackwardEnabled());
+        return this.readWithQuery(QueryType.BOOLEAN, queryString, mode);
     }
 
     @Override
     public long size(final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts : Contexts.filter(
-                contexts, this.inferredContextPrefix.valueMatcher(), null);
+        final Resource[] actualContexts = mode.isForwardEnabled() ? contexts
+                : Contexts.filter(contexts, this.inferredContextPrefix.valueMatcher(), null);
 
         if (!mode.isBackwardEnabled()) {
             if (actualContexts == Contexts.NONE) {
-                LOGGER.debug("[{}] Reporting size 0 after filtering inferred contexts", getID());
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Reporting size 0 after filtering inferred contexts", this.getID());
                 return 0L;
 
             } else if (mode.isForwardEnabled() || actualContexts != Contexts.UNSPECIFIED) {
@@ -435,11 +461,11 @@ class InferenceTransaction extends ForwardingTransaction
             }
         }
 
-        LOGGER.debug("[{}] Computing size using query", getID());
-        final String queryString = composeQuery(Long.class, null, null, null, actualContexts,
-                mode.isBackwardEnabled());
+        InferenceTransaction.LOGGER.info("[{}] Computing size using query", this.getID());
+        final String queryString = InferenceTransaction.composeQuery(Long.class, null, null, null,
+                actualContexts, mode.isBackwardEnabled());
         final BindingSet bindings = Iterations.getOnlyElement(Iterations
-                .asRepositoryIteration(readWithQuery(QueryType.TUPLE, queryString, mode)));
+                .asRepositoryIteration(this.readWithQuery(QueryType.TUPLE, queryString, mode)));
         return ((Literal) bindings.getValue("n")).longValue();
     }
 
@@ -451,7 +477,7 @@ class InferenceTransaction extends ForwardingTransaction
      * matched statements or a {@link Boolean} that is true if at least a statement was matched.
      * Note that none of the components must be a BNode, as it is not possible to match statements
      * with BNodes with a SPARQL query.
-     * 
+     *
      * @param resultType
      *            the expected result of the query to compose; acceptable values are the class
      *            objects for {@link List}, {@link Long} and {@link Boolean}.
@@ -468,7 +494,7 @@ class InferenceTransaction extends ForwardingTransaction
      * @return the composed query string
      */
     private static String composeQuery(final Class<?> resultType, @Nullable final Resource subj,
-            @Nullable final URI pred, @Nullable final Value obj, final Resource[] contexts,
+            @Nullable final IRI pred, @Nullable final Value obj, final Resource[] contexts,
             final boolean distinct)
     {
         boolean hasBNode = subj instanceof BNode || obj instanceof BNode;
@@ -488,8 +514,8 @@ class InferenceTransaction extends ForwardingTransaction
         }
 
         final String subjStr = subj == null ? "?subject" : SparqlRenderer.render(subj).toString();
-        final String predStr = pred == null ? "?predicate" : SparqlRenderer.render(pred)
-                .toString();
+        final String predStr = pred == null ? "?predicate"
+                : SparqlRenderer.render(pred).toString();
         final String objStr = obj == null ? "?object" : SparqlRenderer.render(obj).toString();
         final String where = String.format("WHERE { GRAPH ?context { %s %s %s } }\n", subjStr,
                 predStr, objStr);
@@ -514,7 +540,7 @@ class InferenceTransaction extends ForwardingTransaction
             final InferenceMode mode) throws RepositoryException
     {
         try {
-            return query(QuerySpec.from(queryType, queryString), null, null, mode, 0);
+            return this.query(QuerySpec.from(queryType, queryString), null, null, mode, 0);
 
         } catch (final MalformedQueryException ex) {
             throw new Error("Unexpected exception", ex);
@@ -535,34 +561,37 @@ class InferenceTransaction extends ForwardingTransaction
         if (actualDataset != null && (mode.isBackwardEnabled() || !mode.isForwardEnabled())) {
             actualUpdate = actualUpdate.enforceDataset(actualDataset);
             actualDataset = null;
-            LOGGER.debug("[{}] Update modified to enforce supplied dataset", getID());
+            InferenceTransaction.LOGGER.info("[{}] Update modified to enforce supplied dataset",
+                    this.getID());
         }
 
         if (mode.isBackwardEnabled()) {
             final UpdateSpec old = actualUpdate;
-            actualUpdate = getInferenceController(true).rewriteUpdate(old,
+            actualUpdate = this.getInferenceController(true).rewriteUpdate(old,
                     this.currentClosureStatus, mode.isForwardEnabled());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[{}] Rewritten update for backward inference is {}", getID(),
-                        actualUpdate == null ? "null" : actualUpdate != old ? "different"
-                                : "unchanged");
+            if (InferenceTransaction.LOGGER.isInfoEnabled()) {
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Rewritten update for backward inference is {}", this.getID(),
+                        actualUpdate == null ? "null"
+                                : actualUpdate != old ? "different" : "unchanged");
             }
         }
 
         if (!mode.isForwardEnabled() && actualUpdate != null) {
             final UpdateSpec u = actualUpdate;
-            actualUpdate = excludeInferredGraphs(u);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[{}] Rewritten update to exclude closure is {}", getID(),
-                        actualUpdate == null ? "null" : actualUpdate != u ? "different"
-                                : "unchanged");
+            actualUpdate = this.excludeInferredGraphs(u);
+            if (InferenceTransaction.LOGGER.isInfoEnabled()) {
+                InferenceTransaction.LOGGER.info("[{}] Rewritten update to exclude closure is {}",
+                        this.getID(), actualUpdate == null ? "null"
+                                : actualUpdate != u ? "different" : "unchanged");
             }
         }
 
         if (actualUpdate != null) {
-            delegate().update(actualUpdate, actualDataset, bindings, mode);
+            this.delegate().update(actualUpdate, actualDataset, bindings, mode);
         } else {
-            LOGGER.info("[{}] Rewritten update not executed as trivial", getID());
+            InferenceTransaction.LOGGER.info("[{}] Rewritten update not executed as trivial",
+                    this.getID());
         }
     }
 
@@ -577,8 +606,8 @@ class InferenceTransaction extends ForwardingTransaction
         for (int i = 0; i < count; ++i) {
             final UpdateExpr expr = update.getExpressions().get(i);
             final Dataset dataset = update.getDatasets().get(i);
-            final Entry<QueryModelNode, Dataset> entry = Algebra.excludeReadingGraphs(
-                    this.inferredContextPrefix, expr, dataset);
+            final Entry<QueryModelNode, Dataset> entry = Algebra
+                    .excludeReadingGraphs(this.inferredContextPrefix, expr, dataset);
             if (entry == null) {
                 modified = true;
             } else {
@@ -602,11 +631,11 @@ class InferenceTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
 
         // Must be acquired before issuing the operation.
-        final InferenceController controller = getInferenceController(true);
+        final InferenceController controller = this.getInferenceController(true);
 
         Iterable<? extends Statement> statementsToNotify = null;
         try {
-            delegate().add(statements, contexts);
+            this.delegate().add(statements, contexts);
             statementsToNotify = statements;
 
         } finally {
@@ -615,8 +644,9 @@ class InferenceTransaction extends ForwardingTransaction
                 final ClosureStatus oldStatus = this.currentClosureStatus;
                 this.currentClosureStatus = oldStatus.getStatusAfterStatementsAdded();
                 if (this.currentClosureStatus != oldStatus) {
-                    LOGGER.debug("[{}] Closure status after statements addition changed to {}",
-                            getID(), this.currentClosureStatus);
+                    InferenceTransaction.LOGGER.info(
+                            "[{}] Closure status after statements addition changed to {}",
+                            this.getID(), this.currentClosureStatus);
                 }
             }
         }
@@ -637,11 +667,11 @@ class InferenceTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
 
         // Must be acquired before issuing the operation.
-        final InferenceController controller = getInferenceController(true);
+        final InferenceController controller = this.getInferenceController(true);
 
         Iterable<? extends Statement> statementsToNotify = null;
         try {
-            delegate().remove(statements, contexts);
+            this.delegate().remove(statements, contexts);
             statementsToNotify = statements;
 
         } finally {
@@ -649,40 +679,43 @@ class InferenceTransaction extends ForwardingTransaction
             if (this.inferencer.getInferenceMode().isForwardEnabled()) {
                 this.currentClosureStatus = this.currentClosureStatus
                         .getStatusAfterStatementsRemoved();
-                LOGGER.debug("[{}] Closure status after statements removal is {}", getID(),
+                InferenceTransaction.LOGGER.info(
+                        "[{}] Closure status after statements removal is {}", this.getID(),
                         this.currentClosureStatus);
             }
         }
     }
 
     @Override
-    public void remove(final Resource subj, final URI pred, final Value obj,
+    public void remove(final Resource subj, final IRI pred, final Value obj,
             final Resource... contexts) throws RepositoryException
     {
         if (subj != null && pred != null && obj != null) {
-            final Statement statement = getValueFactory().createStatement(subj, pred, obj);
-            remove(Collections.singleton(statement), contexts);
+            final Statement statement = this.getValueFactory().createStatement(subj, pred, obj);
+            this.remove(Collections.singleton(statement), contexts);
 
         } else if (subj == null && pred == null && obj == null
                 && Contexts.UNSPECIFIED.equals(contexts)) {
-            reset();
+            this.reset();
 
         } else {
             // Check in advance to avoid notification if input parameters are wrong.
             Preconditions.checkNotNull(contexts);
 
             // Must be acquired before issuing the operation.
-            final InferenceController controller = getInferenceController(true);
+            final InferenceController controller = this.getInferenceController(true);
 
             try {
-                delegate().remove(subj, pred, obj, contexts);
+                this.delegate().remove(subj, pred, obj, contexts);
             } finally {
                 controller.statementsRemoved(null, contexts);
                 if (this.inferencer.getInferenceMode().isForwardEnabled()) {
                     this.currentClosureStatus = this.currentClosureStatus
                             .getStatusAfterStatementsRemoved();
-                    LOGGER.debug("[{}] Closure status after statements removal "
-                            + "(with wildcards) is {}", getID(), this.currentClosureStatus);
+                    InferenceTransaction.LOGGER.info(
+                            "[{}] Closure status after statements removal "
+                                    + "(with wildcards) is {}",
+                            this.getID(), this.currentClosureStatus);
                 }
             }
         }
@@ -699,10 +732,12 @@ class InferenceTransaction extends ForwardingTransaction
     {
         if (this.inferencer.getInferenceMode().isForwardEnabled()
                 && this.currentClosureStatus != ClosureStatus.CURRENT) {
-            getInferenceController(true).updateClosure(this.currentClosureStatus);
+
+            final InferenceController controller = this.getInferenceController(true);
+
+            InferenceTransaction.LOGGER.info("Updating closure using {}", controller.toString());
+            controller.updateClosure(this.currentClosureStatus);
             this.currentClosureStatus = ClosureStatus.CURRENT;
-            LOGGER.debug("[{}] Closure status after closure updated is {}", getID(),
-                    this.currentClosureStatus);
         }
     }
 
@@ -710,7 +745,8 @@ class InferenceTransaction extends ForwardingTransaction
     public void clearClosure() throws RepositoryException
     {
         // Must be acquired before issuing the operation.
-        final InferenceController controller = getInferenceController(true);
+
+        final InferenceController controller = this.getInferenceController(true);
 
         if (!this.inferencer.getInferenceMode().isForwardEnabled()
                 && this.currentClosureStatus == ClosureStatus.CURRENT) {
@@ -719,12 +755,15 @@ class InferenceTransaction extends ForwardingTransaction
 
         boolean success = false;
         try {
-            LOGGER.debug("[{}] Clearing closure)", getID());
-            final List<Resource> implicitContexts = Iterations.getAllElements(Iterations.filter(
-                    getContextIDs(InferenceMode.FORWARD),
-                    this.inferredContextPrefix.valueMatcher()));
+            InferenceTransaction.LOGGER.info("[{}] Inferred context prefix: {}", this.getID(),
+                    this.inferredContextPrefix);
+            InferenceTransaction.LOGGER.info("[{}] Clearing closure", this.getID());
+            final List<Resource> implicitContexts = Iterations
+                    .getAllElements(Iterations.filter(this.getContextIDs(InferenceMode.FORWARD),
+                            this.inferredContextPrefix.valueMatcher()));
             for (final Resource implicitContext : implicitContexts) {
-                delegate().remove(null, null, null, new Resource[] { implicitContext });
+                InferenceTransaction.LOGGER.info("[{}]", implicitContext);
+                this.delegate().remove(null, null, null, new Resource[] { implicitContext });
             }
             success = true;
 
@@ -736,8 +775,8 @@ class InferenceTransaction extends ForwardingTransaction
                 } else {
                     this.currentClosureStatus = ClosureStatus.CURRENT;
                 }
-                LOGGER.debug("[{}] Closure status after closure cleared is {}", getID(),
-                        this.currentClosureStatus);
+                InferenceTransaction.LOGGER.info("[{}] Closure status after closure cleared is {}",
+                        this.getID(), this.currentClosureStatus);
 
             } else {
                 controller.statementsRemoved(null, Contexts.UNSPECIFIED);
@@ -753,11 +792,11 @@ class InferenceTransaction extends ForwardingTransaction
     public void reset() throws RepositoryException
     {
         // Must be acquired before issuing the operation.
-        final InferenceController controller = getInferenceController(true);
+        final InferenceController controller = this.getInferenceController(true);
 
         boolean success = false;
         try {
-            delegate().reset();
+            this.delegate().reset();
             success = true;
         } finally {
             if (!success) {
@@ -765,8 +804,8 @@ class InferenceTransaction extends ForwardingTransaction
                 if (this.inferencer.getInferenceMode().isForwardEnabled()) {
                     this.currentClosureStatus = this.currentClosureStatus
                             .getStatusAfterStatementsRemoved();
-                    LOGGER.debug("[{}] Reset failed, closure status set to {}", getID(),
-                            this.currentClosureStatus);
+                    InferenceTransaction.LOGGER.info("[{}] Reset failed, closure status set to {}",
+                            this.getID(), this.currentClosureStatus);
                 }
             }
         }
@@ -779,9 +818,10 @@ class InferenceTransaction extends ForwardingTransaction
             this.currentClosureStatus = ClosureStatus.CURRENT;
         }
 
-        LOGGER.debug("[{}] Closure status after reset is {}", getID(), this.currentClosureStatus);
+        InferenceTransaction.LOGGER.info("[{}] Closure status after reset is {}", this.getID(),
+                this.currentClosureStatus);
 
-        updateClosure();
+        this.updateClosure();
     }
 
     /**
@@ -793,7 +833,7 @@ class InferenceTransaction extends ForwardingTransaction
     @Override
     public void end(final boolean commit) throws RepositoryException
     {
-        final InferenceController controller = getInferenceController(false);
+        final InferenceController controller = this.getInferenceController(false);
         if (controller != null) {
             controller.close(commit);
         }
@@ -806,22 +846,23 @@ class InferenceTransaction extends ForwardingTransaction
 
         boolean emptyRepository = false;
         if (updateClosureMetadata) {
-            CLOSURE_STATUS_CACHE.invalidate(this.inferencer);
-            emptyRepository = !delegate().hasStatement(null, null, null, InferenceMode.NONE);
+            InferenceTransaction.CLOSURE_STATUS_CACHE.invalidate(this.owner);
+            emptyRepository = !this.delegate().hasStatement(null, null, null, InferenceMode.NONE);
             if (this.originalClosureStatus == ClosureStatus.CURRENT
                     || this.currentClosureStatus == ClosureStatus.STALE) {
-                writeClosureMetadata(emptyRepository);
+                InferenceTransaction.LOGGER.info("{}", this.currentClosureStatus);
+                this.writeClosureMetadata(emptyRepository);
             }
         }
 
-        delegate().end(commit);
+        this.delegate().end(commit);
 
         if (updateClosureMetadata) {
             if (this.originalClosureStatus == ClosureStatus.STALE
                     || this.currentClosureStatus == ClosureStatus.CURRENT) {
-                writeClosureMetadata(emptyRepository);
+                this.writeClosureMetadata(emptyRepository);
             }
-            CLOSURE_STATUS_CACHE.put(this.inferencer, this.currentClosureStatus);
+            InferenceTransaction.CLOSURE_STATUS_CACHE.put(this.owner, this.currentClosureStatus);
         }
     }
 

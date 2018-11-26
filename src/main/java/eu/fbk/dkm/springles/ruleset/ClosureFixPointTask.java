@@ -7,11 +7,11 @@ import javax.annotation.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Resource;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
 
 import eu.fbk.dkm.internal.util.Selector;
 
@@ -46,14 +46,14 @@ public final class ClosureFixPointTask extends ClosureTask
 
     public void setSubTask(@Nullable final ClosureTask subTask)
     {
-        checkMutable();
+        this.checkMutable();
         this.subTask = subTask;
     }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
     @Override
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
         final Resource id = super.emitRDF(graph, baseURI, namespaces);
@@ -65,11 +65,11 @@ public final class ClosureFixPointTask extends ClosureTask
     }
 
     @Override
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
         super.parseRDF(graph, baseURI, namespaces);
-        final Selector s = Selector.select(graph, getID());
+        final Selector s = Selector.select(graph, this.getID());
         final Resource subTaskID = s.get(SPR.FIX_POINT_OF, Resource.class, null);
         if (subTaskID != null) {
             this.subTask = ClosureTask.parseRDF(graph, baseURI, namespaces, subTaskID);
@@ -82,7 +82,7 @@ public final class ClosureFixPointTask extends ClosureTask
     public void validate()
     {
         super.validate();
-        validate(this.subTask != null, "missing mandatory sub-task");
+        this.validate(this.subTask != null, "missing mandatory sub-task");
         this.subTask.validate();
     }
 
@@ -91,7 +91,7 @@ public final class ClosureFixPointTask extends ClosureTask
     @Override
     public void freeze()
     {
-        if (!isFrozen()) {
+        if (!this.isFrozen()) {
             if (this.subTask != null) {
                 this.subTask.freeze();
             }

@@ -6,18 +6,17 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.RepositoryException;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
@@ -42,7 +41,7 @@ import eu.fbk.dkm.springles.base.UpdateSpec;
  * Implementations of this interface must be THREAD SAFE, as it must be possible to call the
  * methods of this interface concurrently from multiple threads.
  * </p>
- * 
+ *
  * @apiviz.landmark
  * @apiviz.uses eu.fbk.dkm.springles.inferencer.Inferencer.Session - - - <<create>>
  */
@@ -60,7 +59,7 @@ public interface Inferencer
      * a change in the configuration of the inference engine (e.g., a change of configured
      * inference rules), the already computed closure becomes invalid and has thus to be
      * recomputed. This method is not supposed to throw exceptions.
-     * 
+     *
      * @return the computed string signature
      */
     String getConfigurationDigest();
@@ -70,7 +69,7 @@ public interface Inferencer
      * Parameter <tt>writable</tt> specifies whether the underlying transaction and connection
      * object are modifiable, while parameter <tt>currentClosureStatus</tt> specifies the status
      * of the closure currently materialized in the repository.
-     * 
+     *
      * @param id
      *            a parameter identifying the session (e.g., for logging purposes), typically
      *            related to the transaction it is associated to
@@ -107,12 +106,13 @@ public interface Inferencer
     // write operations in inference context can be called only in updateClosure() and close()
     // when
     // committing is true.
+
     /**
      * <p>
      * Implementations of this interface do not have to be thread safe. However, it must be
      * possible for different threads to access an instance of the interface, not concurrently.
      * </p>
-     * 
+     *
      * @apiviz.uses eu.fbk.dkm.springles.inferencer.Inferencer.Context - - - <<call>>
      * @apiviz.uses eu.fbk.dkm.springles.base.QuerySpec - - - <<rewrite>>
      * @apiviz.uses eu.fbk.dkm.springles.base.UpdateSpec - - - <<rewrite>>
@@ -122,10 +122,9 @@ public interface Inferencer
     {
 
         // Rationale for contexts field: without it, will have to expand statements supplied to
-        // add()
-        // and remove() methods, even if the listener does nothing with them. Better to postpone
-        // expansion (use RepositoryUtils.expand() method for that), so it can be avoided if
-        // unnecessary.
+        // add() and remove() methods, even if the listener does nothing with them. Better to
+        // postpone expansion (use RepositoryUtils.expand() method for that), so it can be avoided
+        // if unnecessary.
 
         // following methods are not allowed to update the closure (unless update closure is in
         // progress); they may however write auxiliary data (invisible to user queries) to the
@@ -146,7 +145,7 @@ public interface Inferencer
          * language used to express the query (e.g., SPARQL or SERQL). The rewriting, if any,
          * should modify the supplied parsed query object, by either modifying the algebraic
          * expression or the dataset over which the query should be evaluated.
-         * 
+         *
          * @param query
          *            the query to rewrite
          * @return the rewritten query, possibly the same input object; a <tt>null</tt> return
@@ -168,7 +167,7 @@ public interface Inferencer
          * if any, should modify the supplied parsed update object, by either modifying the
          * algebraic expressions or the datasets over which the update command sequence should be
          * evaluated.
-         * 
+         *
          * @param update
          *            the update to rewrite
          * @return the rewritten update, possibly the same input object; a <tt>null</tt> return
@@ -183,14 +182,12 @@ public interface Inferencer
         // invoked only when closurestatus is incomplete
 
         // can both add and delete statements inside inferred graphs under the control of the
-        // inference
-        // engine
+        // inference engine
 
         // invoked only when closurestatus is incomplete
 
         // can both add and delete statements inside inferred graphs under the control of the
-        // inference
-        // engine
+        // inference engine
 
         void updateClosure(ClosureStatus closureStatus) throws RepositoryException; // writable
 
@@ -209,17 +206,17 @@ public interface Inferencer
         ValueFactory getValueFactory();
 
         <T> T query(QuerySpec<T> query, @Nullable Dataset dataset, @Nullable BindingSet bindings,
-                boolean includeClosure, int timeout) throws MalformedQueryException,
-                QueryEvaluationException, RepositoryException;
+                boolean includeClosure, int timeout)
+                throws MalformedQueryException, QueryEvaluationException, RepositoryException;
 
         CloseableIteration<? extends Resource, RepositoryException> getContextIDs(
                 boolean includeClosure) throws RepositoryException;
 
         CloseableIteration<? extends Statement, RepositoryException> getStatements(
-                @Nullable Resource subj, @Nullable URI pred, @Nullable Value obj,
+                @Nullable Resource subj, @Nullable IRI pred, @Nullable Value obj,
                 boolean includeClosure, Resource... contexts) throws RepositoryException;
 
-        boolean hasStatement(@Nullable Resource subj, @Nullable URI pred, @Nullable Value obj,
+        boolean hasStatement(@Nullable Resource subj, @Nullable IRI pred, @Nullable Value obj,
                 boolean includeClosure, Resource... contexts) throws RepositoryException;
 
         long size(boolean includeClosure, Resource... contexts) throws RepositoryException;
@@ -230,7 +227,7 @@ public interface Inferencer
         void removeInferred(Iterable<? extends Statement> statements, final Resource... contexts)
                 throws RepositoryException;
 
-        void removeInferred(@Nullable Resource subject, @Nullable URI predicate,
+        void removeInferred(@Nullable Resource subject, @Nullable IRI predicate,
                 @Nullable Value object, Resource... contexts) throws RepositoryException;
 
     }

@@ -6,9 +6,9 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Preconditions;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +51,7 @@ final class InferenceController
         Preconditions.checkNotNull(closureStatus);
 
         this.context = new InferenceContext(transaction, inferredContextPrefix, scheduler);
-
+        InferenceController.LOGGER.info("INFERENCER::" + inferencer.toString());
         this.context.unlock(false);
         try {
             this.session = inferencer.newSession(transaction.getID(), closureStatus, this.context);
@@ -69,14 +69,15 @@ final class InferenceController
     {
         Preconditions.checkNotNull(contexts);
 
-        if (isNotificationEnabled()) {
+        if (this.isNotificationEnabled()) {
             this.context.unlock(false);
             try {
                 this.session.statementsAdded(statements, contexts);
 
             } catch (final Throwable ex) {
-                LOGGER.warn("Exception thrown by InferenceSession.statementsAdded() "
-                        + "callback: ignoring", ex);
+                InferenceController.LOGGER
+                        .warn("Exception thrown by InferenceSession.statementsAdded() "
+                                + "callback: ignoring", ex);
             }
             this.context.lock();
         }
@@ -87,14 +88,15 @@ final class InferenceController
     {
         Preconditions.checkNotNull(contexts);
 
-        if (isNotificationEnabled()) {
+        if (this.isNotificationEnabled()) {
             this.context.unlock(false);
             try {
                 this.session.statementsRemoved(statements, contexts);
 
             } catch (final Throwable ex) {
-                LOGGER.warn("Exception thrown by InferenceSession.statementsRemoved() "
-                        + "callback: ignoring", ex);
+                InferenceController.LOGGER
+                        .warn("Exception thrown by InferenceSession.statementsRemoved() "
+                                + "callback: ignoring", ex);
             }
             this.context.lock();
         }
@@ -102,14 +104,15 @@ final class InferenceController
 
     public synchronized void statementsCleared(final boolean onlyClosure)
     {
-        if (isNotificationEnabled()) {
+        if (this.isNotificationEnabled()) {
             this.context.unlock(false);
             try {
                 this.session.statementsCleared(onlyClosure);
 
             } catch (final Throwable ex) {
-                LOGGER.warn("Exception thrown by InferenceSession.statementsCleared() "
-                        + "callback: ignoring", ex);
+                InferenceController.LOGGER
+                        .warn("Exception thrown by InferenceSession.statementsCleared() "
+                                + "callback: ignoring", ex);
             }
             this.context.lock();
         }
@@ -119,7 +122,7 @@ final class InferenceController
             final ClosureStatus closureStatus, final boolean forwardInferenceEnabled)
             throws RepositoryException
     {
-        checkInferenceSessionInactive();
+        this.checkInferenceSessionInactive();
         Preconditions.checkNotNull(query);
 
         this.context.unlock(false);
@@ -147,7 +150,7 @@ final class InferenceController
             final ClosureStatus closureStatus, final boolean forwardInferenceEnabled)
             throws RepositoryException
     {
-        checkInferenceSessionInactive();
+        this.checkInferenceSessionInactive();
         Preconditions.checkNotNull(update);
 
         this.context.unlock(false);
@@ -165,7 +168,7 @@ final class InferenceController
     public synchronized void updateClosure(final ClosureStatus closureStatus)
             throws RepositoryException
     {
-        checkInferenceSessionInactive();
+        this.checkInferenceSessionInactive();
 
         this.context.unlock(true);
         try {
@@ -181,7 +184,7 @@ final class InferenceController
 
     public synchronized void close(final boolean committing) throws RepositoryException
     {
-        checkInferenceSessionInactive();
+        this.checkInferenceSessionInactive();
 
         this.context.unlock(committing);
         try {
@@ -192,8 +195,9 @@ final class InferenceController
                 throw new RepositoryException(
                         "Cannot finalize inference session during commit: commit will fail", ex);
             } else {
-                LOGGER.error("Exception thrown by InferenceSession.close(committing = false): "
-                        + "ignoring", ex);
+                InferenceController.LOGGER
+                        .error("Exception thrown by InferenceSession.close(committing = false): "
+                                + "ignoring", ex);
             }
 
         } finally {

@@ -4,139 +4,72 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import org.openrdf.model.Value;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.algebra.Distinct;
-import org.openrdf.query.algebra.EmptySet;
-import org.openrdf.query.algebra.Extension;
-import org.openrdf.query.algebra.ExtensionElem;
-import org.openrdf.query.algebra.Filter;
-import org.openrdf.query.algebra.Group;
-import org.openrdf.query.algebra.Join;
-import org.openrdf.query.algebra.MultiProjection;
-import org.openrdf.query.algebra.Order;
-import org.openrdf.query.algebra.OrderElem;
-import org.openrdf.query.algebra.Projection;
-import org.openrdf.query.algebra.ProjectionElem;
-import org.openrdf.query.algebra.ProjectionElemList;
-import org.openrdf.query.algebra.QueryModelNode;
-import org.openrdf.query.algebra.QueryRoot;
-import org.openrdf.query.algebra.Reduced;
-import org.openrdf.query.algebra.Slice;
-import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.StatementPattern.Scope;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.UnaryTupleOperator;
-import org.openrdf.query.algebra.ValueConstant;
-import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.algebra.Var;
-import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.algebra.Distinct;
+import org.eclipse.rdf4j.query.algebra.EmptySet;
+import org.eclipse.rdf4j.query.algebra.Extension;
+import org.eclipse.rdf4j.query.algebra.ExtensionElem;
+import org.eclipse.rdf4j.query.algebra.Filter;
+import org.eclipse.rdf4j.query.algebra.Group;
+import org.eclipse.rdf4j.query.algebra.Join;
+import org.eclipse.rdf4j.query.algebra.MultiProjection;
+import org.eclipse.rdf4j.query.algebra.Order;
+import org.eclipse.rdf4j.query.algebra.OrderElem;
+import org.eclipse.rdf4j.query.algebra.Projection;
+import org.eclipse.rdf4j.query.algebra.ProjectionElem;
+import org.eclipse.rdf4j.query.algebra.ProjectionElemList;
+import org.eclipse.rdf4j.query.algebra.QueryModelNode;
+import org.eclipse.rdf4j.query.algebra.QueryRoot;
+import org.eclipse.rdf4j.query.algebra.Reduced;
+import org.eclipse.rdf4j.query.algebra.Slice;
+import org.eclipse.rdf4j.query.algebra.StatementPattern;
+import org.eclipse.rdf4j.query.algebra.StatementPattern.Scope;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator;
+import org.eclipse.rdf4j.query.algebra.ValueConstant;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.algebra.Var;
+import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor;
 
 public class SparqlQuery
 {
 
-    /**
-	 * @author   calabrese
-	 */
     public enum QueryForm
     {
-        /**
-		 * @uml.property  name="sELECT"
-		 * @uml.associationEnd  
-		 */
-        SELECT, /**
-		 * @uml.property  name="cONSTRUCT"
-		 * @uml.associationEnd  
-		 */
-        CONSTRUCT, /**
-		 * @uml.property  name="aSK"
-		 * @uml.associationEnd  
-		 */
-        ASK
+        SELECT, CONSTRUCT, ASK
     }
 
-    /**
-	 * @author   calabrese
-	 */
     public enum SelectModifier
     {
-        /**
-		 * @uml.property  name="dISTINCT"
-		 * @uml.associationEnd  
-		 */
-        DISTINCT, /**
-		 * @uml.property  name="rEDUCED"
-		 * @uml.associationEnd  
-		 */
-        REDUCED
+        DISTINCT, REDUCED
     };
 
-    /**
-	 * @uml.property  name="queryForm"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
     private QueryForm queryForm;
 
-    /**
-	 * @uml.property  name="selectModifier"
-	 * @uml.associationEnd  
-	 */
     private SelectModifier selectModifier;
 
-    /**
-	 * @uml.property  name="selectList"
-	 * @uml.associationEnd  multiplicity="(0 -1)" elementType="org.openrdf.query.algebra.ProjectionElem"
-	 */
     private List<ProjectionElem> selectList;
 
-    /**
-	 * @uml.property  name="constructExpression"
-	 * @uml.associationEnd  
-	 */
     private TupleExpr constructExpression;
 
-    /**
-	 * @uml.property  name="fromDataset"
-	 * @uml.associationEnd  
-	 */
     private Dataset fromDataset;
 
-    /**
-	 * @uml.property  name="whereExpression"
-	 * @uml.associationEnd  
-	 */
     private TupleExpr whereExpression;
 
-    /**
-	 * @uml.property  name="groupByList"
-	 * @uml.associationEnd  multiplicity="(0 -1)" elementType="org.openrdf.query.algebra.ProjectionElem"
-	 */
     private List<ProjectionElem> groupByList;
 
-    /**
-	 * @uml.property  name="havingCondition"
-	 * @uml.associationEnd  
-	 */
     private ValueExpr havingCondition;
 
-    /**
-	 * @uml.property  name="orderByList"
-	 */
     private List<OrderElem> orderByList;
 
-    /**
-	 * @uml.property  name="sliceOffset"
-	 */
     private Long sliceOffset;
 
-    /**
-	 * @uml.property  name="sliceLimit"
-	 */
     private Long sliceLimit;
 
     public SparqlQuery()
@@ -189,37 +122,21 @@ public class SparqlQuery
         return this.sliceOffset != null || this.sliceLimit != null;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="queryForm"
-	 */
     public QueryForm getQueryForm()
     {
         return this.queryForm;
     }
 
-    /**
-	 * @param queryForm
-	 * @uml.property  name="queryForm"
-	 */
     public void setQueryForm(final QueryForm queryForm)
     {
         this.queryForm = queryForm;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="selectModifier"
-	 */
     public SelectModifier getSelectModifier()
     {
         return this.selectModifier;
     }
 
-    /**
-	 * @param selectModifier
-	 * @uml.property  name="selectModifier"
-	 */
     public void setSelectModifier(final SelectModifier selectModifier)
     {
         this.selectModifier = selectModifier;
@@ -232,59 +149,35 @@ public class SparqlQuery
 
     public void setSelectList(final Iterable<? extends ProjectionElem> selectList)
     {
-        this.selectList = selectList != null ? Lists.newArrayList(selectList) : Lists
-                .<ProjectionElem>newArrayList();
+        this.selectList = selectList != null ? Lists.newArrayList(selectList)
+                : Lists.<ProjectionElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="constructExpression"
-	 */
     public TupleExpr getConstructExpression()
     {
         return this.constructExpression;
     }
 
-    /**
-	 * @param constructExpression
-	 * @uml.property  name="constructExpression"
-	 */
     public void setConstructExpression(final TupleExpr constructExpression)
     {
         this.constructExpression = constructExpression;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="fromDataset"
-	 */
     public Dataset getFromDataset()
     {
         return this.fromDataset;
     }
 
-    /**
-	 * @param fromDataset
-	 * @uml.property  name="fromDataset"
-	 */
     public void setFromDataset(final Dataset fromDataset)
     {
         this.fromDataset = fromDataset;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="whereExpression"
-	 */
     public TupleExpr getWhereExpression()
     {
         return this.whereExpression;
     }
 
-    /**
-	 * @param whereExpression
-	 * @uml.property  name="whereExpression"
-	 */
     public void setWhereExpression(final TupleExpr whereExpression)
     {
         this.whereExpression = whereExpression;
@@ -297,23 +190,15 @@ public class SparqlQuery
 
     public void setGroupByList(final Iterable<? extends ProjectionElem> groupByList)
     {
-        this.groupByList = groupByList != null ? Lists.newArrayList(groupByList) : Lists
-                .<ProjectionElem>newArrayList();
+        this.groupByList = groupByList != null ? Lists.newArrayList(groupByList)
+                : Lists.<ProjectionElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="havingCondition"
-	 */
     public ValueExpr getHavingCondition()
     {
         return this.havingCondition;
     }
 
-    /**
-	 * @param havingCondition
-	 * @uml.property  name="havingCondition"
-	 */
     public void setHavingCondition(final ValueExpr havingCondition)
     {
         this.havingCondition = havingCondition;
@@ -326,41 +211,25 @@ public class SparqlQuery
 
     public void setOrderByList(final List<OrderElem> orderByList)
     {
-        this.orderByList = orderByList != null ? Lists.newArrayList(orderByList) : Lists
-                .<OrderElem>newArrayList();
+        this.orderByList = orderByList != null ? Lists.newArrayList(orderByList)
+                : Lists.<OrderElem>newArrayList();
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="sliceOffset"
-	 */
     public Long getSliceOffset()
     {
         return this.sliceOffset;
     }
 
-    /**
-	 * @param sliceOffset
-	 * @uml.property  name="sliceOffset"
-	 */
     public void setSliceOffset(final Long sliceOffset)
     {
         this.sliceOffset = sliceOffset;
     }
 
-    /**
-	 * @return
-	 * @uml.property  name="sliceLimit"
-	 */
     public Long getSliceLimit()
     {
         return this.sliceLimit;
     }
 
-    /**
-	 * @param sliceLimit
-	 * @uml.property  name="sliceLimit"
-	 */
     public void setSliceLimit(final Long sliceLimit)
     {
         this.sliceLimit = sliceLimit;
@@ -376,11 +245,11 @@ public class SparqlQuery
                     .append(this.selectModifier != null ? " " + this.selectModifier : "")
                     .append("\n");
             for (final ProjectionElem elem : this.selectList) {
-                printTree(elem, builder, "    ", "  ");
+                SparqlQuery.printTree(elem, builder, "    ", "  ");
             }
         } else if (this.queryForm == QueryForm.CONSTRUCT) {
             builder.append("CONSTRUCT\n");
-            printTree(this.constructExpression, builder, "    ", "  ");
+            SparqlQuery.printTree(this.constructExpression, builder, "    ", "  ");
         } else if (this.queryForm == QueryForm.ASK) {
             builder.append("ASK\n");
         }
@@ -391,25 +260,25 @@ public class SparqlQuery
 
         if (this.whereExpression != null) {
             builder.append("WHERE\n");
-            printTree(this.whereExpression, builder, "    ", "  ");
+            SparqlQuery.printTree(this.whereExpression, builder, "    ", "  ");
         }
 
         if (!this.groupByList.isEmpty()) {
             builder.append("GROUP BY\n");
             for (final ProjectionElem elem : this.groupByList) {
-                printTree(elem, builder, "    ", "  ");
+                SparqlQuery.printTree(elem, builder, "    ", "  ");
             }
         }
 
         if (this.havingCondition != null) {
             builder.append("HAVING\n");
-            printTree(this.havingCondition, builder, "    ", "  ");
+            SparqlQuery.printTree(this.havingCondition, builder, "    ", "  ");
         }
 
         if (!this.orderByList.isEmpty()) {
             builder.append("ORDER BY\n");
             for (final OrderElem elem : this.orderByList) {
-                printTree(elem, builder, "    ", "  ");
+                SparqlQuery.printTree(elem, builder, "    ", "  ");
             }
         }
 
@@ -426,7 +295,7 @@ public class SparqlQuery
     private static void printTree(final QueryModelNode node, final StringBuilder builder,
             final String linePrefix, final String indentString)
     {
-        node.visit(new QueryModelVisitorBase<RuntimeException>() {
+        node.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             private int level = 0;
 
@@ -467,7 +336,7 @@ public class SparqlQuery
             return query;
         }
 
-        final List<UnaryTupleOperator> nodes = extractQueryNodes(rootNode, false);
+        final List<UnaryTupleOperator> nodes = SparqlQuery.extractQueryNodes(rootNode, false);
 
         final SparqlQuery query = new SparqlQuery();
         QueryForm queryForm = null;
@@ -483,7 +352,7 @@ public class SparqlQuery
                 query.setSelectModifier(SelectModifier.REDUCED);
 
             } else if (node instanceof Projection) {
-                final Map<String, ExtensionElem> extensions = extractExtensions(node);
+                final Map<String, ExtensionElem> extensions = SparqlQuery.extractExtensions(node);
                 final List<ProjectionElem> projections = ((Projection) node)
                         .getProjectionElemList().getElements();
                 final boolean isConstruct = projections.size() >= 3
@@ -494,7 +363,7 @@ public class SparqlQuery
                                 && "context".equals(projections.get(3).getTargetName()));
                 if (isConstruct) {
                     queryForm = QueryForm.CONSTRUCT;
-                    query.setConstructExpression(extractConstructExpression(extensions,
+                    query.setConstructExpression(SparqlQuery.extractConstructExpression(extensions,
                             Collections.singleton(((Projection) node).getProjectionElemList())));
                 } else {
                     queryForm = QueryForm.SELECT;
@@ -504,29 +373,33 @@ public class SparqlQuery
                         final ProjectionElem newProjection = new ProjectionElem();
                         newProjection.setTargetName(variable);
                         newProjection.setSourceExpression(extension);
-                        newProjection.setSourceName(extension == null
-                                || !(extension.getExpr() instanceof Var) ? variable
-                                : ((Var) extension.getExpr()).getName());
+                        newProjection.setSourceName(
+                                extension == null || !(extension.getExpr() instanceof Var)
+                                        ? variable
+                                        : ((Var) extension.getExpr()).getName());
                         query.getSelectList().add(newProjection);
                     }
                 }
 
             } else if (node instanceof MultiProjection) {
                 query.setQueryForm(QueryForm.CONSTRUCT);
-                query.setConstructExpression(extractConstructExpression(extractExtensions(node),
-                        ((MultiProjection) node).getProjections()));
+                query.setConstructExpression(
+                        SparqlQuery.extractConstructExpression(SparqlQuery.extractExtensions(node),
+                                ((MultiProjection) node).getProjections()));
 
             } else if (node instanceof Group) {
                 final Group group = (Group) node;
-                final Map<String, ExtensionElem> extensions = extractExtensions(group.getArg());
+                final Map<String, ExtensionElem> extensions = SparqlQuery
+                        .extractExtensions(group.getArg());
                 for (final String variableName : group.getGroupBindingNames()) {
                     final ExtensionElem extension = extensions.get(variableName);
                     final ProjectionElem projection = new ProjectionElem();
                     projection.setTargetName(variableName);
                     projection.setSourceExpression(extension);
-                    projection.setSourceName(extension == null
-                            || !(extension.getExpr() instanceof Var) ? variableName
-                            : ((Var) extension.getExpr()).getName());
+                    projection.setSourceName(
+                            extension == null || !(extension.getExpr() instanceof Var)
+                                    ? variableName
+                                    : ((Var) extension.getExpr()).getName());
                     query.getGroupByList().add(projection);
                 }
 
@@ -546,8 +419,9 @@ public class SparqlQuery
             }
         }
 
-        query.setQueryForm(Objects.firstNonNull(queryForm, QueryForm.CONSTRUCT));
-        if (query.getQueryForm() == QueryForm.CONSTRUCT && query.getConstructExpression() == null) {
+        query.setQueryForm(MoreObjects.firstNonNull(queryForm, QueryForm.CONSTRUCT));
+        if (query.getQueryForm() == QueryForm.CONSTRUCT
+                && query.getConstructExpression() == null) {
             query.setConstructExpression(new EmptySet());
         }
         return query;
@@ -613,7 +487,7 @@ public class SparqlQuery
     private static Map<String, ExtensionElem> extractExtensions(final TupleExpr rootNode)
     {
         final Map<String, ExtensionElem> map = Maps.newHashMap();
-        for (final UnaryTupleOperator node : extractQueryNodes(rootNode, true)) {
+        for (final UnaryTupleOperator node : SparqlQuery.extractQueryNodes(rootNode, true)) {
             if (node instanceof Extension) {
                 for (final ExtensionElem elem : ((Extension) node).getElements()) {
                     final String variable = elem.getName();
@@ -634,11 +508,15 @@ public class SparqlQuery
     {
         TupleExpr expression = null;
         for (final ProjectionElemList projections : multiProjections) {
-            final Var subj = extractConstructVar(extensions, projections.getElements().get(0));
-            final Var pred = extractConstructVar(extensions, projections.getElements().get(1));
-            final Var obj = extractConstructVar(extensions, projections.getElements().get(2));
-            final Var ctx = projections.getElements().size() < 4 ? null : extractConstructVar(
-                    extensions, projections.getElements().get(3));
+            final Var subj = SparqlQuery.extractConstructVar(extensions,
+                    projections.getElements().get(0));
+            final Var pred = SparqlQuery.extractConstructVar(extensions,
+                    projections.getElements().get(1));
+            final Var obj = SparqlQuery.extractConstructVar(extensions,
+                    projections.getElements().get(2));
+            final Var ctx = projections.getElements().size() < 4 ? null
+                    : SparqlQuery.extractConstructVar(extensions,
+                            projections.getElements().get(3));
             final StatementPattern pattern = new StatementPattern(
                     ctx == null ? Scope.DEFAULT_CONTEXTS : Scope.NAMED_CONTEXTS, subj, pred, obj,
                     ctx);

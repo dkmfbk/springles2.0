@@ -1,9 +1,9 @@
 package eu.fbk.dkm.springles;
 
-import org.openrdf.model.Resource;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryResult;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryResult;
 
 /**
  * Extension of <tt>RepositoryConnection</tt> with additional inference control.

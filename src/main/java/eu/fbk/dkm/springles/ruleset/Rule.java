@@ -1,6 +1,8 @@
 package eu.fbk.dkm.springles.ruleset;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -12,37 +14,40 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.algebra.FunctionCall;
-import org.openrdf.query.algebra.Projection;
-import org.openrdf.query.algebra.ProjectionElem;
-import org.openrdf.query.algebra.ProjectionElemList;
-import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.algebra.Var;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.algebra.Filter;
+import org.eclipse.rdf4j.query.algebra.FunctionCall;
+import org.eclipse.rdf4j.query.algebra.Projection;
+import org.eclipse.rdf4j.query.algebra.ProjectionElem;
+import org.eclipse.rdf4j.query.algebra.ProjectionElemList;
+import org.eclipse.rdf4j.query.algebra.QueryModelNode;
+import org.eclipse.rdf4j.query.algebra.SameTerm;
+import org.eclipse.rdf4j.query.algebra.StatementPattern;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.algebra.Var;
+import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Selector;
@@ -109,10 +114,9 @@ public final class Rule implements Cloneable
         this.body = body;
         this.condition = condition;
         this.transform = transform;
-        this.triggeredRuleIDs = triggeredRuleIDs == null ? null : Sets
-                .newHashSet(triggeredRuleIDs);
+        this.triggeredRuleIDs = triggeredRuleIDs == null ? null
+                : Sets.newHashSet(triggeredRuleIDs);
         this.frozen = false;
-
         this.headVars = null;
         this.headAtoms = null;
         this.bodyVars = null;
@@ -131,7 +135,7 @@ public final class Rule implements Cloneable
 
     public void setID(@Nullable final Resource id)
     {
-        checkMutable();
+        this.checkMutable();
         this.id = id;
     }
 
@@ -143,7 +147,7 @@ public final class Rule implements Cloneable
 
     public void setHead(@Nullable final TupleExpr head)
     {
-        checkMutable();
+        this.checkMutable();
 
         if (!Objects.equal(head, this.head)) {
             this.head = head;
@@ -176,7 +180,7 @@ public final class Rule implements Cloneable
 
     public void setBody(@Nullable final TupleExpr body)
     {
-        checkMutable();
+        this.checkMutable();
 
         if (!Objects.equal(body, this.body)) {
             this.body = body;
@@ -215,9 +219,9 @@ public final class Rule implements Cloneable
     public QuerySpec<TupleQueryResult> getBodyQuery()
     {
         if (this.bodyQuery == null && this.body != null) {
-            final Set<String> headVars = getHeadVars();
+            final Set<String> headVars = this.getHeadVars();
             final Set<String> projectionVars = Sets.newHashSet();
-            for (final String var : getBody().getBindingNames()) {
+            for (final String var : this.getBody().getBindingNames()) {
                 // TODO improve here
                 if (var.startsWith("_emit") || headVars.contains(var) || this.transform != null) {
                     projectionVars.add(var);
@@ -241,7 +245,7 @@ public final class Rule implements Cloneable
 
     public void setCondition(@Nullable final ValueExpr condition)
     {
-        checkMutable();
+        this.checkMutable();
         this.condition = condition;
     }
 
@@ -253,7 +257,7 @@ public final class Rule implements Cloneable
 
     public void setTransform(@Nullable final FunctionCall transform)
     {
-        checkMutable();
+        this.checkMutable();
         this.transform = transform;
     }
 
@@ -265,9 +269,9 @@ public final class Rule implements Cloneable
 
     public void setTriggeredRuleIDs(@Nullable final Iterable<? extends Resource> triggeredRuleIDs)
     {
-        checkMutable();
-        this.triggeredRuleIDs = triggeredRuleIDs == null ? null : Sets
-                .newHashSet(triggeredRuleIDs);
+        this.checkMutable();
+        this.triggeredRuleIDs = triggeredRuleIDs == null ? null
+                : Sets.newHashSet(triggeredRuleIDs);
     }
 
     // INFERENCE GENERATION
@@ -280,8 +284,8 @@ public final class Rule implements Cloneable
         } else {
             final Value[] arguments = new Value[this.transform.getArgs().size()];
             for (int i = 0; i < arguments.length; ++i) {
-                arguments[i] = Algebra.evaluateValueExpr(this.transform.getArgs().get(i),
-                        bindings, ValueFactoryImpl.getInstance());
+                arguments[i] = Algebra.evaluateValueExpr(this.transform.getArgs().get(i), bindings,
+                        SimpleValueFactory.getInstance());
             }
             return Transform.transform(iteration, this.transform.getURI(), arguments);
         }
@@ -301,7 +305,7 @@ public final class Rule implements Cloneable
             values.add(bindings.getValue(name));
         }
 
-        final List<StatementPattern> patterns = getHeadAtoms();
+        final List<StatementPattern> patterns = this.getHeadAtoms();
         final int[][] indexes = new int[patterns.size()][];
         for (int i = 0; i < patterns.size(); ++i) {
             final List<Var> vars = patterns.get(i).getVarList();
@@ -317,20 +321,19 @@ public final class Rule implements Cloneable
             }
             indexes[i][4] = queryNames.indexOf("_emit" + (i + 1));
         }
-
         return indexes;
     }
 
     public <E extends Exception> void collectHeadStatements(final TupleQueryResult iteration,
-            final BindingSet bindings, final StatementHandler<E> handler) throws E,
-            QueryEvaluationException
+            final BindingSet bindings, final StatementHandler<E> handler)
+            throws E, QueryEvaluationException
     {
-        final TupleQueryResult actualIteration = transformIfNecessary(iteration, bindings);
+        final TupleQueryResult actualIteration = this.transformIfNecessary(iteration, bindings);
 
         final List<String> names = actualIteration.getBindingNames();
         final int numNames = names.size();
         final List<Value> values = Lists.newArrayList();
-        final int[][] indexes = setupMappingParameters(actualIteration, bindings, values);
+        final int[][] indexes = this.setupMappingParameters(actualIteration, bindings, values);
         final Value[] tuple = values.toArray(new Value[values.size()]);
 
         while (actualIteration.hasNext()) {
@@ -349,20 +352,20 @@ public final class Rule implements Cloneable
                         continue;
                     }
                 }
-try{
-                final Value subj = tuple[offsets[0]];
-                final Value pred = tuple[offsets[1]];
-                final Value obj = tuple[offsets[2]];
-                final Value ctx = tuple[offsets[3]];
+                try {
+                    final Value subj = tuple[offsets[0]];
+                    final Value pred = tuple[offsets[1]];
+                    final Value obj = tuple[offsets[2]];
+                    final Value ctx = tuple[offsets[3]];
 
-                if (subj instanceof Resource && pred instanceof URI && obj != null
-                        && (ctx == null || ctx instanceof Resource)) {
-                    handler.handle((Resource) subj, (URI) pred, obj, (Resource) ctx);
+                    if (subj instanceof Resource && pred instanceof IRI && obj != null
+                            && (ctx == null || ctx instanceof Resource)) {
+                        handler.handle((Resource) subj, (IRI) pred, obj, (Resource) ctx);
+                    }
+
+                } catch (final ArrayIndexOutOfBoundsException e) {
+                    System.out.println(e);
                 }
-                
-}catch(ArrayIndexOutOfBoundsException e){
-	System.out.println(e);
-}
             }
         }
     }
@@ -371,12 +374,12 @@ try{
             final TupleQueryResult iteration, final BindingSet bindings,
             final ValueFactory valueFactory) throws QueryEvaluationException
     {
-        final TupleQueryResult actualIteration = transformIfNecessary(iteration, bindings);
+        final TupleQueryResult actualIteration = this.transformIfNecessary(iteration, bindings);
 
         final List<String> names = actualIteration.getBindingNames();
         final int numNames = names.size();
         final List<Value> values = Lists.newArrayList();
-        final int[][] indexes = setupMappingParameters(actualIteration, bindings, values);
+        final int[][] indexes = this.setupMappingParameters(actualIteration, bindings, values);
         final Value[] tuple = values.toArray(new Value[values.size()]);
 
         return new CloseableIteration<Statement, QueryEvaluationException>() {
@@ -418,15 +421,16 @@ try{
                     final Value object = tuple[offsets[2]];
                     final Value context = tuple[offsets[3]];
 
-                    if (subject instanceof Resource && predicate instanceof URI && object != null) {
+                    if (subject instanceof Resource && predicate instanceof IRI
+                            && object != null) {
                         if (context == null) {
                             this.next = valueFactory.createStatement((Resource) subject,
-                                    (URI) predicate, object);
+                                    (IRI) predicate, object);
                             return true;
 
                         } else if (context instanceof Resource) {
                             this.next = valueFactory.createStatement((Resource) subject,
-                                    (URI) predicate, object, (Resource) context);
+                                    (IRI) predicate, object, (Resource) context);
                             return true;
                         }
                     }
@@ -436,7 +440,7 @@ try{
             @Override
             public Statement next() throws QueryEvaluationException
             {
-                if (!hasNext()) {
+                if (!this.hasNext()) {
                     throw new NoSuchElementException();
                 }
                 final Statement result = this.next;
@@ -461,19 +465,19 @@ try{
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
-        final ValueFactory vf = graph.getValueFactory();
+        final ValueFactory vf = SimpleValueFactory.getInstance();
         final Resource id = this.id != null ? this.id : vf.createBNode();
 
         graph.add(id, RDF.TYPE, SPR.RULE);
 
         if (this.triggeredRuleIDs != null) {
-            URI pred = SPR.TRIGGER_OF;
+            IRI pred = SPR.TRIGGER_OF;
             Resource node = id;
             for (final Resource triggeredRuleID : this.triggeredRuleIDs) {
-                final BNode newNode = graph.getValueFactory().createBNode();
+                final BNode newNode = vf.createBNode();
                 graph.add(node, pred, newNode);
                 graph.add(newNode, RDF.FIRST, triggeredRuleID);
                 pred = RDF.REST;
@@ -484,23 +488,19 @@ try{
 
         String expr;
         if (this.head != null) {
-            expr = SparqlRenderer.render(this.head)
-                    .withNamespaces(namespaces).toString();
+            expr = SparqlRenderer.render(this.head).withNamespaces(namespaces).toString();
             graph.add(id, SPR.HEAD, vf.createLiteral(expr, XMLSchema.STRING));
         }
         if (this.body != null) {
-            expr = SparqlRenderer.render(this.body)
-                    .withNamespaces(namespaces).toString();
+            expr = SparqlRenderer.render(this.body).withNamespaces(namespaces).toString();
             graph.add(id, SPR.BODY, vf.createLiteral(expr, XMLSchema.STRING));
         }
         if (this.condition != null) {
-            expr = SparqlRenderer.render(this.condition)
-                    .withNamespaces(namespaces).toString();
+            expr = SparqlRenderer.render(this.condition).withNamespaces(namespaces).toString();
             graph.add(id, SPR.CONDITION, vf.createLiteral(expr, XMLSchema.STRING));
         }
         if (this.transform != null) {
-            expr = SparqlRenderer.render(this.transform)
-                    .withNamespaces(namespaces).toString();
+            expr = SparqlRenderer.render(this.transform).withNamespaces(namespaces).toString();
             graph.add(id, SPR.TRANSFORM, vf.createLiteral(expr, XMLSchema.STRING));
         }
 
@@ -509,10 +509,10 @@ try{
 
     // ID must be assigned in order for the method to work
 
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
-        checkMutable();
+        this.checkMutable();
         Preconditions.checkNotNull(graph);
         Preconditions.checkState(this.id != null);
 
@@ -527,7 +527,7 @@ try{
             field = "head";
             expr = s.get(SPR.HEAD, String.class, null);
             if (expr != null) {
-                this.head = Algebra.parseTupleExpr(expr, baseURI, namespaces);
+                this.head = Rule.normalizeVars(Algebra.parseTupleExpr(expr, baseURI, namespaces));
             }
 
             field = "body";
@@ -554,12 +554,12 @@ try{
         }
     }
 
-    public static Rule parseRDF(final Graph graph, @Nullable final String baseURI,
+    public static Rule parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces, final Resource ruleID)
             throws MalformedQueryException
     {
-        final Resource id = ruleID != null ? ruleID : Iterators.getOnlyElement(
-                graph.match(null, RDF.TYPE, SPR.RULE)).getSubject();
+        final Resource id = ruleID != null ? ruleID
+                : Iterables.getOnlyElement(graph.filter(null, RDF.TYPE, SPR.RULE)).getSubject();
         final Rule rule = new Rule();
         rule.setID(id);
         rule.parseRDF(graph, baseURI, namespaces);
@@ -570,10 +570,10 @@ try{
 
     public void validate()
     {
-        validate(this.id != null, "no ID defined");
-        validate(this.head != null, "no head supplied");
-        validate(this.body != null, "no body supplied");
-        validate(this.triggeredRuleIDs == null || !this.triggeredRuleIDs.contains(null),
+        this.validate(this.id != null, "no ID defined");
+        this.validate(this.head != null, "no head supplied");
+        this.validate(this.body != null, "no body supplied");
+        this.validate(this.triggeredRuleIDs == null || !this.triggeredRuleIDs.contains(null),
                 "invalid list of triggered rules IDs");
     }
 
@@ -595,8 +595,8 @@ try{
     public void freeze()
     {
         if (!this.frozen) {
-            this.triggeredRuleIDs = this.triggeredRuleIDs == null ? null : ImmutableSet
-                    .copyOf(this.triggeredRuleIDs);
+            this.triggeredRuleIDs = this.triggeredRuleIDs == null ? null
+                    : ImmutableSet.copyOf(this.triggeredRuleIDs);
             this.frozen = true;
         }
     }
@@ -606,8 +606,8 @@ try{
     {
         try {
             final Rule clone = (Rule) super.clone();
-            clone.triggeredRuleIDs = this.triggeredRuleIDs == null ? null : Sets
-                    .newHashSet(this.triggeredRuleIDs);
+            clone.triggeredRuleIDs = this.triggeredRuleIDs == null ? null
+                    : Sets.newHashSet(this.triggeredRuleIDs);
             clone.frozen = false;
             return clone;
 
@@ -619,8 +619,8 @@ try{
     private void checkMutable()
     {
         if (this.frozen) {
-            throw new IllegalStateException("Cannot modify frozen rule " + this.id
-                    + "; must clone it");
+            throw new IllegalStateException(
+                    "Cannot modify frozen rule " + this.id + "; must clone it");
         }
     }
 
@@ -656,12 +656,14 @@ try{
         if (digest == null) {
             final Hasher hasher = Hashing.md5().newHasher();
             hasher.putUnencodedChars(this.id == null ? " " : this.id.stringValue());
-            hasher.putUnencodedChars(this.head == null ? " " : SparqlRenderer.render(this.head).toString());
-            hasher.putUnencodedChars(this.body == null ? " " : SparqlRenderer.render(this.body).toString());
-            hasher.putUnencodedChars(this.condition == null ? " " : SparqlRenderer.render(this.condition)
-                    .toString());
-            hasher.putUnencodedChars(this.transform == null ? " " : SparqlRenderer.render(this.transform)
-                    .toString());
+            hasher.putUnencodedChars(
+                    this.head == null ? " " : SparqlRenderer.render(this.head).toString());
+            hasher.putUnencodedChars(
+                    this.body == null ? " " : SparqlRenderer.render(this.body).toString());
+            hasher.putUnencodedChars(this.condition == null ? " "
+                    : SparqlRenderer.render(this.condition).toString());
+            hasher.putUnencodedChars(this.transform == null ? " "
+                    : SparqlRenderer.render(this.transform).toString());
             final List<String> ids = Lists.newArrayList();
             if (this.triggeredRuleIDs != null) {
                 for (final Resource ruleID : this.triggeredRuleIDs) {
@@ -681,7 +683,7 @@ try{
     @Override
     public String toString()
     {
-        return this.id instanceof URI ? ((URI) this.id).getLocalName() : "unnamed";
+        return this.id instanceof IRI ? ((IRI) this.id).getLocalName() : "unnamed";
     }
 
     // HANDLER INTERFACE
@@ -689,8 +691,92 @@ try{
     public interface StatementHandler<E extends Exception>
     {
 
-        void handle(Resource subj, URI pred, Value obj, Resource ctx) throws E;
+        void handle(Resource subj, IRI pred, Value obj, Resource ctx) throws E;
 
+    }
+
+    @Nullable
+    public static TupleExpr normalizeVars(@Nullable TupleExpr expr)
+    {
+
+        if (expr == null) {
+            return null;
+        }
+
+        expr = expr.clone();
+        expr.setParentNode(null);
+
+        final Map<String, String> replacements = new HashMap<>();
+        final List<Filter> filtersToDrop = new ArrayList<>();
+        expr.visit(new AbstractQueryModelVisitor<RuntimeException>() {
+
+            @Override
+            public void meet(final SameTerm same) throws RuntimeException
+            {
+                if (same.getParentNode() instanceof Filter && same.getLeftArg() instanceof Var
+                        && same.getRightArg() instanceof Var) {
+                    final Var leftVar = (Var) same.getLeftArg();
+                    final Var rightVar = (Var) same.getRightArg();
+                    if (leftVar.isAnonymous() || rightVar.isAnonymous()) {
+                        if (!rightVar.isAnonymous()) {
+                            replacements.put(leftVar.getName(), rightVar.getName());
+                        } else {
+                            replacements.put(rightVar.getName(), leftVar.getName());
+                        }
+                        filtersToDrop.add((Filter) same.getParentNode());
+                    }
+                }
+            }
+
+        });
+        expr.visit(new AbstractQueryModelVisitor<RuntimeException>() {
+
+            @Override
+            public void meet(final Var var) throws RuntimeException
+            {
+                if (!var.hasValue()) {
+                    final String newName = replacements.get(var.getName());
+                    if (newName != null) {
+                        var.setName(newName);
+                    } else if (var.getName().startsWith("_const-")) {
+                        if (var.getParentNode() instanceof StatementPattern) {
+                            for (final Var var2 : ((StatementPattern) var.getParentNode())
+                                    .getVarList()) {
+                                if (var2.hasValue() && var.getName().startsWith(var2.getName())) {
+                                    var.setValue(var2.getValue());
+                                }
+                            }
+                        }
+                    } else if (var.getName().startsWith("-anon-")) {
+                        var.setName(var.getName().replace('-', '_'));
+                    } else {
+                        final int index = var.getName().indexOf('-');
+                        if (index >= 0) {
+                            var.setName(var.getName().substring(0, index));
+                        }
+                    }
+                }
+            }
+
+        });
+        for (final Filter filter : filtersToDrop) {
+            expr = (TupleExpr) Rule.replaceNode(expr, filter, filter.getArg());
+        }
+        return expr;
+    }
+
+    public static QueryModelNode replaceNode(final QueryModelNode root,
+            final QueryModelNode current, final QueryModelNode replacement)
+    {
+        final QueryModelNode parent = current.getParentNode();
+        if (parent == null) {
+            replacement.setParentNode(null);
+            return replacement;
+        } else {
+            parent.replaceChildNode(current, replacement);
+            current.setParentNode(null);
+            return root;
+        }
     }
 
 }

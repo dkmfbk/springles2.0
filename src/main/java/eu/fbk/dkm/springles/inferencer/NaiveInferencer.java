@@ -5,13 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -19,24 +18,23 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.impl.ListBindingSet;
-import org.openrdf.query.impl.MapBindingSet;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.Iterations;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.impl.ListBindingSet;
+import org.eclipse.rdf4j.query.impl.MapBindingSet;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.Iterations;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -69,6 +67,8 @@ class NaiveInferencer extends AbstractInferencer
 
     private final Map<Resource, RuleStatistics> statistics;
 
+    int cont = 0;
+
     public NaiveInferencer(final Ruleset ruleset, @Nullable final BindingSet rulesetBindings,
             final int maxConcurrentRules)
     {
@@ -80,7 +80,12 @@ class NaiveInferencer extends AbstractInferencer
         }
 
         this.ruleset = ruleset.isFrozen() ? ruleset : ruleset.clone();
+        NaiveInferencer.LOGGER.info("Costruttore Naive Inferencer Bindings1=[ {} ]",
+                rulesetBindings);
         this.rulesetBindings = ruleset.getParameterBindings(rulesetBindings);
+        NaiveInferencer.LOGGER.info("Costruttore Naive Inferencer Bindings2=[ {} ]",
+                this.rulesetBindings);
+
         this.maxConcurrentRules = concurrencyLevel;
         this.statistics = Maps.newHashMap();
 
@@ -95,14 +100,18 @@ class NaiveInferencer extends AbstractInferencer
     protected InferenceMode doInitialize(final String inferredContextPrefix, final Hasher hasher)
             throws Exception
     {
-        this.rulesetBindings = overrideBindings(this.rulesetBindings,
-                new ListBindingSet(ImmutableList.of("prefix"), ValueFactoryImpl.getInstance()
-                        .createLiteral(inferredContextPrefix)));
+        NaiveInferencer.LOGGER.info("inizializeinferencerbindings={}", this.rulesetBindings);
+        NaiveInferencer.LOGGER.info("inferredContextPrefix={}", this.rulesetBindings);
+        this.rulesetBindings = NaiveInferencer.overrideBindings(this.rulesetBindings,
+                new ListBindingSet(ImmutableList.of("prefix"),
+                        SimpleValueFactory.getInstance().createLiteral(inferredContextPrefix)));
 
+        NaiveInferencer.LOGGER.info("inizializeDinferencerbindings={}", this.rulesetBindings);
         hasher.putUnencodedChars(this.ruleset.digest());
-        for (final String name : Ordering.natural().sortedCopy(
-                this.rulesetBindings.getBindingNames())) {
-            hasher.putUnencodedChars(name).putUnencodedChars(this.rulesetBindings.getValue(name).stringValue());
+        for (final String name : Ordering.natural()
+                .sortedCopy(this.rulesetBindings.getBindingNames())) {
+            hasher.putUnencodedChars(name)
+                    .putUnencodedChars(this.rulesetBindings.getValue(name).stringValue());
         }
 
         return InferenceMode.FORWARD;
@@ -118,13 +127,13 @@ class NaiveInferencer extends AbstractInferencer
     @Override
     public void close() throws RepositoryException
     {
-        if (LOGGER.isInfoEnabled()) {
+        if (NaiveInferencer.LOGGER.isInfoEnabled()) {
             final StringBuilder builder = new StringBuilder("Inference statistics:");
             for (final Rule rule : this.ruleset.getRules()) {
                 builder.append("\n  ").append(this.statistics.get(rule.getID()).toString());
             }
-            LOGGER.info(builder.toString());
-            LOGGER.info("Inference buffer statistics: " + Buffer.getStatistics());
+            NaiveInferencer.LOGGER.info(builder.toString());
+            NaiveInferencer.LOGGER.info("Inference buffer statistics: " + Buffer.getStatistics());
         }
     }
 
@@ -140,7 +149,7 @@ class NaiveInferencer extends AbstractInferencer
         for (final Map.Entry<String, ValueExpr> entry : overridingExpressions.entrySet()) {
             final String name = entry.getKey();
             final Value value = Algebra.evaluateValueExpr(entry.getValue(), baseBindings,
-                    ValueFactoryImpl.getInstance());
+                    SimpleValueFactory.getInstance());
             newBindings.addBinding(name, value);
         }
 
@@ -198,30 +207,40 @@ class NaiveInferencer extends AbstractInferencer
 
             case STALE:
                 this.context.removeInferred(null, null, null, new Resource[] {});
-
+                // return;
             case POSSIBLY_INCOMPLETE:
                 try {
-                    LOGGER.debug("[{}] === Closure computation started ===", this.id);
+                    NaiveInferencer.LOGGER.info("[{}] === Closure computation started ===",
+                            this.id);
 
                     long time = System.currentTimeMillis();
-                    this.buffer = Lists.newArrayListWithCapacity(INITIAL_BUFFER_CAPACITY);
+                    this.buffer = Lists
+                            .newArrayListWithCapacity(NaiveInferencer.INITIAL_BUFFER_CAPACITY);
                     this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
+                    for (final Resource r : this.activeRules) {
+                        NaiveInferencer.LOGGER.info("{}", r.stringValue());
+                    }
                     this.lastBindings = null;
-                    final long inferred = executeTask(
+
+                    NaiveInferencer.LOGGER.info("NaiveInferencerClosurePlan ={}  Bindings ={}",
+                            NaiveInferencer.this.ruleset.getClosurePlan(),
+                            NaiveInferencer.this.rulesetBindings);
+                    final long inferred = this.executeTask(
                             NaiveInferencer.this.ruleset.getClosurePlan(),
                             NaiveInferencer.this.rulesetBindings);
                     this.buffer = null;
                     time = System.currentTimeMillis() - time;
 
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("[{}] === Closure computation completed after {} ms with "
-                                + "{} new inferences ===",
+                    if (NaiveInferencer.LOGGER.isDebugEnabled()) {
+                        NaiveInferencer.LOGGER.debug(
+                                "[{}] === Closure computation completed after {} ms with "
+                                        + "{} new inferences ===",
                                 new Object[] { this.id, time, inferred });
                     }
 
                 } catch (final QueryEvaluationException ex) {
-                    throw new RepositoryException(
-                            "Closure computation failed: " + ex.getMessage(), ex);
+                    throw new RepositoryException("Closure computation failed: " + ex.getMessage(),
+                            ex);
                 }
                 break;
 
@@ -238,24 +257,35 @@ class NaiveInferencer extends AbstractInferencer
         protected final long executeTask(final ClosureTask task, final BindingSet bindings)
                 throws QueryEvaluationException, RepositoryException
         {
+            NaiveInferencer.LOGGER.info("[Execute Tsk] Bindings {} - {}", bindings,
+                    NaiveInferencer.this.cont);
             BindingSet actualBindings = bindings;
             if (!task.getBindings().isEmpty()) {
-                actualBindings = overrideBindings(bindings, task.getBindings());
+                actualBindings = NaiveInferencer.overrideBindings(bindings, task.getBindings());
+                NaiveInferencer.LOGGER.info("[Execute Tsk] ActualBindings {} - {}", actualBindings,
+                        NaiveInferencer.this.cont);
             }
 
             if (!(task instanceof ClosureEvalTask)) {
-                LOGGER.debug("[{}] --- Executing {} ---", this.id, task);
+                NaiveInferencer.LOGGER.info("[{}] --- Executing {} ---", this.id, task);
             }
-
+            NaiveInferencer.LOGGER.info("{} - {}", actualBindings.getBindingNames().toString(),
+                    NaiveInferencer.this.cont);
             long result;
             if (task instanceof ClosureSequenceTask) {
-                result = executeSequence((ClosureSequenceTask) task, actualBindings);
+                NaiveInferencer.LOGGER.info("[{}] --- Executing {} ---", this.id, task);
+                result = this.executeSequence((ClosureSequenceTask) task, actualBindings);
             } else if (task instanceof ClosureFixPointTask) {
-                result = executeFixPoint((ClosureFixPointTask) task, actualBindings);
+                NaiveInferencer.LOGGER.info("[{}] --- Executing {} ---", this.id, task);
+                result = this.executeFixPoint((ClosureFixPointTask) task, actualBindings);
             } else if (task instanceof ClosureRepeatTask) {
-                result = executeRepeat((ClosureRepeatTask) task, actualBindings);
+                NaiveInferencer.LOGGER.info("[{}] --- Executing {} ---", this.id, task);
+                result = this.executeRepeat((ClosureRepeatTask) task, actualBindings);
             } else if (task instanceof ClosureEvalTask) {
-                result = executeEval((ClosureEvalTask) task, actualBindings);
+                NaiveInferencer.LOGGER.info("[{}] --- Executing {} ---", this.id, task);
+                NaiveInferencer.LOGGER.info("EXECUTE EVAL TASK --- ActualBindings {} ---", this.id,
+                        actualBindings);
+                result = this.executeEval((ClosureEvalTask) task, actualBindings);
             } else {
                 throw new Error("Unknown closure task: " + task.getClass().getSimpleName());
             }
@@ -268,7 +298,7 @@ class NaiveInferencer extends AbstractInferencer
         {
             long result = 0L;
             for (final ClosureTask subTask : task.getSubTasks()) {
-                final long inferred = executeTask(subTask, bindings);
+                final long inferred = this.executeTask(subTask, bindings);
                 result += inferred;
             }
             return result;
@@ -278,22 +308,28 @@ class NaiveInferencer extends AbstractInferencer
                 throws QueryEvaluationException, RepositoryException
         {
             long result = 0L;
-            int iteration = 1;
-
+            // int iteration = 1;
             while (true) {
-                LOGGER.debug("[{}] Fix point iteration {} started", this.id, iteration);
+                // LOGGER.info("[{}] Fixxxxx point iteration {} started", this.id, iteration);
+                // LOGGER.info("[{}] Fixxxxx point bindings {} started", this.id, bindings);
+                // #TODO GC
+                final long size_before = this.context.size(true);
+                this.executeTask(task.getSubTask(), bindings);
+                final long size_after = this.context.size(true);
 
-                final long inferred = executeTask(task.getSubTask(), bindings);
+                final long inferred = size_after - size_before;
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Fix point iteration {} completed with {} new inferences",
-                            new Object[] { this.id, iteration, inferred });
-                }
-
+                // if (LOGGER.isInfoEnabled()) {
+                // LOGGER.info("[{}] Fixxxxx point iteration {} completed with {} new inferences",
+                // new Object[] { this.id, iteration, inferred });
+                // }
+                // LOGGER.info("{}",inferred);
                 result += inferred;
-                ++iteration;
-
+                // ++iteration;
+                ++NaiveInferencer.this.cont;
+                // if (inferred == 0L || cont > 150) {
                 if (inferred == 0L) {
+
                     break;
                 }
             }
@@ -306,8 +342,8 @@ class NaiveInferencer extends AbstractInferencer
         {
             final List<BindingSet> iterationRange;
             try {
-                iterationRange = Iterations.asList(this.context.query(task.getQuery(), null,
-                        bindings, true, 0));
+                iterationRange = Iterations
+                        .asList(this.context.query(task.getQuery(), null, bindings, true, 0));
             } catch (final MalformedQueryException ex) {
                 throw new Error("Unexpected exception: " + ex.getMessage(), ex);
             }
@@ -317,16 +353,18 @@ class NaiveInferencer extends AbstractInferencer
 
             for (final BindingSet iterationBindings : iterationRange) {
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Repeat iteration {}/{} started", new Object[] { this.id,
-                            iteration, iterationRange.size() });
+                if (NaiveInferencer.LOGGER.isDebugEnabled()) {
+                    NaiveInferencer.LOGGER.debug("[{}] Repeat iteration {}/{} started",
+                            new Object[] { this.id, iteration, iterationRange.size() });
                 }
 
-                final BindingSet actualBindings = overrideBindings(bindings, iterationBindings);
-                final long inferred = executeTask(task.getSubTask(), actualBindings);
+                final BindingSet actualBindings = NaiveInferencer.overrideBindings(bindings,
+                        iterationBindings);
+                final long inferred = this.executeTask(task.getSubTask(), actualBindings);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Repeat iteration {}/{} completed with {} new inferences",
+                if (NaiveInferencer.LOGGER.isDebugEnabled()) {
+                    NaiveInferencer.LOGGER.debug(
+                            "[{}] Repeat iteration {}/{} completed with {} new inferences",
                             new Object[] { this.id, iteration, iterationRange.size(), inferred });
                 }
 
@@ -340,6 +378,11 @@ class NaiveInferencer extends AbstractInferencer
         protected long executeEval(final ClosureEvalTask task, final BindingSet bindings)
                 throws QueryEvaluationException, RepositoryException
         {
+            NaiveInferencer.LOGGER.info("executeEval [ {} ]", task);
+
+            // LOGGER.info("GAETANO++++Bindings [ {} ]
+            // --LansBIndings[{}]+++",bindings,this.lastBindings);
+
             if (!bindings.equals(this.lastBindings)) {
                 this.activeRules.addAll(NaiveInferencer.this.ruleset.getForwardRuleIDs());
                 this.lastBindings = bindings;
@@ -351,13 +394,19 @@ class NaiveInferencer extends AbstractInferencer
             for (final Resource ruleID : task.getRuleIDs()) {
                 final Rule rule = NaiveInferencer.this.ruleset.getRule(ruleID);
                 if (!this.activeRules.contains(ruleID)) {
-                    LOGGER.debug("[{}] Rule {} skipped because inactive", this.id, ruleID);
+                    NaiveInferencer.LOGGER.debug("[{}] Rule {} skipped because inactive", this.id,
+                            ruleID);
                 } else if (rule.getCondition() != null
                         && !((Literal) Algebra.evaluateValueExpr(rule.getCondition(), bindings,
-                                ValueFactoryImpl.getInstance())).booleanValue()) {
-                    LOGGER.debug("[{}] Rule {} skipped because condition unsatisfied", this.id,
-                            ruleID);
+                                SimpleValueFactory.getInstance())).booleanValue()) {
+                    NaiveInferencer.LOGGER.debug(
+                            "[{}] Rule {} skipped because condition unsatisfied", this.id, ruleID);
                 } else {
+
+                    // for (final Resource resource : this.activeRules) {
+                    // System.out.println(resource.toString());
+                    // }
+
                     this.activeRules.remove(ruleID);
                     pendingRuleIDs.offer(ruleID);
                 }
@@ -367,38 +416,36 @@ class NaiveInferencer extends AbstractInferencer
                 return 0L;
             }
 
-            final int numAuxiliaryTasks = this.context.getScheduler() == null ? 0 : Math.min(
-                    NaiveInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
+            final int numAuxiliaryTasks = this.context.getScheduler() == null ? 0
+                    : Math.min(NaiveInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
             final List<Future<?>> futures = Lists.newArrayListWithCapacity(numAuxiliaryTasks);
-            for (int i = 0; i < numAuxiliaryTasks; ++i) {
-                futures.add(this.context.getScheduler().submit(new Callable<Void>() {
+            /*
+             * for (int i = 0; i < numAuxiliaryTasks; ++i) {
+             * futures.add(this.context.getScheduler().submit(new Callable<Void>() {
+             * 
+             * @Override public Void call() throws Exception { executeEvalHelper(pendingRuleIDs,
+             * bindings, buffer); return null; }
+             * 
+             * })); }
+             */
 
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        executeEvalHelper(pendingRuleIDs, bindings, buffer);
-                        return null;
-                    }
-
-                }));
-            }
-
-            executeEvalHelper(pendingRuleIDs, bindings, buffer);
+            this.executeEvalHelper(pendingRuleIDs, bindings, buffer);
 
             for (final Future<?> future : futures) {
                 try {
                     future.get();
                 } catch (final ExecutionException ex) {
-                    throw new RepositoryException("Rule evaluation failed: "
-                            + ex.getCause().getMessage(), ex.getCause());
+                    throw new RepositoryException(
+                            "Rule evaluation failed: " + ex.getCause().getMessage(),
+                            ex.getCause());
                 } catch (final InterruptedException ex) {
                     throw new RepositoryException("Rule evaluation interrupted", ex);
                 }
             }
 
             if (buffer.size() > 0) {
-                LOGGER.debug("[{}] Flushing {} inferred statements to repository", this.id,
-                        buffer.size());
+                NaiveInferencer.LOGGER.info("[{}] Flushing {} inferred statements to repository",
+                        this.id, buffer.size());
                 this.context.addInferred(buffer);
             }
 
@@ -406,8 +453,8 @@ class NaiveInferencer extends AbstractInferencer
         }
 
         private void executeEvalHelper(final Queue<Resource> pendingRuleIDs,
-                final BindingSet bindings, final Buffer buffer) throws QueryEvaluationException,
-                RepositoryException
+                final BindingSet bindings, final Buffer buffer)
+                throws QueryEvaluationException, RepositoryException
         {
             while (true) {
                 Rule rule = null;
@@ -420,20 +467,22 @@ class NaiveInferencer extends AbstractInferencer
                 }
 
                 long time = System.currentTimeMillis();
-                final int count = evaluateRule(rule, bindings, buffer);
+                final int count = this.evaluateRule(rule, bindings, buffer);
                 time = System.currentTimeMillis() - time;
 
                 synchronized (this) {
                     NaiveInferencer.this.statistics.get(rule.getID()).recordActivations(count,
                             time);
                     if (count > 0) {
-                        this.activeRules.addAll(Objects.firstNonNull(rule.getTriggeredRuleIDs(),
-                                NaiveInferencer.this.ruleset.getForwardRuleIDs()));
+                        this.activeRules
+                                .addAll(MoreObjects.firstNonNull(rule.getTriggeredRuleIDs(),
+                                        NaiveInferencer.this.ruleset.getForwardRuleIDs()));
                     }
                 }
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Rule {} evaluated in {} ms, {} statements inferred",
+                if (NaiveInferencer.LOGGER.isInfoEnabled()) {
+                    NaiveInferencer.LOGGER.info(
+                            "[{}] Rule {} evaluated in {} ms, {} statements inferred",
                             new Object[] { this.id, rule, time, count });
                 }
             }
@@ -489,7 +538,7 @@ class NaiveInferencer extends AbstractInferencer
         @Override
         public String toString()
         {
-            final String id = this.ruleID instanceof URI ? ((URI) this.ruleID).getLocalName()
+            final String id = this.ruleID instanceof IRI ? ((IRI) this.ruleID).getLocalName()
                     : this.ruleID.stringValue();
             return String.format("%-20s %6d activation(s) %8d inf. statement(s) %8d ms total", id,
                     this.activations, this.statements, this.time);

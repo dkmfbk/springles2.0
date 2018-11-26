@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>eu.fbk.rdfpro</groupId>
+  <artifactId>rdfpro-dist</artifactId>
+  <versioning>
+    <versions>
+      <version>0.7-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20181120102436</lastUpdated>
+  </versioning>
+</metadata>

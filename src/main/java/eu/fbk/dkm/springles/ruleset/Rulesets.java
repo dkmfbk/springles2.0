@@ -14,9 +14,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.rio.RDFFormat;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.rio.Rio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,41 +42,41 @@ public final class Rulesets
         ruleset.validate();
         ruleset.freeze();
 
-        final Ruleset oldRuleset = REGISTERED_RULESETS.get(ruleset.getID());
+        final Ruleset oldRuleset = Rulesets.REGISTERED_RULESETS.get(ruleset.getID());
         final boolean equal = oldRuleset != null && oldRuleset.equals(ruleset);
 
         if (equal) {
             return false;
         }
 
-        REGISTERED_RULESETS.put(ruleset.getID(), ruleset);
+        Rulesets.REGISTERED_RULESETS.put(ruleset.getID(), ruleset);
 
         if (oldRuleset != null && !equal) {
-            LOGGER.warn("Registration of ruleset " + ruleset.getID() + " (" + ruleset.getLabel()
-                    + ") overrides old ruleset " + oldRuleset.getID() + " ("
+            Rulesets.LOGGER.warn("Registration of ruleset " + ruleset.getID() + " ("
+                    + ruleset.getLabel() + ") overrides old ruleset " + oldRuleset.getID() + " ("
                     + oldRuleset.getLabel() + ")");
         }
 
         return true;
     }
 
-    public static boolean unregister(final URI id)
+    public static boolean unregister(final IRI id)
     {
         Preconditions.checkArgument(!SPC.NAMESPACE.equals(id.getNamespace()),
                 "Cannot unregister builtin ruleset " + id);
-        final Ruleset oldRuleset = REGISTERED_RULESETS.remove(id);
+        final Ruleset oldRuleset = Rulesets.REGISTERED_RULESETS.remove(id);
         return oldRuleset != null;
     }
 
     public static Ruleset lookup(final Resource id)
     {
         Preconditions.checkNotNull(id);
-        return REGISTERED_RULESETS.get(id);
+        return Rulesets.REGISTERED_RULESETS.get(id);
     }
 
     public static List<Ruleset> list()
     {
-        final List<Ruleset> result = Lists.newArrayList(REGISTERED_RULESETS.values());
+        final List<Ruleset> result = Lists.newArrayList(Rulesets.REGISTERED_RULESETS.values());
         Collections.sort(result, new Comparator<Ruleset>() {
 
             @Override
@@ -89,11 +89,12 @@ public final class Rulesets
         return result;
     }
 
-    static {
+    public static void load()
+    {
         List<URL> metaURLs;
         try {
-            metaURLs = Lists.newArrayList(Iterators.forEnumeration(Ruleset.class.getClassLoader()
-                    .getResources("META-INF/springles-rulesets")));
+            metaURLs = Lists.newArrayList(Iterators.forEnumeration(
+                    Ruleset.class.getClassLoader().getResources("META-INF/springles-rulesets")));
         } catch (final IOException ex) {
             throw new Error("Unable to retrieve rulesets declarations");
         }
@@ -104,15 +105,15 @@ public final class Rulesets
             try {
                 lines = Resources.readLines(metaURL, Charsets.UTF_8);
             } catch (final Exception ex) {
-                LOGGER.error("Unable to scan rulesets declarations at " + metaURL + " - ignoring");
+                Rulesets.LOGGER.error(
+                        "Unable to scan rulesets declarations at " + metaURL + " - ignoring");
                 continue;
             }
 
-            LOGGER.info("Processing rulesets declarations at " + metaURL);
+            Rulesets.LOGGER.info("Processing rulesets declarations at " + metaURL);
             for (final String line : lines) {
-
                 String path = line.trim();
-                if (RDFFormat.forFileName(path) != null) {
+                if (Rio.getParserFormatForFileName(path) != null) {
                     final int index = Math.max(0, path.lastIndexOf('.'));
                     path = path.substring(0, index).replace('.', '/') + path.substring(index);
                 } else {
@@ -123,27 +124,34 @@ public final class Rulesets
                 if (rulesetURL != null) {
                     try {
                         final Ruleset ruleset = new Ruleset(rulesetURL);
-                        register(ruleset);
+                        Rulesets.register(ruleset);
                         ++counter;
-                        LOGGER.info("Loaded ruleset " + ruleset.getID() + " from " + rulesetURL);
+                        Rulesets.LOGGER
+                                .info("Loaded ruleset " + ruleset.getID() + " from " + rulesetURL);
                     } catch (final Throwable ex) {
-                        LOGGER.error("Failed to load ruleset from " + rulesetURL + ": " //
+                        Rulesets.LOGGER.error("Failed to load ruleset from " + rulesetURL + ": " //
                                 + ex.getMessage() + " - ignoring", ex);
                     }
                 } else {
-                    LOGGER.warn("Unable to locate ruleset at " + rulesetURL + " - ignoring");
+                    Rulesets.LOGGER
+                            .warn("Unable to locate ruleset at " + rulesetURL + " - ignoring");
                 }
             }
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("{} rulesets registered, {} total", counter, Rulesets.list().size());
+        if (Rulesets.LOGGER.isInfoEnabled()) {
+            Rulesets.LOGGER.info("{} rulesets registered, {} total", counter,
+                    Rulesets.list().size());
         }
 
-        RDFS_MERGED = lookup(SPC.RDFS_MERGED);
-        RDFS_GLOBAL_IMPORT = lookup(SPC.RDFS_GLOBAL_IMPORT);
-        RDFS_GRAPH_IMPORT = lookup(SPC.RDFS_GRAPH_IMPORT);
-        OWL2RL_MERGED = lookup(SPC.OWL2RL_MERGED);
+    }
+
+    static {
+        RDFS_MERGED = Rulesets.lookup(SPC.RDFS_MERGED);
+        RDFS_GLOBAL_IMPORT = Rulesets.lookup(SPC.RDFS_GLOBAL_IMPORT);
+        RDFS_GRAPH_IMPORT = Rulesets.lookup(SPC.RDFS_GRAPH_IMPORT);
+        OWL2RL_MERGED = Rulesets.lookup(SPC.OWL2RL_MERGED);
+        Rulesets.load();
     }
 
     private Rulesets()

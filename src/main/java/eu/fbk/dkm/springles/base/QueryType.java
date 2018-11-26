@@ -7,16 +7,16 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-import org.openrdf.query.BooleanQuery;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.Query;
-import org.openrdf.query.TupleQuery;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.parser.ParsedBooleanQuery;
-import org.openrdf.query.parser.ParsedGraphQuery;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.query.parser.ParsedTupleQuery;
+import org.eclipse.rdf4j.query.BooleanQuery;
+import org.eclipse.rdf4j.query.GraphQuery;
+import org.eclipse.rdf4j.query.GraphQueryResult;
+import org.eclipse.rdf4j.query.Query;
+import org.eclipse.rdf4j.query.TupleQuery;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery;
+import org.eclipse.rdf4j.query.parser.ParsedGraphQuery;
+import org.eclipse.rdf4j.query.parser.ParsedQuery;
+import org.eclipse.rdf4j.query.parser.ParsedTupleQuery;
 
 public final class QueryType<T> implements Serializable
 {
@@ -32,7 +32,8 @@ public final class QueryType<T> implements Serializable
     public static final QueryType<GraphQueryResult> GRAPH = new QueryType<GraphQueryResult>(
             GraphQueryResult.class, GraphQuery.class, ParsedGraphQuery.class, "GRAPH");
 
-    private static final List<QueryType<?>> VALUES = ImmutableList.of(BOOLEAN, TUPLE, GRAPH);
+    private static final List<QueryType<?>> VALUES = ImmutableList.of(QueryType.BOOLEAN,
+            QueryType.TUPLE, QueryType.GRAPH);
 
     private final Class<T> resultClass;
 
@@ -74,17 +75,17 @@ public final class QueryType<T> implements Serializable
 
     public static Iterable<QueryType<?>> values()
     {
-        return VALUES;
+        return QueryType.VALUES;
     }
 
     public static QueryType<?> valueOf(final String string)
     {
-        if (BOOLEAN.name.equals(string)) {
-            return BOOLEAN;
-        } else if (TUPLE.name.equals(string)) {
-            return TUPLE;
-        } else if (GRAPH.name.equals(string)) {
-            return GRAPH;
+        if (QueryType.BOOLEAN.name.equals(string)) {
+            return QueryType.BOOLEAN;
+        } else if (QueryType.TUPLE.name.equals(string)) {
+            return QueryType.TUPLE;
+        } else if (QueryType.GRAPH.name.equals(string)) {
+            return QueryType.GRAPH;
         } else {
             throw new IllegalArgumentException("Unknown query type: " + string);
         }
@@ -94,27 +95,27 @@ public final class QueryType<T> implements Serializable
     public static <T> QueryType<T> forResultClass(final Class<T> resultClass)
     {
         Preconditions.checkNotNull(resultClass);
-        if (BOOLEAN.resultClass.isAssignableFrom(resultClass)) {
-            return (QueryType<T>) BOOLEAN;
-        } else if (TUPLE.resultClass.isAssignableFrom(resultClass)) {
-            return (QueryType<T>) TUPLE;
-        } else if (GRAPH.resultClass.isAssignableFrom(resultClass)) {
-            return (QueryType<T>) GRAPH;
+        if (QueryType.BOOLEAN.resultClass.isAssignableFrom(resultClass)) {
+            return (QueryType<T>) QueryType.BOOLEAN;
+        } else if (QueryType.TUPLE.resultClass.isAssignableFrom(resultClass)) {
+            return (QueryType<T>) QueryType.TUPLE;
+        } else if (QueryType.GRAPH.resultClass.isAssignableFrom(resultClass)) {
+            return (QueryType<T>) QueryType.GRAPH;
         } else {
-            throw new IllegalArgumentException("Invalid query result class: "
-                    + resultClass.getName());
+            throw new IllegalArgumentException(
+                    "Invalid query result class: " + resultClass.getName());
         }
     }
 
     public static QueryType<?> forQueryClass(final Class<? extends Query> queryClass)
     {
         Preconditions.checkNotNull(queryClass);
-        if (BOOLEAN.queryClass.isAssignableFrom(queryClass)) {
-            return BOOLEAN;
-        } else if (TUPLE.queryClass.isAssignableFrom(queryClass)) {
-            return TUPLE;
-        } else if (GRAPH.queryClass.isAssignableFrom(queryClass)) {
-            return GRAPH;
+        if (QueryType.BOOLEAN.queryClass.isAssignableFrom(queryClass)) {
+            return QueryType.BOOLEAN;
+        } else if (QueryType.TUPLE.queryClass.isAssignableFrom(queryClass)) {
+            return QueryType.TUPLE;
+        } else if (QueryType.GRAPH.queryClass.isAssignableFrom(queryClass)) {
+            return QueryType.GRAPH;
         } else {
             throw new IllegalArgumentException("Invalid query class: " + queryClass.getName());
         }
@@ -123,12 +124,12 @@ public final class QueryType<T> implements Serializable
     public static QueryType<?> forParsedClass(final Class<? extends ParsedQuery> parsedClass)
     {
         Preconditions.checkNotNull(parsedClass);
-        if (BOOLEAN.parsedClass.isAssignableFrom(parsedClass)) {
-            return BOOLEAN;
-        } else if (TUPLE.parsedClass.isAssignableFrom(parsedClass)) {
-            return TUPLE;
-        } else if (GRAPH.parsedClass.isAssignableFrom(parsedClass)) {
-            return GRAPH;
+        if (QueryType.BOOLEAN.parsedClass.isAssignableFrom(parsedClass)) {
+            return QueryType.BOOLEAN;
+        } else if (QueryType.TUPLE.parsedClass.isAssignableFrom(parsedClass)) {
+            return QueryType.TUPLE;
+        } else if (QueryType.GRAPH.parsedClass.isAssignableFrom(parsedClass)) {
+            return QueryType.GRAPH;
         } else {
             throw new IllegalArgumentException("Invalid query class: " + parsedClass.getName());
         }
@@ -136,7 +137,7 @@ public final class QueryType<T> implements Serializable
 
     private Object readResolve() throws ObjectStreamException
     {
-        return forResultClass(this.resultClass);
+        return QueryType.forResultClass(this.resultClass);
     }
 
 }

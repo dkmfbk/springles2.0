@@ -7,13 +7,14 @@ import javax.annotation.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Resource;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Selector;
@@ -56,7 +57,7 @@ public final class ClosureRepeatTask extends ClosureTask
 
     public void setSubTask(@Nullable final ClosureTask subTask)
     {
-        checkMutable();
+        this.checkMutable();
         this.subTask = subTask;
     }
 
@@ -68,14 +69,14 @@ public final class ClosureRepeatTask extends ClosureTask
 
     public void setQuery(@Nullable final QuerySpec<TupleQueryResult> query)
     {
-        checkMutable();
+        this.checkMutable();
         this.query = query;
     }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
     @Override
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
         final Resource id = super.emitRDF(graph, baseURI, namespaces);
@@ -87,17 +88,17 @@ public final class ClosureRepeatTask extends ClosureTask
             final String expr = SparqlRenderer.render(this.query.getExpression())
                     .withNamespaces(namespaces).withHeader(false).toString();
             graph.add(id, SPR.REPEAT_OF,
-                    graph.getValueFactory().createLiteral(expr, XMLSchema.STRING));
+                    SimpleValueFactory.getInstance().createLiteral(expr, XMLSchema.STRING));
         }
         return id;
     }
 
     @Override
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
         super.parseRDF(graph, baseURI, namespaces);
-        final Selector s = Selector.select(graph, getID());
+        final Selector s = Selector.select(graph, this.getID());
         final String query = s.get(SPR.REPEAT_OVER, String.class, null);
         final Resource subTaskID = s.get(SPR.REPEAT_OF, Resource.class, null);
         if (query != null) {
@@ -115,8 +116,8 @@ public final class ClosureRepeatTask extends ClosureTask
     public void validate()
     {
         super.validate();
-        validate(this.subTask != null, "missing mandatory sub-task");
-        validate(this.query != null, "missing mandatory query");
+        this.validate(this.subTask != null, "missing mandatory sub-task");
+        this.validate(this.query != null, "missing mandatory query");
         this.subTask.validate();
     }
 
@@ -125,7 +126,7 @@ public final class ClosureRepeatTask extends ClosureTask
     @Override
     public void freeze()
     {
-        if (!isFrozen()) {
+        if (!this.isFrozen()) {
             if (this.subTask != null) {
                 this.subTask.freeze();
             }

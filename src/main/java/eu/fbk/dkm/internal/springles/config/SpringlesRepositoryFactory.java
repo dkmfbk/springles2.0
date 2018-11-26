@@ -1,28 +1,28 @@
 package eu.fbk.dkm.internal.springles.config;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.impl.GraphImpl;
-import org.openrdf.model.util.GraphUtil;
-import org.openrdf.model.util.GraphUtilException;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfigException;
-import org.openrdf.repository.config.RepositoryConfigSchema;
-import org.openrdf.repository.config.RepositoryFactory;
-import org.openrdf.repository.config.RepositoryImplConfig;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.repository.Repository;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigSchema;
+import org.eclipse.rdf4j.repository.config.RepositoryFactory;
+import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
 
 import eu.fbk.dkm.springles.Factory;
 import eu.fbk.dkm.springles.SPC;
@@ -103,19 +103,19 @@ public final class SpringlesRepositoryFactory implements RepositoryFactory
     {
 
         /** The RDF configuration graph. */
-        private final Graph graph;
+        private final Model graph;
 
         /** The root configuration node in the graph. */
         private Resource node;
 
         /**
          * Creates a new instance with an empty configuration graph. The graph will be populated
-         * by {@link #parse(Graph, Resource)}.
+         * by {@link #parse(Model, Resource)}.
          */
         public Config()
         {
-            this.graph = new GraphImpl();
-            this.node = this.graph.getValueFactory().createBNode();
+            this.graph = new LinkedHashModel();
+            this.node = SimpleValueFactory.getInstance().createBNode();
         }
 
         /**
@@ -135,11 +135,13 @@ public final class SpringlesRepositoryFactory implements RepositoryFactory
         public void validate() throws RepositoryConfigException
         {
             try {
-                Preconditions.checkArgument(SpringlesRepository.TYPE.equals(GraphUtil
-                        .getUniqueObjectLiteral(this.graph, this.node,
-                                RepositoryConfigSchema.REPOSITORYTYPE).getLabel()), "must be "
-                        + SpringlesRepository.TYPE);
-            } catch (final GraphUtilException ex) {
+                final Set<Value> types = this.graph
+                        .filter(this.node, RepositoryConfigSchema.REPOSITORYTYPE, null).objects();
+                final Value type = types.size() == 1 ? types.iterator().next() : null;
+                final String label = type instanceof Literal ? ((Literal) type).getLabel() : null;
+                Preconditions.checkArgument(SpringlesRepository.TYPE.equals(label),
+                        "must be " + SpringlesRepository.TYPE);
+            } catch (final Throwable ex) {
                 throw new RepositoryConfigException(
                         "Invalid repository type in configuration graph: " + ex.getMessage(), ex);
             }
@@ -151,7 +153,7 @@ public final class SpringlesRepositoryFactory implements RepositoryFactory
          * {@inheritDoc} Dumps stored RDF data to the supplied graph.
          */
         @Override
-        public Resource export(final Graph graph)
+        public Resource export(final Model graph)
         {
             graph.addAll(this.graph);
             return this.node;
@@ -164,46 +166,64 @@ public final class SpringlesRepositoryFactory implements RepositoryFactory
          * nodes, particularly the Sesame rep:Repository node (which is related to ID and title
          * metadata about the repository and is distinct from the repository implementation node
          * managed in this class). If information about that node is imported, then it will be
-         * also exported as part of the execution of {@link #export(Graph)}, causing Sesame to
+         * also exported as part of the execution of {@link #export(Model)}, causing Sesame to
          * store duplicate data in its system repository, which would then become partly unusable.
          * This method also reuses the Sesame repository ID as the ID assigned through property
          * {@link SPC#HAS_ID} to the repository implementation, if missing.
          */
         @Override
-        public void parse(final Graph graph, final Resource implNode)
+        public void parse(final Model graph, final Resource implNode)
         {
             Preconditions.checkNotNull(graph);
             Preconditions.checkNotNull(implNode);
 
-            this.node = implNode;
+            // IMPORTANT!!! if we just reuse the supplied implNode bnode, even if the resulting
+            // config and the exported RDF appear perfectly fine, they do not work in RDF4J. The
+            // problem is that files ~/.RDF4J/server/repository/<ID>/config.ttl miss the required
+            // association between repository and repository impl node (repository points to an
+            // anon. bnode [], another anon. bnode [] is the impl). No clue why this happens.
+            // This has something to do with inlining of bnodes in turtle. Using IRIs in place of
+            // bnodes does not work. Adding extra triples to avoid inlining of impl bnode does not
+            // work too (it introduces a cycle, which is fine but the turtle writer will complain)
+            this.node = SimpleValueFactory.getInstance().createBNode();
 
             // import only the statements describing implNode
             final Set<Resource> visited = Sets.newHashSet(implNode);
             final Queue<Resource> pending = Lists.newLinkedList(Collections.singleton(implNode));
             while (!pending.isEmpty()) {
                 final Resource node = pending.poll();
-                for (final Iterator<Statement> i = graph.match(node, null, null); i.hasNext();) {
-                    final Statement statement = i.next();
-                    this.graph.add(statement);
-                    if (statement.getObject() instanceof Resource) {
-                        final Resource object = (Resource) statement.getObject();
+                for (final Statement stmt : graph.filter(node, null, null)) {
+
+                    // extract components
+                    Resource s = stmt.getSubject();
+                    final IRI p = stmt.getPredicate();
+                    Value o = stmt.getObject();
+
+                    // enqueue the inclusion of statements for object resources
+                    if (o instanceof Resource) {
+                        final Resource object = (Resource) o;
                         if (!visited.contains(object)) {
                             visited.add(object);
                             pending.offer(object);
                         }
                     }
+
+                    // store the statement, rewriting the implNode with a new IRI if needed
+                    s = implNode.equals(s) ? this.node : s;
+                    o = implNode.equals(o) ? this.node : o;
+                    this.graph.add(s, p, o);
                 }
             }
 
             // reuse the repository identifier if a statement <implNode hasID id> is missing
-            if (!graph.match(implNode, SPC.HAS_ID, null).hasNext()) {
-                Statement statement = Iterators.getNext(
-                        graph.match(null, RepositoryConfigSchema.REPOSITORYIMPL, implNode), null);
+            if (graph.filter(implNode, SPC.HAS_ID, null).isEmpty()) {
+                Statement statement = Iterables.getFirst(
+                        graph.filter(null, RepositoryConfigSchema.REPOSITORYIMPL, implNode), null);
                 if (statement != null) {
-                    statement = Iterators.getNext(graph.match(statement.getSubject(),
+                    statement = Iterables.getFirst(graph.filter(statement.getSubject(),
                             RepositoryConfigSchema.REPOSITORYID, null), null);
                     if (statement != null && statement.getObject() instanceof Literal) {
-                        this.graph.add(implNode, SPC.HAS_ID, statement.getObject());
+                        this.graph.add(this.node, SPC.HAS_ID, statement.getObject());
                     }
                 }
             }

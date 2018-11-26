@@ -11,7 +11,7 @@ import java.util.concurrent.Future;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -19,24 +19,23 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.impl.ListBindingSet;
-import org.openrdf.query.impl.MapBindingSet;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.Iterations;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.impl.ListBindingSet;
+import org.eclipse.rdf4j.query.impl.MapBindingSet;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.Iterations;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -95,14 +94,15 @@ class TestInferencer extends AbstractInferencer
     protected InferenceMode doInitialize(final String inferredContextPrefix, final Hasher hasher)
             throws Exception
     {
-        this.rulesetBindings = overrideBindings(this.rulesetBindings,
-                new ListBindingSet(ImmutableList.of("prefix"), ValueFactoryImpl.getInstance()
-                        .createLiteral(inferredContextPrefix)));
+        this.rulesetBindings = TestInferencer.overrideBindings(this.rulesetBindings,
+                new ListBindingSet(ImmutableList.of("prefix"),
+                        SimpleValueFactory.getInstance().createLiteral(inferredContextPrefix)));
 
         hasher.putUnencodedChars(this.ruleset.digest());
-        for (final String name : Ordering.natural().sortedCopy(
-                this.rulesetBindings.getBindingNames())) {
-            hasher.putUnencodedChars(name).putUnencodedChars(this.rulesetBindings.getValue(name).stringValue());
+        for (final String name : Ordering.natural()
+                .sortedCopy(this.rulesetBindings.getBindingNames())) {
+            hasher.putUnencodedChars(name)
+                    .putUnencodedChars(this.rulesetBindings.getValue(name).stringValue());
         }
 
         return InferenceMode.FORWARD;
@@ -118,13 +118,13 @@ class TestInferencer extends AbstractInferencer
     @Override
     public void close() throws RepositoryException
     {
-        if (LOGGER.isInfoEnabled()) {
+        if (TestInferencer.LOGGER.isInfoEnabled()) {
             final StringBuilder builder = new StringBuilder("Inference statistics:");
             for (final Rule rule : this.ruleset.getRules()) {
                 builder.append("\n  ").append(this.statistics.get(rule.getID()).toString());
             }
-            LOGGER.info(builder.toString());
-            LOGGER.info("Inference buffer statistics: " + Buffer.getStatistics());
+            TestInferencer.LOGGER.info(builder.toString());
+            TestInferencer.LOGGER.info("Inference buffer statistics: " + Buffer.getStatistics());
         }
     }
 
@@ -140,7 +140,7 @@ class TestInferencer extends AbstractInferencer
         for (final Map.Entry<String, ValueExpr> entry : overridingExpressions.entrySet()) {
             final String name = entry.getKey();
             final Value value = Algebra.evaluateValueExpr(entry.getValue(), baseBindings,
-                    ValueFactoryImpl.getInstance());
+                    SimpleValueFactory.getInstance());
             newBindings.addBinding(name, value);
         }
 
@@ -201,27 +201,30 @@ class TestInferencer extends AbstractInferencer
 
             case POSSIBLY_INCOMPLETE:
                 try {
-                    LOGGER.debug("[{}] === Closure computation started ===", this.id);
+                    TestInferencer.LOGGER.debug("[{}] === Closure computation started ===",
+                            this.id);
 
                     long time = System.currentTimeMillis();
-                    this.buffer = Lists.newArrayListWithCapacity(INITIAL_BUFFER_CAPACITY);
+                    this.buffer = Lists
+                            .newArrayListWithCapacity(TestInferencer.INITIAL_BUFFER_CAPACITY);
                     this.activeRules.addAll(TestInferencer.this.ruleset.getForwardRuleIDs());
                     this.lastBindings = null;
-                    final long inferred = executeTask(
+                    final long inferred = this.executeTask(
                             TestInferencer.this.ruleset.getClosurePlan(),
                             TestInferencer.this.rulesetBindings);
                     this.buffer = null;
                     time = System.currentTimeMillis() - time;
 
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("[{}] === Closure computation completed after {} ms with "
-                                + "{} new inferences ===",
+                    if (TestInferencer.LOGGER.isInfoEnabled()) {
+                        TestInferencer.LOGGER.info(
+                                "[{}] === Closure computation completed after {} ms with "
+                                        + "{} new inferences ===",
                                 new Object[] { this.id, time, inferred });
                     }
 
                 } catch (final QueryEvaluationException ex) {
-                    throw new RepositoryException(
-                            "Closure computation failed: " + ex.getMessage(), ex);
+                    throw new RepositoryException("Closure computation failed: " + ex.getMessage(),
+                            ex);
                 }
                 break;
 
@@ -240,22 +243,22 @@ class TestInferencer extends AbstractInferencer
         {
             BindingSet actualBindings = bindings;
             if (!task.getBindings().isEmpty()) {
-                actualBindings = overrideBindings(bindings, task.getBindings());
+                actualBindings = TestInferencer.overrideBindings(bindings, task.getBindings());
             }
 
             if (!(task instanceof ClosureEvalTask)) {
-                LOGGER.debug("[{}] --- Executing {} ---", this.id, task);
+                TestInferencer.LOGGER.debug("[{}] --- Executing {} ---", this.id, task);
             }
 
             long result;
             if (task instanceof ClosureSequenceTask) {
-                result = executeSequence((ClosureSequenceTask) task, actualBindings);
+                result = this.executeSequence((ClosureSequenceTask) task, actualBindings);
             } else if (task instanceof ClosureFixPointTask) {
-                result = executeFixPoint((ClosureFixPointTask) task, actualBindings);
+                result = this.executeFixPoint((ClosureFixPointTask) task, actualBindings);
             } else if (task instanceof ClosureRepeatTask) {
-                result = executeRepeat((ClosureRepeatTask) task, actualBindings);
+                result = this.executeRepeat((ClosureRepeatTask) task, actualBindings);
             } else if (task instanceof ClosureEvalTask) {
-                result = executeEval((ClosureEvalTask) task, actualBindings);
+                result = this.executeEval((ClosureEvalTask) task, actualBindings);
             } else {
                 throw new Error("Unknown closure task: " + task.getClass().getSimpleName());
             }
@@ -268,7 +271,7 @@ class TestInferencer extends AbstractInferencer
         {
             long result = 0L;
             for (final ClosureTask subTask : task.getSubTasks()) {
-                final long inferred = executeTask(subTask, bindings);
+                final long inferred = this.executeTask(subTask, bindings);
                 result += inferred;
             }
             return result;
@@ -281,12 +284,14 @@ class TestInferencer extends AbstractInferencer
             int iteration = 1;
 
             while (true) {
-                LOGGER.debug("[{}] Fix point iteration {} started", this.id, iteration);
+                TestInferencer.LOGGER.debug("[{}] Fix point iteration {} started", this.id,
+                        iteration);
 
-                final long inferred = executeTask(task.getSubTask(), bindings);
+                final long inferred = this.executeTask(task.getSubTask(), bindings);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Fix point iteration {} completed with {} new inferences",
+                if (TestInferencer.LOGGER.isDebugEnabled()) {
+                    TestInferencer.LOGGER.debug(
+                            "[{}] Fix point iteration {} completed with {} new inferences",
                             new Object[] { this.id, iteration, inferred });
                 }
 
@@ -306,8 +311,8 @@ class TestInferencer extends AbstractInferencer
         {
             final List<BindingSet> iterationRange;
             try {
-                iterationRange = Iterations.asList(this.context.query(task.getQuery(), null,
-                        bindings, true, 0));
+                iterationRange = Iterations
+                        .asList(this.context.query(task.getQuery(), null, bindings, true, 0));
             } catch (final MalformedQueryException ex) {
                 throw new Error("Unexpected exception: " + ex.getMessage(), ex);
             }
@@ -317,16 +322,18 @@ class TestInferencer extends AbstractInferencer
 
             for (final BindingSet iterationBindings : iterationRange) {
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Repeat iteration {}/{} started", new Object[] { this.id,
-                            iteration, iterationRange.size() });
+                if (TestInferencer.LOGGER.isDebugEnabled()) {
+                    TestInferencer.LOGGER.debug("[{}] Repeat iteration {}/{} started",
+                            new Object[] { this.id, iteration, iterationRange.size() });
                 }
 
-                final BindingSet actualBindings = overrideBindings(bindings, iterationBindings);
-                final long inferred = executeTask(task.getSubTask(), actualBindings);
+                final BindingSet actualBindings = TestInferencer.overrideBindings(bindings,
+                        iterationBindings);
+                final long inferred = this.executeTask(task.getSubTask(), actualBindings);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Repeat iteration {}/{} completed with {} new inferences",
+                if (TestInferencer.LOGGER.isDebugEnabled()) {
+                    TestInferencer.LOGGER.debug(
+                            "[{}] Repeat iteration {}/{} completed with {} new inferences",
                             new Object[] { this.id, iteration, iterationRange.size(), inferred });
                 }
 
@@ -351,12 +358,13 @@ class TestInferencer extends AbstractInferencer
             for (final Resource ruleID : task.getRuleIDs()) {
                 final Rule rule = TestInferencer.this.ruleset.getRule(ruleID);
                 if (!this.activeRules.contains(ruleID)) {
-                    LOGGER.debug("[{}] Rule {} skipped because inactive", this.id, ruleID);
+                    TestInferencer.LOGGER.debug("[{}] Rule {} skipped because inactive", this.id,
+                            ruleID);
                 } else if (rule.getCondition() != null
                         && !((Literal) Algebra.evaluateValueExpr(rule.getCondition(), bindings,
-                                ValueFactoryImpl.getInstance())).booleanValue()) {
-                    LOGGER.debug("[{}] Rule {} skipped because condition unsatisfied", this.id,
-                            ruleID);
+                                SimpleValueFactory.getInstance())).booleanValue()) {
+                    TestInferencer.LOGGER.debug(
+                            "[{}] Rule {} skipped because condition unsatisfied", this.id, ruleID);
                 } else {
                     this.activeRules.remove(ruleID);
                     pendingRuleIDs.offer(ruleID);
@@ -367,8 +375,8 @@ class TestInferencer extends AbstractInferencer
                 return 0L;
             }
 
-            final int numAuxiliaryTasks = this.context.getScheduler() == null ? 0 : Math.min(
-                    TestInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
+            final int numAuxiliaryTasks = this.context.getScheduler() == null ? 0
+                    : Math.min(TestInferencer.this.maxConcurrentRules, pendingRuleIDs.size()) - 1;
             final List<Future<?>> futures = Lists.newArrayListWithCapacity(numAuxiliaryTasks);
             for (int i = 0; i < numAuxiliaryTasks; ++i) {
                 futures.add(this.context.getScheduler().submit(new Callable<Void>() {
@@ -376,29 +384,30 @@ class TestInferencer extends AbstractInferencer
                     @Override
                     public Void call() throws Exception
                     {
-                        executeEvalHelper(pendingRuleIDs, bindings, buffer);
+                        NaiveSession.this.executeEvalHelper(pendingRuleIDs, bindings, buffer);
                         return null;
                     }
 
                 }));
             }
 
-            executeEvalHelper(pendingRuleIDs, bindings, buffer);
+            this.executeEvalHelper(pendingRuleIDs, bindings, buffer);
 
             for (final Future<?> future : futures) {
                 try {
                     future.get();
                 } catch (final ExecutionException ex) {
-                    throw new RepositoryException("Rule evaluation failed: "
-                            + ex.getCause().getMessage(), ex.getCause());
+                    throw new RepositoryException(
+                            "Rule evaluation failed: " + ex.getCause().getMessage(),
+                            ex.getCause());
                 } catch (final InterruptedException ex) {
                     throw new RepositoryException("Rule evaluation interrupted", ex);
                 }
             }
 
             if (buffer.size() > 0) {
-                LOGGER.debug("[{}] Flushing {} inferred statements to repository", this.id,
-                        buffer.size());
+                TestInferencer.LOGGER.debug("[{}] Flushing {} inferred statements to repository",
+                        this.id, buffer.size());
                 this.context.addInferred(buffer);
             }
 
@@ -406,8 +415,8 @@ class TestInferencer extends AbstractInferencer
         }
 
         private void executeEvalHelper(final Queue<Resource> pendingRuleIDs,
-                final BindingSet bindings, final Buffer buffer) throws QueryEvaluationException,
-                RepositoryException
+                final BindingSet bindings, final Buffer buffer)
+                throws QueryEvaluationException, RepositoryException
         {
             while (true) {
                 Rule rule = null;
@@ -420,20 +429,22 @@ class TestInferencer extends AbstractInferencer
                 }
 
                 long time = System.currentTimeMillis();
-                final int count = evaluateRule(rule, bindings, buffer);
+                final int count = this.evaluateRule(rule, bindings, buffer);
                 time = System.currentTimeMillis() - time;
 
                 synchronized (this) {
                     TestInferencer.this.statistics.get(rule.getID()).recordActivations(count,
                             time);
                     if (count > 0) {
-                        this.activeRules.addAll(Objects.firstNonNull(rule.getTriggeredRuleIDs(),
-                                TestInferencer.this.ruleset.getForwardRuleIDs()));
+                        this.activeRules
+                                .addAll(MoreObjects.firstNonNull(rule.getTriggeredRuleIDs(),
+                                        TestInferencer.this.ruleset.getForwardRuleIDs()));
                     }
                 }
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Rule {} evaluated in {} ms, {} statements inferred",
+                if (TestInferencer.LOGGER.isDebugEnabled()) {
+                    TestInferencer.LOGGER.debug(
+                            "[{}] Rule {} evaluated in {} ms, {} statements inferred",
                             new Object[] { this.id, rule, time, count });
                 }
             }
@@ -489,7 +500,7 @@ class TestInferencer extends AbstractInferencer
         @Override
         public String toString()
         {
-            final String id = this.ruleID instanceof URI ? ((URI) this.ruleID).getLocalName()
+            final String id = this.ruleID instanceof IRI ? ((IRI) this.ruleID).getLocalName()
                     : this.ruleID.stringValue();
             return String.format("%-20s %6d activation(s) %8d inf. statement(s) %8d ms total", id,
                     this.activations, this.statements, this.time);

@@ -1,10 +1,10 @@
 package eu.fbk.dkm.springles;
 
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.repository.Repository;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 // SParql Rule-based Inference over Named Graphs Layer Extending Sesame
 
@@ -35,7 +35,7 @@ public interface SpringlesRepository extends Repository
 
     String getID();
 
-    URI getNullContextURI();
+    IRI getNullContextURI();
 
     String getInferredContextPrefix();
 

@@ -8,11 +8,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.UnmodifiableIterator;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
 
 import eu.fbk.dkm.springles.ruleset.Rule.StatementHandler;
 
@@ -58,8 +58,8 @@ class Buffer implements Iterable<Statement>
         Preconditions.checkNotNull(factory);
 
         this.factory = factory;
-        this.buckets = new long[INITIAL_BUCKETS_SIZE];
-        this.bucketsMask = INITIAL_BUCKETS_MASK;
+        this.buckets = new long[Buffer.INITIAL_BUCKETS_SIZE];
+        this.bucketsMask = Buffer.INITIAL_BUCKETS_MASK;
         this.blocks = Lists.newArrayList();
         this.size = 0;
     }
@@ -81,7 +81,7 @@ class Buffer implements Iterable<Statement>
     private synchronized int append(final Value[] block, final int blockLength)
     {
         if (2 * this.size >= this.buckets.length) {
-            resize();
+            this.resize();
         }
 
         int added = 0;
@@ -106,12 +106,12 @@ class Buffer implements Iterable<Statement>
                 final long bucket = this.buckets[j];
                 if (bucket == 0) {
                     this.buckets[j] = mask | this.size | 0x80000000L;
-                    final int blockIndex = this.size >> BLOCK_BITS;
+                    final int blockIndex = this.size >> Buffer.BLOCK_BITS;
                     if (blockIndex >= this.blocks.size()) {
-                        this.blocks.add(new Value[4 * BLOCK_SIZE]);
+                        this.blocks.add(new Value[4 * Buffer.BLOCK_SIZE]);
                     }
                     final Value[] bufferedBlock = this.blocks.get(blockIndex);
-                    int blockOffset = 4 * (this.size & BLOCK_MASK);
+                    int blockOffset = 4 * (this.size & Buffer.BLOCK_MASK);
                     bufferedBlock[blockOffset++] = subj;
                     bufferedBlock[blockOffset++] = pred;
                     bufferedBlock[blockOffset++] = obj;
@@ -122,22 +122,19 @@ class Buffer implements Iterable<Statement>
 
                 } else if ((bucket & 0xFFFFFFFF00000000L) == mask) {
                     final int statementIndex = (int) bucket & 0x7FFFFFFF;
-                    final int blockIndex = statementIndex >> BLOCK_BITS;
+                    final int blockIndex = statementIndex >> Buffer.BLOCK_BITS;
                     final Value[] bufferedBlock = this.blocks.get(blockIndex);
-                    int blockOffset = 4 * (statementIndex & BLOCK_MASK);
+                    int blockOffset = 4 * (statementIndex & Buffer.BLOCK_MASK);
                     final Value oldSubj = bufferedBlock[blockOffset++];
                     final Value oldPred = bufferedBlock[blockOffset++];
                     final Value oldObj = bufferedBlock[blockOffset++];
                     final Value oldCtx = bufferedBlock[blockOffset];
 
-                    final boolean equal = subj == oldSubj
-                            && pred == oldPred
-                            && obj == oldObj
+                    final boolean equal = subj == oldSubj && pred == oldPred && obj == oldObj
                             && ctx == oldCtx
-                            || subj.equals(oldSubj)
-                            && pred.equals(oldPred)
-                            && obj.equals(oldObj)
-                            && (ctx == null && oldCtx == null || ctx != null && ctx.equals(oldCtx));
+                            || subj.equals(oldSubj) && pred.equals(oldPred) && obj.equals(oldObj)
+                                    && (ctx == null && oldCtx == null
+                                            || ctx != null && ctx.equals(oldCtx));
 
                     if (equal) {
                         ++Buffer.duplicates;
@@ -178,14 +175,15 @@ class Buffer implements Iterable<Statement>
             {
                 try {
                     final Resource subj = (Resource) this.block[this.blockOffset++];
-                    final URI pred = (URI) this.block[this.blockOffset++];
+                    final IRI pred = (IRI) this.block[this.blockOffset++];
                     final Value obj = this.block[this.blockOffset++];
                     final Resource ctx = (Resource) this.block[this.blockOffset++];
 
                     ++this.statementIndex;
                     if (this.blockOffset == this.block.length) {
                         if (this.statementIndex < Buffer.this.size) {
-                            this.block = Buffer.this.blocks.get(this.statementIndex >> BLOCK_BITS);
+                            this.block = Buffer.this.blocks
+                                    .get(this.statementIndex >> Buffer.BLOCK_BITS);
                             this.blockOffset = 0;
                         } else {
                             this.block = null;
@@ -211,11 +209,11 @@ class Buffer implements Iterable<Statement>
 
     public static String getStatistics()
     {
-        if (insertions == 0) {
+        if (Buffer.insertions == 0) {
             return "buffer unused";
         } else {
             return String.format("%d insertions: %d duplicates, %d probes and %d collisions",
-                    insertions, duplicates, probes, collisions);
+                    Buffer.insertions, Buffer.duplicates, Buffer.probes, Buffer.collisions);
         }
     }
 
@@ -230,28 +228,28 @@ class Buffer implements Iterable<Statement>
 
         private Appender()
         {
-            this.block = new Value[4 * BLOCK_SIZE];
+            this.block = new Value[4 * Buffer.BLOCK_SIZE];
             this.offset = 0;
             this.added = 0;
         }
 
         @Override
-        public void handle(final Resource subj, final URI pred, final Value obj, final Resource ctx)
-                throws RuntimeException
+        public void handle(final Resource subj, final IRI pred, final Value obj,
+                final Resource ctx) throws RuntimeException
         {
             this.block[this.offset++] = subj;
             this.block[this.offset++] = pred;
             this.block[this.offset++] = obj;
             this.block[this.offset++] = ctx;
             if (this.offset == this.block.length) {
-                this.added += append(this.block, this.block.length);
+                this.added += Buffer.this.append(this.block, this.block.length);
                 this.offset = 0;
             }
         }
 
         public int flush()
         {
-            this.added += append(this.block, this.offset);
+            this.added += Buffer.this.append(this.block, this.offset);
             return this.added;
         }
 

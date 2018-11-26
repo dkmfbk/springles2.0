@@ -10,7 +10,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
@@ -22,62 +22,61 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.FN;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.algebra.Add;
-import org.openrdf.query.algebra.And;
-import org.openrdf.query.algebra.ArbitraryLengthPath;
-import org.openrdf.query.algebra.Clear;
-import org.openrdf.query.algebra.Compare;
-import org.openrdf.query.algebra.Copy;
-import org.openrdf.query.algebra.Create;
-import org.openrdf.query.algebra.DeleteData;
-import org.openrdf.query.algebra.EmptySet;
-import org.openrdf.query.algebra.Extension;
-import org.openrdf.query.algebra.ExtensionElem;
-import org.openrdf.query.algebra.Filter;
-import org.openrdf.query.algebra.FunctionCall;
-import org.openrdf.query.algebra.InsertData;
-import org.openrdf.query.algebra.Join;
-import org.openrdf.query.algebra.Load;
-import org.openrdf.query.algebra.Modify;
-import org.openrdf.query.algebra.Move;
-import org.openrdf.query.algebra.MultiProjection;
-import org.openrdf.query.algebra.Not;
-import org.openrdf.query.algebra.Projection;
-import org.openrdf.query.algebra.ProjectionElemList;
-import org.openrdf.query.algebra.QueryModelNode;
-import org.openrdf.query.algebra.Reduced;
-import org.openrdf.query.algebra.SingletonSet;
-import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.StatementPattern.Scope;
-import org.openrdf.query.algebra.Str;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.UnaryTupleOperator;
-import org.openrdf.query.algebra.Union;
-import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.query.algebra.ValueConstant;
-import org.openrdf.query.algebra.ValueExpr;
-import org.openrdf.query.algebra.Var;
-import org.openrdf.query.algebra.ZeroLengthPath;
-import org.openrdf.query.algebra.evaluation.TripleSource;
-import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
-import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
-import org.openrdf.query.impl.DatasetImpl;
-import org.openrdf.query.parser.sparql.SPARQLParser;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.EmptyIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.EmptyIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.FN;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.algebra.Add;
+import org.eclipse.rdf4j.query.algebra.And;
+import org.eclipse.rdf4j.query.algebra.ArbitraryLengthPath;
+import org.eclipse.rdf4j.query.algebra.Clear;
+import org.eclipse.rdf4j.query.algebra.Compare;
+import org.eclipse.rdf4j.query.algebra.Copy;
+import org.eclipse.rdf4j.query.algebra.Create;
+import org.eclipse.rdf4j.query.algebra.DeleteData;
+import org.eclipse.rdf4j.query.algebra.EmptySet;
+import org.eclipse.rdf4j.query.algebra.Extension;
+import org.eclipse.rdf4j.query.algebra.ExtensionElem;
+import org.eclipse.rdf4j.query.algebra.Filter;
+import org.eclipse.rdf4j.query.algebra.FunctionCall;
+import org.eclipse.rdf4j.query.algebra.InsertData;
+import org.eclipse.rdf4j.query.algebra.Join;
+import org.eclipse.rdf4j.query.algebra.Load;
+import org.eclipse.rdf4j.query.algebra.Modify;
+import org.eclipse.rdf4j.query.algebra.Move;
+import org.eclipse.rdf4j.query.algebra.MultiProjection;
+import org.eclipse.rdf4j.query.algebra.Not;
+import org.eclipse.rdf4j.query.algebra.Projection;
+import org.eclipse.rdf4j.query.algebra.ProjectionElemList;
+import org.eclipse.rdf4j.query.algebra.QueryModelNode;
+import org.eclipse.rdf4j.query.algebra.Reduced;
+import org.eclipse.rdf4j.query.algebra.SingletonSet;
+import org.eclipse.rdf4j.query.algebra.StatementPattern;
+import org.eclipse.rdf4j.query.algebra.StatementPattern.Scope;
+import org.eclipse.rdf4j.query.algebra.Str;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.UnaryTupleOperator;
+import org.eclipse.rdf4j.query.algebra.Union;
+import org.eclipse.rdf4j.query.algebra.UpdateExpr;
+import org.eclipse.rdf4j.query.algebra.ValueConstant;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.algebra.Var;
+import org.eclipse.rdf4j.query.algebra.ZeroLengthPath;
+import org.eclipse.rdf4j.query.algebra.evaluation.TripleSource;
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.StrictEvaluationStrategy;
+import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor;
+import org.eclipse.rdf4j.query.impl.SimpleDataset;
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser;
 
 /**
  * Utility methods pertaining to Sesame query and update algebra.
@@ -94,25 +93,25 @@ public final class Algebra
      * Clones the supplied dataset, returning a modifiable copy. The returned dataset has the same
      * default graphs, named graphs, default insert graph and default remove graphs as the
      * supplied dataset.
-     * 
+     *
      * @param dataset
      *            the dataset to clone
      * @return a modifiable clone of the supplied dataset, or <tt>null</tt> if the supplied
      *         dataset was null
      */
-    public static DatasetImpl clone(@Nullable final Dataset dataset)
+    public static SimpleDataset clone(@Nullable final Dataset dataset)
     {
         if (dataset == null) {
             return null;
         } else {
-            final DatasetImpl ds = new DatasetImpl();
-            for (final URI uri : dataset.getDefaultGraphs()) {
+            final SimpleDataset ds = new SimpleDataset();
+            for (final IRI uri : dataset.getDefaultGraphs()) {
                 ds.addDefaultGraph(uri);
             }
-            for (final URI uri : dataset.getNamedGraphs()) {
+            for (final IRI uri : dataset.getNamedGraphs()) {
                 ds.addNamedGraph(uri);
             }
-            for (final URI uri : dataset.getDefaultRemoveGraphs()) {
+            for (final IRI uri : dataset.getDefaultRemoveGraphs()) {
                 ds.addDefaultRemoveGraph(uri);
             }
             ds.setDefaultInsertGraph(dataset.getDefaultInsertGraph());
@@ -126,7 +125,7 @@ public final class Algebra
      * <tt>IdentityHashMap</tt>s, as the implementation of <tt>equals</tt> and <tt>hashCode</tt>
      * for algebraic nodes is expensive as recursive and for some nodes broken (e.g.
      * <tt>Count</tt> node).
-     * 
+     *
      * @param root
      *            the root of the tree to clone
      * @param sourceToCopyMap
@@ -142,7 +141,7 @@ public final class Algebra
             @Nullable final IdentityHashMap<QueryModelNode, QueryModelNode> copyToSourceMap)
     {
         final List<QueryModelNode> sourceList = Lists.newArrayList();
-        root.visit(new QueryModelVisitorBase<RuntimeException>() {
+        root.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             @Override
             protected void meetNode(final QueryModelNode node) throws RuntimeException
@@ -155,7 +154,7 @@ public final class Algebra
 
         @SuppressWarnings("unchecked")
         final T clone = (T) root.clone();
-        clone.visit(new QueryModelVisitorBase<RuntimeException>() {
+        clone.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             private int index = 0;
 
@@ -179,7 +178,7 @@ public final class Algebra
 
     /**
      * Finds the root node of a property path, starting from a child node of that path.
-     * 
+     *
      * @param childNode
      *            the child node where to start searching from
      * @return the root node of the property path, if there is such a path, or <tt>null</tt> if
@@ -193,7 +192,7 @@ public final class Algebra
                 .getParentNode()) {
             if (parent instanceof ArbitraryLengthPath || parent instanceof Union
                     && (((Union) parent).getLeftArg() instanceof ZeroLengthPath //
-                    || ((Union) parent).getRightArg() instanceof ZeroLengthPath)) {
+                            || ((Union) parent).getRightArg() instanceof ZeroLengthPath)) {
                 root = (TupleExpr) parent;
             }
         }
@@ -204,7 +203,7 @@ public final class Algebra
      * Finds the root node of a group pattern, starting from a child node of that pattern. A group
      * pattern is a sub-tree composed only of {@link Join} and {@link StatementPattern} nodes,
      * plus {@link ValueExpr} nodes linked to that nodes (e.g., variables).
-     * 
+     *
      * @param childNode
      *            the child node where to start searching from
      * @return the root node of the group pattern comprising the specified child node, if any,
@@ -220,7 +219,7 @@ public final class Algebra
             node = node.getParentNode();
         }
         if (node != null) {
-            node = Objects.firstNonNull(findPropertyPathRoot(node), node);
+            node = MoreObjects.firstNonNull(Algebra.findPropertyPathRoot(node), node);
             while (node != null && node.getParentNode() instanceof Join) {
                 node = node.getParentNode();
             }
@@ -231,7 +230,7 @@ public final class Algebra
     /**
      * Replaces a node in an algebraic tree, returning the root of the modified tree. Note the
      * root changes if the node to be replaced was the root of the tree.
-     * 
+     *
      * @param root
      *            the root of the tree the node to replace belongs to
      * @param current
@@ -259,7 +258,7 @@ public final class Algebra
      * Inserts or modifies a <tt>Filter</tt> node before the node supplied, enforcing the
      * condition specified and returning the root of the modified tree. If a filter node is
      * already present, its condition is put in and with the supplied condition.
-     * 
+     *
      * @param root
      *            the root of the tree the node to filter belongs to
      * @param filteredNode
@@ -283,8 +282,8 @@ public final class Algebra
 
         if (parent instanceof Filter) {
             final ValueExpr existingCondition = ((Filter) parent).getCondition();
-            parent.replaceChildNode(existingCondition, new And(existingCondition.clone(),
-                    filterCondition));
+            parent.replaceChildNode(existingCondition,
+                    new And(existingCondition.clone(), filterCondition));
         } else {
             parent.replaceChildNode(filteredNode, new Filter(filteredNode, filterCondition));
         }
@@ -293,7 +292,7 @@ public final class Algebra
 
     /**
      * Parses a SPARQL <tt>TupleExpr</tt>.
-     * 
+     *
      * @param string
      *            the SPARQL string containing the expression
      * @param baseURI
@@ -313,8 +312,9 @@ public final class Algebra
 
         if (namespaces != null) {
             for (final Map.Entry<String, String> entry : namespaces.entrySet()) {
+                final IRI iri = SimpleValueFactory.getInstance().createIRI(entry.getValue());
                 builder.append("PREFIX ").append(entry.getKey()).append(": ")
-                        .append(SparqlRenderer.render(new URIImpl(entry.getValue()))).append("\n");
+                        .append(SparqlRenderer.render(iri)).append("\n");
             }
         }
 
@@ -330,7 +330,7 @@ public final class Algebra
 
     /**
      * Parses a SPARQL <tt>ValueExpr</tt>.
-     * 
+     *
      * @param string
      *            the SPARQL string corresponding to the expression
      * @param baseURI
@@ -350,8 +350,9 @@ public final class Algebra
 
         if (namespaces != null) {
             for (final Map.Entry<String, String> entry : namespaces.entrySet()) {
+                final IRI iri = SimpleValueFactory.getInstance().createIRI(entry.getValue());
                 builder.append("PREFIX ").append(entry.getKey()).append(": ")
-                        .append(SparqlRenderer.render(new URIImpl(entry.getValue()))).append("\n");
+                        .append(SparqlRenderer.render(iri)).append("\n");
             }
         }
 
@@ -365,7 +366,7 @@ public final class Algebra
     /**
      * Evaluates a <tt>ValueExpr</tt> using the bindings supplied and the <tt>ValueFactory</tt>
      * supplied.
-     * 
+     *
      * @param expr
      *            the <tt>ValueExpr</tt> to evaluate
      * @param bindings
@@ -379,7 +380,7 @@ public final class Algebra
     public static Value evaluateValueExpr(final ValueExpr expr, final BindingSet bindings,
             final ValueFactory valueFactory) throws QueryEvaluationException
     {
-        return new EvaluationStrategyImpl(new TripleSource() {
+        return new StrictEvaluationStrategy(new TripleSource() {
 
             @Override
             public ValueFactory getValueFactory()
@@ -389,7 +390,7 @@ public final class Algebra
 
             @Override
             public CloseableIteration<? extends Statement, QueryEvaluationException> getStatements(
-                    final Resource subj, final URI pred, final Value obj,
+                    final Resource subj, final IRI pred, final Value obj,
                     final Resource... contexts) throws QueryEvaluationException
             {
                 return new EmptyIteration<Statement, QueryEvaluationException>();
@@ -402,7 +403,7 @@ public final class Algebra
      * Return a set with the name of variables mentioned in the algebraic expression specified.
      * More precisely, the method searches for all nodes of type {@link Var} which are not
      * associated to a value.
-     * 
+     *
      * @param expr
      *            the expression from which variables should be extracted
      * @return an immutable set with the extracted variables
@@ -410,7 +411,7 @@ public final class Algebra
     public static Set<String> extractVariables(final QueryModelNode expr)
     {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
-        expr.visit(new QueryModelVisitorBase<RuntimeException>() {
+        expr.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             @Override
             public void meet(final Var var) throws RuntimeException
@@ -429,7 +430,7 @@ public final class Algebra
     {
         @SuppressWarnings("unchecked")
         final T result = (T) node.clone();
-        result.visit(new QueryModelVisitorBase<RuntimeException>() {
+        result.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             @Override
             public void meet(final Var var) throws RuntimeException
@@ -451,7 +452,7 @@ public final class Algebra
     public static List<StatementPattern> extractPatterns(final TupleExpr expr)
     {
         final ImmutableList.Builder<StatementPattern> builder = ImmutableList.builder();
-        expr.visit(new QueryModelVisitorBase<RuntimeException>() {
+        expr.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             @Override
             public void meet(final StatementPattern pattern) throws RuntimeException
@@ -466,20 +467,20 @@ public final class Algebra
     public static List<ValueExpr> extractConditions(final TupleExpr expr)
     {
         final ImmutableList.Builder<ValueExpr> builder = ImmutableList.builder();
-        expr.visit(new QueryModelVisitorBase<RuntimeException>() {
+        expr.visit(new AbstractQueryModelVisitor<RuntimeException>() {
 
             @Override
             public void meet(final Filter filter) throws RuntimeException
             {
-                extractAndOperands(filter.getCondition());
+                this.extractAndOperands(filter.getCondition());
             }
 
             private void extractAndOperands(final ValueExpr expr)
             {
                 if (expr instanceof And) {
                     final And and = (And) expr;
-                    extractAndOperands(and.getLeftArg());
-                    extractAndOperands(and.getRightArg());
+                    this.extractAndOperands(and.getLeftArg());
+                    this.extractAndOperands(and.getRightArg());
                 } else {
                     builder.add(expr);
                 }
@@ -504,7 +505,7 @@ public final class Algebra
      * </ul>
      * Note that {@link Clear}, {@link Add}, {@link Copy} and {@link Move} expressions are always
      * not trivial
-     * 
+     *
      * @param expression
      *            the expression to check
      * @param dataset
@@ -522,13 +523,13 @@ public final class Algebra
 
         } else if (expression instanceof InsertData) {
             // Note: Sesame specific test - {} parsed as Reduced(EmptySet)
-          //  final TupleExpr insertExpr = ((InsertData) expression).getInsertExpr();
+            // final TupleExpr insertExpr = ((InsertData) expression).getInsertExpr();
             return expression instanceof Reduced
                     && ((Reduced) expression).getArg() instanceof EmptySet;
 
         } else if (expression instanceof DeleteData) {
             // Note: Sesame specific test - {} parsed as Reduced(EmptySet)
-          //  final TupleExpr deleteExpr = ((DeleteData) expression).getDeleteExpr();
+            // final TupleExpr deleteExpr = ((DeleteData) expression).getDeleteExpr();
             return expression instanceof EmptySet || expression instanceof Reduced
                     && ((Reduced) expression).getArg() instanceof EmptySet;
 
@@ -551,7 +552,7 @@ public final class Algebra
     /**
      * Rewrites the supplied update expression in order to re-target read and write access to
      * Sesame null context to a replacement context.
-     * 
+     *
      * @param expr
      *            the expression to rewrite
      * @param dataset
@@ -566,7 +567,7 @@ public final class Algebra
      */
     @SuppressWarnings("unchecked")
     public static <T extends QueryModelNode> Entry<T, Dataset> rewriteDefaultContext(final T expr,
-            @Nullable final Dataset dataset, final URI replacement)
+            @Nullable final Dataset dataset, final IRI replacement)
     {
         Preconditions.checkNotNull(replacement);
 
@@ -574,14 +575,15 @@ public final class Algebra
         Dataset resultDataset = dataset;
 
         if (expr instanceof TupleExpr) {
-            resultDataset = rewriteDefaultContext(resultDataset, replacement, false);
+            resultDataset = Algebra.rewriteDefaultContext(resultDataset, replacement, false);
 
         } else if (expr instanceof Copy) {
             Copy copy = (Copy) expr;
             if (copy.getSourceGraph() == null || copy.getDestinationGraph() == null) {
                 copy = copy.clone();
-                copy.setSourceGraph(replaceIfNull(copy.getSourceGraph(), replacement));
-                copy.setDestinationGraph(replaceIfNull(copy.getDestinationGraph(), replacement));
+                copy.setSourceGraph(Algebra.replaceIfNull(copy.getSourceGraph(), replacement));
+                copy.setDestinationGraph(
+                        Algebra.replaceIfNull(copy.getDestinationGraph(), replacement));
                 resultExpr = (T) copy;
             }
 
@@ -589,8 +591,9 @@ public final class Algebra
             Move move = (Move) expr;
             if (move.getSourceGraph() == null || move.getDestinationGraph() == null) {
                 move = move.clone();
-                move.setSourceGraph(replaceIfNull(move.getSourceGraph(), replacement));
-                move.setDestinationGraph(replaceIfNull(move.getDestinationGraph(), replacement));
+                move.setSourceGraph(Algebra.replaceIfNull(move.getSourceGraph(), replacement));
+                move.setDestinationGraph(
+                        Algebra.replaceIfNull(move.getDestinationGraph(), replacement));
                 resultExpr = (T) move;
             }
 
@@ -598,8 +601,9 @@ public final class Algebra
             Add add = (Add) expr;
             if (add.getSourceGraph() == null || add.getDestinationGraph() == null) {
                 add = add.clone();
-                add.setSourceGraph(replaceIfNull(add.getSourceGraph(), replacement));
-                add.setDestinationGraph(replaceIfNull(add.getDestinationGraph(), replacement));
+                add.setSourceGraph(Algebra.replaceIfNull(add.getSourceGraph(), replacement));
+                add.setDestinationGraph(
+                        Algebra.replaceIfNull(add.getDestinationGraph(), replacement));
                 resultExpr = (T) add;
             }
 
@@ -617,7 +621,7 @@ public final class Algebra
             if (clear.getScope() == null || clear.getScope() == Scope.DEFAULT_CONTEXTS) {
                 clear = clear.clone();
                 if (clear.getScope() == Scope.DEFAULT_CONTEXTS) {
-                    clear.setGraph(replaceIfNull(clear.getGraph(), replacement));
+                    clear.setGraph(Algebra.replaceIfNull(clear.getGraph(), replacement));
                 }
                 clear.setScope(Scope.NAMED_CONTEXTS);
                 resultExpr = (T) clear;
@@ -626,7 +630,7 @@ public final class Algebra
         } else if (expr instanceof InsertData || expr instanceof DeleteData
                 || expr instanceof Modify) {
             // Dataset considered only for INSERT DATA, DELETE DATA, MODIFY
-            resultDataset = rewriteDefaultContext(dataset, replacement, true);
+            resultDataset = Algebra.rewriteDefaultContext(dataset, replacement, true);
 
         } else {
             Preconditions.checkNotNull(expr);
@@ -637,39 +641,41 @@ public final class Algebra
     }
 
     private static Dataset rewriteDefaultContext(@Nullable final Dataset dataset,
-            final URI replacement, final boolean rewriteInsertDeleteClauses)
+            final IRI replacement, final boolean rewriteInsertDeleteClauses)
     {
         Dataset resultDataset = dataset;
 
         if (dataset != null) {
             if (dataset.getDefaultGraphs().contains(null)) {
-                resultDataset = clone(dataset);
-                ((DatasetImpl) resultDataset).removeDefaultGraph(null);
-                ((DatasetImpl) resultDataset).addDefaultGraph(replacement);
+                resultDataset = Algebra.clone(dataset);
+                ((SimpleDataset) resultDataset).removeDefaultGraph(null);
+                ((SimpleDataset) resultDataset).addDefaultGraph(replacement);
             }
             if (dataset.getNamedGraphs().contains(null)) {
-                resultDataset = resultDataset != dataset ? resultDataset : clone(dataset);
-                ((DatasetImpl) resultDataset).removeNamedGraph(null);
-                ((DatasetImpl) resultDataset).addNamedGraph(replacement);
+                resultDataset = resultDataset != dataset ? resultDataset : Algebra.clone(dataset);
+                ((SimpleDataset) resultDataset).removeNamedGraph(null);
+                ((SimpleDataset) resultDataset).addNamedGraph(replacement);
             }
         }
 
         if (rewriteInsertDeleteClauses) {
             if (resultDataset == null) {
-                resultDataset = new DatasetImpl();
-                ((DatasetImpl) resultDataset).setDefaultInsertGraph(replacement);
-                ((DatasetImpl) resultDataset).addDefaultRemoveGraph(replacement);
+                resultDataset = new SimpleDataset();
+                ((SimpleDataset) resultDataset).setDefaultInsertGraph(replacement);
+                ((SimpleDataset) resultDataset).addDefaultRemoveGraph(replacement);
 
             } else {
                 if (dataset.getDefaultInsertGraph() == null) {
-                    resultDataset = resultDataset != dataset ? resultDataset : clone(dataset);
-                    ((DatasetImpl) resultDataset).setDefaultInsertGraph(replacement);
+                    resultDataset = resultDataset != dataset ? resultDataset
+                            : Algebra.clone(dataset);
+                    ((SimpleDataset) resultDataset).setDefaultInsertGraph(replacement);
                 }
                 if (dataset.getDefaultRemoveGraphs().isEmpty()
                         || dataset.getDefaultRemoveGraphs().contains(null)) {
-                    resultDataset = resultDataset != dataset ? resultDataset : clone(dataset);
-                    ((DatasetImpl) resultDataset).removeDefaultRemoveGraph(null);
-                    ((DatasetImpl) resultDataset).addDefaultRemoveGraph(replacement);
+                    resultDataset = resultDataset != dataset ? resultDataset
+                            : Algebra.clone(dataset);
+                    ((SimpleDataset) resultDataset).removeDefaultRemoveGraph(null);
+                    ((SimpleDataset) resultDataset).addDefaultRemoveGraph(replacement);
                 }
             }
         }
@@ -680,7 +686,7 @@ public final class Algebra
     /**
      * Helper method that generates a new <tt>ValueConstant</tt> for a replacement graph if the
      * supplied <tt>ValueConstant</tt> is null, meaning it denotes the default graph.
-     * 
+     *
      * @param constant
      *            the current <tt>ValueConstant</tt>
      * @param replacement
@@ -688,7 +694,7 @@ public final class Algebra
      * @return either the supplied <tt>ValueConstant</tt>, if not null, i.e., denoting the default
      *         graph, or a new <tt>ValueConstant</tt> for the replacement graph supplied
      */
-    private static ValueConstant replaceIfNull(final ValueConstant constant, final URI replacement)
+    private static ValueConstant replaceIfNull(final ValueConstant constant, final IRI replacement)
     {
         return constant != null ? constant : new ValueConstant(replacement);
     }
@@ -696,7 +702,7 @@ public final class Algebra
     /**
      * Rewrites an algebraic expression and/or its associated dataset in order to prevent reading
      * from graphs whose URIs matches the supplied prefix.
-     * 
+     *
      * @param prefix
      *            the prefix of graphs for which reading must be prevented
      * @param expr
@@ -718,38 +724,41 @@ public final class Algebra
         // For updates, default and named graphs parts of a dataset are considered only for MODIFY
         Dataset resultDataset = dataset;
         if (dataset != null && (expr instanceof TupleExpr || expr instanceof Modify)) {
-            resultDataset = clone(dataset);
+            resultDataset = Algebra.clone(dataset);
             final Predicate<Value> pred = prefix.valueMatcher();
-            for (final URI uri : Iterables.filter(dataset.getDefaultGraphs(), pred)) {
-                ((DatasetImpl) resultDataset).removeDefaultGraph(uri);
+            for (final IRI uri : Iterables.filter(dataset.getDefaultGraphs(), pred)) {
+                ((SimpleDataset) resultDataset).removeDefaultGraph(uri);
             }
-            for (final URI uri : Iterables.filter(dataset.getNamedGraphs(), pred)) {
-                ((DatasetImpl) resultDataset).removeNamedGraph(uri);
+            for (final IRI uri : Iterables.filter(dataset.getNamedGraphs(), pred)) {
+                ((SimpleDataset) resultDataset).removeNamedGraph(uri);
             }
         }
 
         QueryModelNode resultExpression = expr;
         if (resultDataset == null) {
-            if (expr instanceof Add && matches(prefix, ((Add) expr).getSourceGraph())) {
+            if (expr instanceof Add && Algebra.matches(prefix, ((Add) expr).getSourceGraph())) {
                 resultExpression = null;
-            } else if (expr instanceof Copy && matches(prefix, ((Copy) expr).getSourceGraph())) {
+            } else if (expr instanceof Copy
+                    && Algebra.matches(prefix, ((Copy) expr).getSourceGraph())) {
                 resultExpression = new Clear(((Copy) expr).getDestinationGraph());
-            } else if (expr instanceof Add && matches(prefix, ((Add) expr).getSourceGraph())) {
+            } else if (expr instanceof Add
+                    && Algebra.matches(prefix, ((Add) expr).getSourceGraph())) {
                 resultExpression = new Clear(((Add) expr).getDestinationGraph());
             } else if (expr instanceof Modify) {
                 final Modify modify = (Modify) expr;
                 final TupleExpr whereExpr = modify.getWhereExpr();
                 final TupleExpr newWhereExpr = new ExcludeReadingGraphsVisitor(prefix)
                         .process(whereExpr);
-                resultExpression = newWhereExpr == whereExpr ? expr : new Modify(
-                        modify.getDeleteExpr(), modify.getInsertExpr(), newWhereExpr);
+                resultExpression = newWhereExpr == whereExpr ? expr
+                        : new Modify(modify.getDeleteExpr(), modify.getInsertExpr(), newWhereExpr);
             } else if (expr instanceof TupleExpr) {
                 resultExpression = new ExcludeReadingGraphsVisitor(prefix)
                         .process((TupleExpr) expr);
             }
         }
 
-        return resultExpression == null || isTrivial(resultExpression, resultDataset) ? null
+        return resultExpression == null || Algebra.isTrivial(resultExpression, resultDataset)
+                ? null
                 : new SimpleImmutableEntry<QueryModelNode, Dataset>(resultExpression,
                         resultDataset);
     }
@@ -760,7 +769,7 @@ public final class Algebra
      * expression with more than one unbound context variable in <tt>INSERT</tt> or
      * <tt>DELETE</tt> clauses that are assigned to URIs matching the pattern, are rewritten in a
      * way that may prevent also writing of statements to graphs not matching the prefix.</b>
-     * 
+     *
      * @param prefix
      *            the prefix of graphs for which writing must be prevented
      * @param expr
@@ -794,44 +803,48 @@ public final class Algebra
                 || expr instanceof DeleteData || expr instanceof Modify)) {
 
             if (prefix.matches(dataset.getDefaultInsertGraph())) {
-                resultDataset = clone(dataset);
-                ((DatasetImpl) resultDataset).setDefaultInsertGraph(null);
+                resultDataset = Algebra.clone(dataset);
+                ((SimpleDataset) resultDataset).setDefaultInsertGraph(null);
                 defaultInsert = false;
             }
-            for (final URI uri : Iterables.filter(dataset.getDefaultRemoveGraphs(),
+            for (final IRI uri : Iterables.filter(dataset.getDefaultRemoveGraphs(),
                     prefix.valueMatcher())) {
-                resultDataset = resultDataset != dataset ? resultDataset : clone(dataset);
-                ((DatasetImpl) resultDataset).removeDefaultRemoveGraph(uri);
+                resultDataset = resultDataset != dataset ? resultDataset : Algebra.clone(dataset);
+                ((SimpleDataset) resultDataset).removeDefaultRemoveGraph(uri);
             }
             defaultRemove = dataset.getDefaultRemoveGraphs().size() == 0
                     || resultDataset.getDefaultRemoveGraphs().size() > 0;
         }
 
         if (expr instanceof Copy) {
-            resultExpr = matches(prefix, ((Copy) expr).getDestinationGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Copy) expr).getDestinationGraph()) ? null
+                    : expr;
         } else if (expr instanceof Move) {
-            resultExpr = matches(prefix, ((Move) expr).getDestinationGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Move) expr).getDestinationGraph()) ? null
+                    : expr;
         } else if (expr instanceof Add) {
-            resultExpr = matches(prefix, ((Add) expr).getDestinationGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Add) expr).getDestinationGraph()) ? null : expr;
         } else if (expr instanceof Load) {
-            resultExpr = matches(prefix, ((Load) expr).getGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Load) expr).getGraph()) ? null : expr;
         } else if (expr instanceof Create) {
-            resultExpr = matches(prefix, ((Create) expr).getGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Create) expr).getGraph()) ? null : expr;
         } else if (expr instanceof Clear) {
-            resultExpr = matches(prefix, ((Clear) expr).getGraph()) ? null : expr;
+            resultExpr = Algebra.matches(prefix, ((Clear) expr).getGraph()) ? null : expr;
 
         } else if (expr instanceof InsertData) {
-           // final TupleExpr data = expr;
-            final TupleExpr newData = rewriteData(prefix, !defaultInsert, (TupleExpr)expr, null);
-            if (newData != (TupleExpr)expr) {
-                resultExpr = new InsertData( ((InsertData)newData).getDataBlock() );
+            // final TupleExpr data = expr;
+            final TupleExpr newData = Algebra.rewriteData(prefix, !defaultInsert, (TupleExpr) expr,
+                    null);
+            if (newData != (TupleExpr) expr) {
+                resultExpr = new InsertData(((InsertData) newData).getDataBlock());
             }
 
         } else if (expr instanceof DeleteData) {
-         ///   final TupleExpr data = ((DeleteData) expr).getDeleteExpr();
-            final TupleExpr newData = rewriteData(prefix, !defaultRemove, (TupleExpr)expr, null);
-            if (newData != (TupleExpr)expr) {
-                resultExpr = new DeleteData(((DeleteData)newData).getDataBlock());
+            /// final TupleExpr data = ((DeleteData) expr).getDeleteExpr();
+            final TupleExpr newData = Algebra.rewriteData(prefix, !defaultRemove, (TupleExpr) expr,
+                    null);
+            if (newData != (TupleExpr) expr) {
+                resultExpr = new DeleteData(((DeleteData) newData).getDataBlock());
             }
 
         } else if (expr instanceof Modify) {
@@ -841,15 +854,15 @@ public final class Algebra
             // matching the supplied prefix
             final Modify modify = (Modify) expr;
             final Set<String> vars = Sets.newHashSet();
-            final TupleExpr insertExpr = modify.getInsertExpr() == null ? null : rewriteData(
-                    prefix, !defaultInsert, modify.getInsertExpr(), vars);
-            final TupleExpr deleteExpr = modify.getDeleteExpr() == null ? null : rewriteData(
-                    prefix, !defaultRemove, modify.getDeleteExpr(), vars);
+            final TupleExpr insertExpr = modify.getInsertExpr() == null ? null
+                    : Algebra.rewriteData(prefix, !defaultInsert, modify.getInsertExpr(), vars);
+            final TupleExpr deleteExpr = modify.getDeleteExpr() == null ? null
+                    : Algebra.rewriteData(prefix, !defaultRemove, modify.getDeleteExpr(), vars);
             TupleExpr whereExpr = modify.getWhereExpr();
             if (!vars.isEmpty()) {
                 whereExpr = whereExpr.clone();
-                whereExpr = (TupleExpr) insertFilter(whereExpr, whereExpr,
-                        excludeCondition(prefix, vars));
+                whereExpr = (TupleExpr) Algebra.insertFilter(whereExpr, whereExpr,
+                        Algebra.excludeCondition(prefix, vars));
             }
             if (insertExpr != modify.getInsertExpr() || deleteExpr != modify.getDeleteExpr()
                     || whereExpr != modify.getWhereExpr()) {
@@ -857,14 +870,14 @@ public final class Algebra
             }
         }
 
-        return resultExpr == null || isTrivial(resultExpr, resultDataset) ? null
+        return resultExpr == null || Algebra.isTrivial(resultExpr, resultDataset) ? null
                 : new SimpleImmutableEntry<UpdateExpr, Dataset>(resultExpr, resultDataset);
     }
 
     /**
      * Helper method that checks whether a URI prefix applies to the URI possibly associated to a
      * <tt>ValueConstant</tt>.
-     * 
+     *
      * @param prefix
      *            the URI prefix
      * @param expr
@@ -873,13 +886,13 @@ public final class Algebra
      */
     private static boolean matches(final URIPrefix prefix, final ValueConstant expr)
     {
-        return expr != null && expr.getValue() instanceof URI && prefix.matches(expr.getValue());
+        return expr != null && expr.getValue() instanceof IRI && prefix.matches(expr.getValue());
     }
 
     /**
      * Helper method that returns a boolean condition enforcing that the values of all the
      * supplied variables must not match the URI prefix specified (if values are URIs).
-     * 
+     *
      * @param prefix
      *            the URI prefix
      * @param varNames
@@ -896,8 +909,10 @@ public final class Algebra
                 test = new Compare(new Var(varName), new ValueConstant(prefix.asFullURI()),
                         Compare.CompareOp.NE);
             } else {
-                test = new Not(new FunctionCall(FN.STARTS_WITH.stringValue(), new Str(new Var(
-                        varName)), new ValueConstant(new LiteralImpl(prefix.getPrefix()))));
+                final Literal lit = SimpleValueFactory.getInstance()
+                        .createLiteral(prefix.getPrefix());
+                test = new Not(new FunctionCall(FN.STARTS_WITH.stringValue(),
+                        new Str(new Var(varName)), new ValueConstant(lit)));
             }
             condition = condition == null ? test : new And(test, condition);
         }
@@ -912,7 +927,7 @@ public final class Algebra
      * to a value), those variables are added to the set supplied with parameter <tt>vars</tt>, as
      * it will be required to constrain their values in a <tt>WHERE</tt> clause in order to fully
      * avoid writing to the specified graphs.
-     * 
+     *
      * @param prefix
      *            the URI prefix
      * @param excludeDefault
@@ -949,8 +964,10 @@ public final class Algebra
 
         } else if (expr instanceof Join) {
             final Join join = (Join) expr;
-            final TupleExpr left = rewriteData(prefix, excludeDefault, join.getLeftArg(), vars);
-            final TupleExpr right = rewriteData(prefix, excludeDefault, join.getRightArg(), vars);
+            final TupleExpr left = Algebra.rewriteData(prefix, excludeDefault, join.getLeftArg(),
+                    vars);
+            final TupleExpr right = Algebra.rewriteData(prefix, excludeDefault, join.getRightArg(),
+                    vars);
             if (left == null) {
                 return right;
             } else if (right == null) {
@@ -963,7 +980,8 @@ public final class Algebra
 
         } else if (expr instanceof Reduced) {
             final Reduced reduced = (Reduced) expr;
-            final TupleExpr arg = rewriteData(prefix, excludeDefault, reduced.getArg(), vars);
+            final TupleExpr arg = Algebra.rewriteData(prefix, excludeDefault, reduced.getArg(),
+                    vars);
             if (arg == null) {
                 return null;
             } else if (arg != reduced.getArg()) {
@@ -976,22 +994,23 @@ public final class Algebra
                 ((Projection) expr).getArg() instanceof Extension) {
 
             final Projection projection = (Projection) expr;
-            final Map<String, ValueExpr> map = indexExtensions((Extension) projection.getArg());
-            return rewriteProjection(prefix, excludeDefault, projection.getProjectionElemList(),
-                    map, vars) ? projection : null;
+            final Map<String, ValueExpr> map = Algebra
+                    .indexExtensions((Extension) projection.getArg());
+            return Algebra.rewriteProjection(prefix, excludeDefault,
+                    projection.getProjectionElemList(), map, vars) ? projection : null;
 
         } else if (expr instanceof MultiProjection
                 && ((UnaryTupleOperator) expr).getArg() instanceof Extension) {
 
             final MultiProjection proj = (MultiProjection) expr;
             final Extension ext = (Extension) proj.getArg();
-            final Map<String, ValueExpr> map = indexExtensions(ext);
+            final Map<String, ValueExpr> map = Algebra.indexExtensions(ext);
 
             List<ProjectionElemList> rewrittenTuples = null;
             final int size = proj.getProjections().size();
             for (int i = 0; i < size; ++i) {
                 final ProjectionElemList tuple = proj.getProjections().get(i);
-                if (!rewriteProjection(prefix, excludeDefault, tuple, map, vars)) {
+                if (!Algebra.rewriteProjection(prefix, excludeDefault, tuple, map, vars)) {
                     if (rewrittenTuples == null) {
                         rewrittenTuples = Lists.newArrayListWithCapacity(size);
                         rewrittenTuples.addAll(proj.getProjections().subList(0, i));
@@ -1043,169 +1062,30 @@ public final class Algebra
     }
 
     /**
-	 * Helper class supporting the rewriting of  {@link TupleExpr}  so to prevent reading from graphs whose URIs match a certain prefix. <p> NOTE: this class is not thread safe. </p>
-	 */
-    private static class ExcludeReadingGraphsVisitor extends
-            QueryModelVisitorBase<RuntimeException>
+     * Helper class supporting the rewriting of {@link TupleExpr} so to prevent reading from
+     * graphs whose URIs match a certain prefix.
+     * <p>
+     * NOTE: this class is not thread safe.
+     * </p>
+     */
+    private static class ExcludeReadingGraphsVisitor
+            extends AbstractQueryModelVisitor<RuntimeException>
     {
 
         /**
-		 * Helper class supporting the rewriting of  {@link TupleExpr}  so to prevent reading from graphs whose URIs match a certain prefix. <p> NOTE: this class is not thread safe. </p>
-		 */
-		private static class ExcludeReadingGraphsVisitor1 extends
-		        QueryModelVisitorBase<RuntimeException>
-		{
-		
-		    /**
-			 * The URI prefix of graphs not to be read.
-			 * @uml.property  name="prefix"
-			 * @uml.associationEnd  
-			 */
-		    private final URIPrefix prefix;
-		
-		    /** The expression to be rewritten, at the beginning, then the rewritten expression. */
-		    private TupleExpr expression;
-		
-		    /** A map with scheduled assignments of context variables to patterns in the expression. */
-		    private Map<TupleExpr, String> assignments;
-		
-		    /** A map with scheduled filtering of context variables to be added in the expression. */
-		    private Multimap<TupleExpr, String> filtering;
-		
-		    /** A set of nodes to be deleted. */
-		    private Set<TupleExpr> deletions;
-		
-		    /** A counter used to generate the names of new context variables. */
-		    private int counter;
-		
-		    /**
-		     * Creates a new instance for the URI prefix supplied.
-		     * 
-		     * @param prefix
-		     *            the URI prefix of graphs not to be read
-		     */
-		    public ExcludeReadingGraphsVisitor1(final URIPrefix prefix)
-		    {
-		        Preconditions.checkNotNull(prefix);
-		        this.prefix = prefix;
-		    }
-		
-		    /**
-		     * Rewrites the expression specified, using the URI prefix provided at construction time.
-		     * 
-		     * @param expression
-		     *            the expression to rewrite
-		     * @return the rewritten expression, possibly the supplied expression itself
-		     */
-		    public TupleExpr process(final TupleExpr expression)
-		    {
-		        this.expression = expression;
-		        this.assignments = Maps.newHashMap();
-		        this.filtering = HashMultimap.create();
-		        this.deletions = Sets.newHashSet();
-		        this.counter = 0;
-		
-		        this.expression.visit(this);
-		
-		        return this.expression == null || isTrivial(this.expression, null) ? null
-		                : (TupleExpr) this.expression;
-		    }
-		
-		    /**
-		     * {@inheritDoc} Updates the data structures holding scheduled modifications to the
-		     * expression while visiting the expression tree. After the whole tree is visited, the
-		     * rewritten expression is generated if some modification was scheduled.
-		     */
-		    @Override
-		    protected void meetNode(final QueryModelNode node) throws RuntimeException
-		    {
-		        if (node instanceof StatementPattern) {
-		            scheduleModifications((TupleExpr) node, ((StatementPattern) node).getContextVar());
-		        } else if (node instanceof ZeroLengthPath) {
-		            scheduleModifications((TupleExpr) node, ((ZeroLengthPath) node).getContextVar());
-		        }
-		
-		        super.meetNode(node);
-		
-		        if (node == this.expression
-		                && (!this.deletions.isEmpty() || !this.filtering.isEmpty())) {
-		            generateExpression();
-		        }
-		    }
-		
-		    /**
-		     * Analyzes the supplied pattern node and the associated context variable, scheduling the
-		     * appropriate modifications to the algebraic expression.
-		     * 
-		     * @param node
-		     *            the pattern node, either a {@link StatementPattern} or a
-		     *            {@link ZeroLengthPath}
-		     * @param var
-		     *            the context variable associated to the node
-		     */
-		    private void scheduleModifications(final TupleExpr node, final Var var)
-		    {
-		        if (var == null) {
-		            final String newVarName = "__c" + this.counter++;
-		            this.assignments.put(node, newVarName);
-		            this.filtering.put(findGroupPatternRoot(node), newVarName);
-		
-		        } else if (var.getValue() == null) {
-		            this.filtering.put(findGroupPatternRoot(node), var.getName());
-		
-		        } else if (var.getValue() instanceof URI && this.prefix.matches(var.getValue())) {
-		            this.deletions.add(node);
-		        }
-		    }
-		
-		    /**
-		     * Generates the rewritten algebraic expression, if some modification was scheduled.
-		     */
-		    private void generateExpression()
-		    {
-		        final IdentityHashMap<QueryModelNode, QueryModelNode> map = Maps.newIdentityHashMap();
-		        this.expression = Algebra.clone(this.expression, map, null);
-		
-		        // XXX we may need a method to get rid of generated EmptySet, when translating an
-		        // algebraic expression to a SPARQL string
-		        for (final QueryModelNode node : this.deletions) {
-		            this.expression = (TupleExpr) replaceNode(this.expression, map.get(node),
-		                    new EmptySet());
-		        }
-		
-		        for (final Map.Entry<TupleExpr, String> entry : this.assignments.entrySet()) {
-		            final QueryModelNode node = map.get(entry.getKey());
-		            final Var var = new Var(entry.getValue());
-		            if (node instanceof StatementPattern) {
-		                ((StatementPattern) node).setContextVar(var);
-		                ((StatementPattern) node).setScope(Scope.NAMED_CONTEXTS);
-		            } else if (node instanceof ZeroLengthPath) {
-		                ((ZeroLengthPath) node).setContextVar(var);
-		                ((ZeroLengthPath) node).setScope(Scope.NAMED_CONTEXTS);
-		            }
-		        }
-		
-		        for (final Map.Entry<TupleExpr, Collection<String>> entry : this.filtering.asMap()
-		                .entrySet()) {
-		            this.expression = (TupleExpr) Algebra.insertFilter(this.expression,
-		                    (TupleExpr) map.get(entry.getKey()),
-		                    excludeCondition(this.prefix, entry.getValue()));
-		        }
-		    }
-		
-		}
-
-		/**
-		 * The URI prefix of graphs not to be read.
-		 * @uml.property  name="prefix"
-		 * @uml.associationEnd  
-		 */
+         * The URI prefix of graphs not to be read.
+         *
+         * @uml.property name="prefix"
+         * @uml.associationEnd
+         */
         private final URIPrefix prefix;
 
         /** The expression to be rewritten, at the beginning, then the rewritten expression. */
         private TupleExpr expression;
 
-        /** A map with scheduled assignments of context variables to patterns in the expression. */
+        /**
+         * A map with scheduled assignments of context variables to patterns in the expression.
+         */
         private Map<TupleExpr, String> assignments;
 
         /** A map with scheduled filtering of context variables to be added in the expression. */
@@ -1219,7 +1099,7 @@ public final class Algebra
 
         /**
          * Creates a new instance for the URI prefix supplied.
-         * 
+         *
          * @param prefix
          *            the URI prefix of graphs not to be read
          */
@@ -1231,7 +1111,7 @@ public final class Algebra
 
         /**
          * Rewrites the expression specified, using the URI prefix provided at construction time.
-         * 
+         *
          * @param expression
          *            the expression to rewrite
          * @return the rewritten expression, possibly the supplied expression itself
@@ -1246,7 +1126,7 @@ public final class Algebra
 
             this.expression.visit(this);
 
-            return this.expression == null || isTrivial(this.expression, null) ? null
+            return this.expression == null || Algebra.isTrivial(this.expression, null) ? null
                     : (TupleExpr) this.expression;
         }
 
@@ -1259,23 +1139,25 @@ public final class Algebra
         protected void meetNode(final QueryModelNode node) throws RuntimeException
         {
             if (node instanceof StatementPattern) {
-                scheduleModifications((TupleExpr) node, ((StatementPattern) node).getContextVar());
+                this.scheduleModifications((TupleExpr) node,
+                        ((StatementPattern) node).getContextVar());
             } else if (node instanceof ZeroLengthPath) {
-                scheduleModifications((TupleExpr) node, ((ZeroLengthPath) node).getContextVar());
+                this.scheduleModifications((TupleExpr) node,
+                        ((ZeroLengthPath) node).getContextVar());
             }
 
             super.meetNode(node);
 
             if (node == this.expression
                     && (!this.deletions.isEmpty() || !this.filtering.isEmpty())) {
-                generateExpression();
+                this.generateExpression();
             }
         }
 
         /**
          * Analyzes the supplied pattern node and the associated context variable, scheduling the
          * appropriate modifications to the algebraic expression.
-         * 
+         *
          * @param node
          *            the pattern node, either a {@link StatementPattern} or a
          *            {@link ZeroLengthPath}
@@ -1287,12 +1169,12 @@ public final class Algebra
             if (var == null) {
                 final String newVarName = "__c" + this.counter++;
                 this.assignments.put(node, newVarName);
-                this.filtering.put(findGroupPatternRoot(node), newVarName);
+                this.filtering.put(Algebra.findGroupPatternRoot(node), newVarName);
 
             } else if (var.getValue() == null) {
-                this.filtering.put(findGroupPatternRoot(node), var.getName());
+                this.filtering.put(Algebra.findGroupPatternRoot(node), var.getName());
 
-            } else if (var.getValue() instanceof URI && this.prefix.matches(var.getValue())) {
+            } else if (var.getValue() instanceof IRI && this.prefix.matches(var.getValue())) {
                 this.deletions.add(node);
             }
         }
@@ -1308,7 +1190,7 @@ public final class Algebra
             // XXX we may need a method to get rid of generated EmptySet, when translating an
             // algebraic expression to a SPARQL string
             for (final QueryModelNode node : this.deletions) {
-                this.expression = (TupleExpr) replaceNode(this.expression, map.get(node),
+                this.expression = (TupleExpr) Algebra.replaceNode(this.expression, map.get(node),
                         new EmptySet());
             }
 
@@ -1328,10 +1210,169 @@ public final class Algebra
                     .entrySet()) {
                 this.expression = (TupleExpr) Algebra.insertFilter(this.expression,
                         (TupleExpr) map.get(entry.getKey()),
-                        excludeCondition(this.prefix, entry.getValue()));
+                        Algebra.excludeCondition(this.prefix, entry.getValue()));
             }
         }
 
     }
+
+    // /**
+    // * Helper class supporting the rewriting of {@link TupleExpr} so to prevent reading from
+    // * graphs whose URIs match a certain prefix.
+    // * <p>
+    // * NOTE: this class is not thread safe.
+    // * </p>
+    // */
+    // private static class ExcludeReadingGraphsVisitor1
+    // extends AbstractQueryModelVisitor<RuntimeException>
+    // {
+    //
+    // /**
+    // * The URI prefix of graphs not to be read.
+    // *
+    // * @uml.property name="prefix"
+    // * @uml.associationEnd
+    // */
+    // private final URIPrefix prefix;
+    //
+    // /**
+    // * The expression to be rewritten, at the beginning, then the rewritten expression.
+    // */
+    // private TupleExpr expression;
+    //
+    // /**
+    // * A map with scheduled assignments of context variables to patterns in the expression.
+    // */
+    // private Map<TupleExpr, String> assignments;
+    //
+    // /**
+    // * A map with scheduled filtering of context variables to be added in the expression.
+    // */
+    // private Multimap<TupleExpr, String> filtering;
+    //
+    // /** A set of nodes to be deleted. */
+    // private Set<TupleExpr> deletions;
+    //
+    // /** A counter used to generate the names of new context variables. */
+    // private int counter;
+    //
+    // /**
+    // * Creates a new instance for the URI prefix supplied.
+    // *
+    // * @param prefix
+    // * the URI prefix of graphs not to be read
+    // */
+    // public ExcludeReadingGraphsVisitor1(final URIPrefix prefix)
+    // {
+    // Preconditions.checkNotNull(prefix);
+    // this.prefix = prefix;
+    // }
+    //
+    // /**
+    // * Rewrites the expression specified, using the URI prefix provided at construction time.
+    // *
+    // * @param expression
+    // * the expression to rewrite
+    // * @return the rewritten expression, possibly the supplied expression itself
+    // */
+    // public TupleExpr process(final TupleExpr expression)
+    // {
+    // this.expression = expression;
+    // this.assignments = Maps.newHashMap();
+    // this.filtering = HashMultimap.create();
+    // this.deletions = Sets.newHashSet();
+    // this.counter = 0;
+    //
+    // this.expression.visit(this);
+    //
+    // return this.expression == null || Algebra.isTrivial(this.expression, null) ? null
+    // : (TupleExpr) this.expression;
+    // }
+    //
+    // /**
+    // * {@inheritDoc} Updates the data structures holding scheduled modifications to the
+    // * expression while visiting the expression tree. After the whole tree is visited, the
+    // * rewritten expression is generated if some modification was scheduled.
+    // */
+    // @Override
+    // protected void meetNode(final QueryModelNode node) throws RuntimeException
+    // {
+    // if (node instanceof StatementPattern) {
+    // this.scheduleModifications((TupleExpr) node,
+    // ((StatementPattern) node).getContextVar());
+    // } else if (node instanceof ZeroLengthPath) {
+    // this.scheduleModifications((TupleExpr) node,
+    // ((ZeroLengthPath) node).getContextVar());
+    // }
+    //
+    // super.meetNode(node);
+    //
+    // if (node == this.expression
+    // && (!this.deletions.isEmpty() || !this.filtering.isEmpty())) {
+    // this.generateExpression();
+    // }
+    // }
+    //
+    // /**
+    // * Analyzes the supplied pattern node and the associated context variable, scheduling the
+    // * appropriate modifications to the algebraic expression.
+    // *
+    // * @param node
+    // * the pattern node, either a {@link StatementPattern} or a
+    // * {@link ZeroLengthPath}
+    // * @param var
+    // * the context variable associated to the node
+    // */
+    // private void scheduleModifications(final TupleExpr node, final Var var)
+    // {
+    // if (var == null) {
+    // final String newVarName = "__c" + this.counter++;
+    // this.assignments.put(node, newVarName);
+    // this.filtering.put(Algebra.findGroupPatternRoot(node), newVarName);
+    //
+    // } else if (var.getValue() == null) {
+    // this.filtering.put(Algebra.findGroupPatternRoot(node), var.getName());
+    //
+    // } else if (var.getValue() instanceof IRI && this.prefix.matches(var.getValue())) {
+    // this.deletions.add(node);
+    // }
+    // }
+    //
+    // /**
+    // * Generates the rewritten algebraic expression, if some modification was scheduled.
+    // */
+    // private void generateExpression()
+    // {
+    // final IdentityHashMap<QueryModelNode, QueryModelNode> map = Maps.newIdentityHashMap();
+    // this.expression = Algebra.clone(this.expression, map, null);
+    //
+    // // XXX we may need a method to get rid of generated EmptySet, when translating an
+    // // algebraic expression to a SPARQL string
+    // for (final QueryModelNode node : this.deletions) {
+    // this.expression = (TupleExpr) Algebra.replaceNode(this.expression, map.get(node),
+    // new EmptySet());
+    // }
+    //
+    // for (final Map.Entry<TupleExpr, String> entry : this.assignments.entrySet()) {
+    // final QueryModelNode node = map.get(entry.getKey());
+    // final Var var = new Var(entry.getValue());
+    // if (node instanceof StatementPattern) {
+    // ((StatementPattern) node).setContextVar(var);
+    // ((StatementPattern) node).setScope(Scope.NAMED_CONTEXTS);
+    // } else if (node instanceof ZeroLengthPath) {
+    // ((ZeroLengthPath) node).setContextVar(var);
+    // ((ZeroLengthPath) node).setScope(Scope.NAMED_CONTEXTS);
+    // }
+    // }
+    //
+    // for (final Map.Entry<TupleExpr, Collection<String>> entry : this.filtering.asMap()
+    // .entrySet()) {
+    // this.expression = (TupleExpr) Algebra.insertFilter(this.expression,
+    // (TupleExpr) map.get(entry.getKey()),
+    // Algebra.excludeCondition(this.prefix, entry.getValue()));
+    // }
+    // }
+    //
+    // }
 
 }

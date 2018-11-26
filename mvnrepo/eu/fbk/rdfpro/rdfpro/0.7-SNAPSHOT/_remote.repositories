@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Nov 20 11:24:13 CET 2018
+rdfpro-0.7-SNAPSHOT.pom>=
+rdfpro-0.7-SNAPSHOT-site.xml>=

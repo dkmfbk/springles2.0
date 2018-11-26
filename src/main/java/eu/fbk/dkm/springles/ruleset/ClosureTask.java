@@ -9,21 +9,22 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.Selector;
@@ -53,8 +54,8 @@ public abstract class ClosureTask implements Cloneable
             @Nullable final Map<? extends String, ? extends ValueExpr> bindings)
     {
         this.id = id;
-        this.bindings = bindings == null ? Maps.<String, ValueExpr>newHashMap() : Maps
-                .newHashMap(bindings);
+        this.bindings = bindings == null ? Maps.<String, ValueExpr>newHashMap()
+                : Maps.newHashMap(bindings);
         this.frozen = false;
     }
 
@@ -68,7 +69,7 @@ public abstract class ClosureTask implements Cloneable
 
     public final void setID(@Nullable final Resource id)
     {
-        checkMutable();
+        this.checkMutable();
         this.id = id;
     }
 
@@ -77,22 +78,21 @@ public abstract class ClosureTask implements Cloneable
         return this.bindings;
     }
 
- /*   public final void setBindings(
+    public final void setBindings(
             @Nullable final Map<? extends String, ? extends ValueExpr> bindings)
     {
         Preconditions.checkNotNull(bindings);
-        checkMutable();
-
-        this.bindings = bindings == null ? Maps.<String, ValueExpr>newHashMap() : Maps
-                .newHashMap(bindings);
-    }*/
+        this.checkMutable();
+        this.bindings = bindings == null ? Maps.<String, ValueExpr>newHashMap()
+                : Maps.newHashMap(bindings);
+    }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
-        final ValueFactory vf = graph.getValueFactory();
+        final ValueFactory vf = SimpleValueFactory.getInstance();
         final Resource id = this.id != null ? this.id : vf.createBNode();
 
         for (final Map.Entry<String, ValueExpr> entry : this.bindings.entrySet()) {
@@ -110,10 +110,10 @@ public abstract class ClosureTask implements Cloneable
 
     // ID must be assigned in order for the method to work
 
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
-        checkMutable();
+        this.checkMutable();
         Preconditions.checkNotNull(graph);
         Preconditions.checkState(this.id != null);
 
@@ -131,28 +131,31 @@ public abstract class ClosureTask implements Cloneable
                         baseURI, namespaces);
                 this.bindings.put(var, valueExpr);
             } catch (final Throwable ex) {
-                throw new MalformedQueryException("Invalid bind expression in '" + this + "':\n"
-                        + binding, ex);
+                throw new MalformedQueryException(
+                        "Invalid bind expression in '" + this + "':\n" + binding, ex);
             }
         }
     }
 
-    public static ClosureTask parseRDF(final Graph graph, @Nullable final String baseURI,
+    public static ClosureTask parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces, final Resource taskID)
             throws MalformedQueryException
     {
-        final Resource id = taskID != null ? taskID : Iterators.getOnlyElement(
-                Iterators.concat(graph.match(null, RDF.TYPE, SPR.CLOSURE_EVAL_TASK),
-                        graph.match(null, RDF.TYPE, SPR.CLOSURE_FIX_POINT_TASK),
-                        graph.match(null, RDF.TYPE, SPR.CLOSURE_REPEAT_TASK),
-                        graph.match(null, RDF.TYPE, SPR.CLOSURE_SEQUENCE_TASK))).getSubject();
+        final Resource id = taskID != null ? taskID
+                : Iterables
+                        .getOnlyElement(Iterables.concat(
+                                graph.filter(null, RDF.TYPE, SPR.CLOSURE_EVAL_TASK),
+                                graph.filter(null, RDF.TYPE, SPR.CLOSURE_FIX_POINT_TASK),
+                                graph.filter(null, RDF.TYPE, SPR.CLOSURE_REPEAT_TASK),
+                                graph.filter(null, RDF.TYPE, SPR.CLOSURE_SEQUENCE_TASK)))
+                        .getSubject();
 
         final Selector s = Selector.select(graph, id);
-        final Set<URI> properties = s.properties();
-        properties.retainAll(ImmutableSet.of(SPR.EVAL_OF, SPR.FIX_POINT_OF, SPR.REPEAT_OF,
-                SPR.SEQUENCE_OF));
+        final Set<IRI> properties = s.properties();
+        properties.retainAll(
+                ImmutableSet.of(SPR.EVAL_OF, SPR.FIX_POINT_OF, SPR.REPEAT_OF, SPR.SEQUENCE_OF));
         Preconditions.checkArgument(properties.size() == 1);
-        final URI property = properties.iterator().next();
+        final IRI property = properties.iterator().next();
 
         ClosureTask task;
         if (property.equals(SPR.EVAL_OF)) {
@@ -177,15 +180,15 @@ public abstract class ClosureTask implements Cloneable
 
     public void validate()
     {
-        validate(this.id != null, "missing ID");
-        validate(!this.bindings.containsKey(null), "null binding variable");
-        validate(!this.bindings.containsValue(null), "null binding expression");
+        this.validate(this.id != null, "missing ID");
+        this.validate(!this.bindings.containsKey(null), "null binding variable");
+        this.validate(!this.bindings.containsValue(null), "null binding expression");
     }
 
     protected final void validate(final boolean condition, final String message)
     {
         if (!condition) {
-            throw new IllegalStateException("Invalid " + getClass().getSimpleName()
+            throw new IllegalStateException("Invalid " + this.getClass().getSimpleName()
                     + (this.id == null ? "" : " " + this.id) + ": " + message);
         }
     }
@@ -222,8 +225,9 @@ public abstract class ClosureTask implements Cloneable
     protected final void checkMutable()
     {
         if (this.frozen) {
-            throw new IllegalStateException("Cannot modify frozen " + getClass().getSimpleName()
-                    + (this.id == null ? "" : " " + this.id) + "; must clone it before");
+            throw new IllegalStateException(
+                    "Cannot modify frozen " + this.getClass().getSimpleName()
+                            + (this.id == null ? "" : " " + this.id) + "; must clone it before");
         }
     }
 
@@ -235,7 +239,7 @@ public abstract class ClosureTask implements Cloneable
         if (object == this) {
             return true;
         }
-        if (object == null || object.getClass() == getClass()) {
+        if (object == null || object.getClass() == this.getClass()) {
             return false;
         }
         final ClosureTask other = (ClosureTask) object;
@@ -253,7 +257,7 @@ public abstract class ClosureTask implements Cloneable
         String digest = this.digest;
         if (digest == null) {
             final Hasher hasher = Hashing.md5().newHasher();
-            computeDigest(hasher);
+            this.computeDigest(hasher);
             digest = hasher.hash().toString();
             this.digest = this.frozen ? digest : null;
         }
@@ -262,7 +266,7 @@ public abstract class ClosureTask implements Cloneable
 
     protected void computeDigest(final Hasher hasher)
     {
-        hasher.putUnencodedChars(this.id instanceof URI ? this.id.stringValue() : " ");
+        hasher.putUnencodedChars(this.id instanceof IRI ? this.id.stringValue() : " ");
         for (final String name : Ordering.natural().sortedCopy(this.bindings.keySet())) {
             final ValueExpr expr = this.bindings.get(name);
             hasher.putUnencodedChars(name).putUnencodedChars("=");
@@ -276,9 +280,9 @@ public abstract class ClosureTask implements Cloneable
     public final String toString()
     {
         final StringBuilder builder = new StringBuilder();
-        builder.append(getClass().getSimpleName().substring("Closure".length()));
-        if (this.id instanceof URI) {
-            builder.append(" ").append(((URI) this.id).getLocalName());
+        builder.append(this.getClass().getSimpleName().substring("Closure".length()));
+        if (this.id instanceof IRI) {
+            builder.append(" ").append(((IRI) this.id).getLocalName());
         }
         return builder.toString();
     }

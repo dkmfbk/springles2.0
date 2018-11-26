@@ -2,19 +2,18 @@ package eu.fbk.dkm.springles.base;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryException;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
@@ -29,7 +28,7 @@ import eu.fbk.dkm.springles.InferenceMode;
 
 /**
  * Transaction abstraction.
- * 
+ *
  * @apiviz.landmark
  * @apiviz.uses eu.fbk.dkm.springles.base.Transaction.Operation - - <<auxiliary>>
  * @apiviz.uses eu.fbk.dkm.springles.base.QuerySpec
@@ -59,23 +58,24 @@ public interface Transaction
     // Statement read
 
     void query(QuerySpec<?> query, @Nullable Dataset dataset, @Nullable BindingSet bindings,
-            InferenceMode mode, int timeout, Object handler) throws QueryEvaluationException,
-            RepositoryException; // RDFHandler or TupleQueryResultHandler
+            InferenceMode mode, int timeout, Object handler)
+            throws QueryEvaluationException, RepositoryException; // RDFHandler or
+                                                                  // TupleQueryResultHandler
 
     <T> T query(QuerySpec<T> query, @Nullable Dataset dataset, @Nullable BindingSet bindings,
             InferenceMode mode, int timeout) throws QueryEvaluationException, RepositoryException;
 
-    <T> T query(URI queryURI, QueryType<T> queryType, InferenceMode mode, Object... parameters)
+    <T> T query(IRI queryURI, QueryType<T> queryType, InferenceMode mode, Object... parameters)
             throws QueryEvaluationException, RepositoryException;
 
     CloseableIteration<? extends Resource, RepositoryException> getContextIDs(InferenceMode mode)
             throws RepositoryException;
 
     CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable Resource subj, @Nullable URI pred, @Nullable Value obj, InferenceMode mode,
+            @Nullable Resource subj, @Nullable IRI pred, @Nullable Value obj, InferenceMode mode,
             Resource... contexts) throws RepositoryException;
 
-    boolean hasStatement(@Nullable Resource subj, @Nullable URI pred, @Nullable Value obj,
+    boolean hasStatement(@Nullable Resource subj, @Nullable IRI pred, @Nullable Value obj,
             InferenceMode mode, Resource... contexts) throws RepositoryException;
 
     long size(InferenceMode mode, Resource... contexts) throws RepositoryException;
@@ -85,7 +85,7 @@ public interface Transaction
     void update(UpdateSpec update, @Nullable Dataset dataset, @Nullable BindingSet bindings,
             final InferenceMode mode) throws UpdateExecutionException, RepositoryException;
 
-    void update(URI updateURI, InferenceMode mode, Object... parameters)
+    void update(IRI updateURI, InferenceMode mode, Object... parameters)
             throws UpdateExecutionException, RepositoryException;
 
     void add(Iterable<? extends Statement> statements, final Resource... contexts)
@@ -94,7 +94,7 @@ public interface Transaction
     void remove(Iterable<? extends Statement> statements, final Resource... contexts)
             throws RepositoryException;
 
-    void remove(@Nullable Resource subject, @Nullable URI predicate, @Nullable Value object,
+    void remove(@Nullable Resource subject, @Nullable IRI predicate, @Nullable Value object,
             Resource... contexts) throws RepositoryException;
 
     // Closure management

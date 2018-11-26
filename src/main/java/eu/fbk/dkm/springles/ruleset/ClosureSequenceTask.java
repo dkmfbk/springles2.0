@@ -10,13 +10,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Graph;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
 
 import eu.fbk.dkm.internal.util.Selector;
 
@@ -37,8 +38,8 @@ public final class ClosureSequenceTask extends ClosureTask
             @Nullable final Iterable<? extends ClosureTask> subTasks)
     {
         super(id, bindings);
-        this.subTasks = subTasks == null ? Lists.<ClosureTask>newArrayList() : Lists
-                .newArrayList(subTasks);
+        this.subTasks = subTasks == null ? Lists.<ClosureTask>newArrayList()
+                : Lists.newArrayList(subTasks);
     }
 
     // PROPERTIES
@@ -50,23 +51,23 @@ public final class ClosureSequenceTask extends ClosureTask
 
     public void setSubTasks(@Nullable final Iterable<? extends ClosureTask> subTasks)
     {
-        checkMutable();
-        this.subTasks = subTasks == null ? Lists.<ClosureTask>newArrayList() : Lists
-                .newArrayList(subTasks);
+        this.checkMutable();
+        this.subTasks = subTasks == null ? Lists.<ClosureTask>newArrayList()
+                : Lists.newArrayList(subTasks);
     }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
     @Override
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
         final Resource id = super.emitRDF(graph, baseURI, namespaces);
-        URI pred = SPR.SEQUENCE_OF;
+        IRI pred = SPR.SEQUENCE_OF;
         Resource node = id;
         graph.add(id, RDF.TYPE, SPR.CLOSURE_SEQUENCE_TASK);
         for (final ClosureTask subTask : this.subTasks) {
-            final BNode newNode = graph.getValueFactory().createBNode();
+            final BNode newNode = SimpleValueFactory.getInstance().createBNode();
             graph.add(node, pred, newNode);
             graph.add(newNode, RDF.FIRST, subTask.emitRDF(graph, baseURI, namespaces));
             pred = RDF.REST;
@@ -77,11 +78,11 @@ public final class ClosureSequenceTask extends ClosureTask
     }
 
     @Override
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
         super.parseRDF(graph, baseURI, namespaces);
-        final Selector s = Selector.select(graph, getID());
+        final Selector s = Selector.select(graph, this.getID());
         if (!s.isEmpty(SPR.SEQUENCE_OF)) {
             this.subTasks.clear();
             for (final Resource subTaskID : s.getList(SPR.SEQUENCE_OF, Resource.class)) {
@@ -97,7 +98,7 @@ public final class ClosureSequenceTask extends ClosureTask
     {
         super.validate();
         for (final ClosureTask node : this.subTasks) {
-            validate(node != null, "null sub-task listed");
+            this.validate(node != null, "null sub-task listed");
             node.validate();
         }
     }
@@ -107,7 +108,7 @@ public final class ClosureSequenceTask extends ClosureTask
     @Override
     public void freeze()
     {
-        if (!isFrozen()) {
+        if (!this.isFrozen()) {
             this.subTasks = ImmutableList.copyOf(this.subTasks);
             for (final ClosureTask node : this.subTasks) {
                 node.freeze();

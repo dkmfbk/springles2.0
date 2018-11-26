@@ -13,59 +13,58 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Nullable;
 
-import sun.security.action.GetLongAction;
-
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import org.openrdf.IsolationLevel;
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.BooleanQuery;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.Query;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.TupleQuery;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.TupleQueryResultHandler;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.Update;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.query.algebra.Clear;
-import org.openrdf.query.algebra.Create;
-import org.openrdf.query.algebra.Load;
-import org.openrdf.query.impl.AbstractQuery;
-import org.openrdf.query.impl.AbstractUpdate;
-import org.openrdf.query.parser.QueryParserUtil;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.UnknownTransactionStateException;
-import org.openrdf.rio.ParserConfig;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFParser.DatatypeHandling;
-import org.openrdf.rio.helpers.RDFHandlerBase;
+import org.eclipse.rdf4j.IsolationLevel;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.Iteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.BooleanQuery;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.GraphQuery;
+import org.eclipse.rdf4j.query.GraphQueryResult;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.Query;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.query.TupleQuery;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.TupleQueryResultHandler;
+import org.eclipse.rdf4j.query.TupleQueryResultHandlerException;
+import org.eclipse.rdf4j.query.Update;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.query.algebra.Clear;
+import org.eclipse.rdf4j.query.impl.AbstractQuery;
+import org.eclipse.rdf4j.query.impl.AbstractUpdate;
+import org.eclipse.rdf4j.query.impl.IteratingTupleQueryResult;
+import org.eclipse.rdf4j.query.impl.ListBindingSet;
+import org.eclipse.rdf4j.query.parser.QueryParserUtil;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryResult;
+import org.eclipse.rdf4j.repository.UnknownTransactionStateException;
+import org.eclipse.rdf4j.rio.ParserConfig;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.helpers.AbstractRDFHandler;
+import org.eclipse.rdf4j.rio.helpers.BasicParserSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.Iteration;
-
-//import eu.fbk.dkm.internal.springles.protocol.Options;
+// import eu.fbk.dkm.internal.springles.protocol.Options;
 import eu.fbk.dkm.internal.util.Iterations;
 import eu.fbk.dkm.internal.util.RDFParseOptions;
 import eu.fbk.dkm.internal.util.RDFSource;
@@ -76,10 +75,13 @@ import eu.fbk.dkm.springles.SpringlesRepository;
 import eu.fbk.dkm.springles.TransactionMode;
 import eu.fbk.dkm.springles.base.SynchronizedTransaction.EndListener;
 import eu.fbk.dkm.springles.base.Transaction.Operation;
+import eu.fbk.dkm.springles.ruleset.Ruleset;
+import eu.fbk.dkm.springles.ruleset.Rulesets;
+import eu.fbk.dkm.springles.ruleset.RulesetsRDFPRO;
 
 /**
  * Base implementation of <tt>SpringlesConnection</tt>.
- * 
+ *
  * @apiviz.landmark
  * @apiviz.uses eu.fbk.dkm.springles.base.Transaction - - <<delegate>>
  */
@@ -93,8 +95,10 @@ public class SpringlesConnectionBase implements SpringlesConnection
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpringlesConnectionBase.class);
 
-    private static final ParserConfig DEFAULT_PARSER_CONFIG = new ParserConfig(true, false, false,
-            DatatypeHandling.VERIFY);
+    private static final ParserConfig DEFAULT_PARSER_CONFIG = new ParserConfig()
+            .set(BasicParserSettings.VERIFY_RELATIVE_URIS, true)
+            .set(BasicParserSettings.NORMALIZE_DATATYPE_VALUES, true)
+            .set(BasicParserSettings.PRESERVE_BNODE_IDS, false);
 
     private static final int BATCH_SIZE = 64 * 1024;
 
@@ -140,15 +144,15 @@ public class SpringlesConnectionBase implements SpringlesConnection
         } else {
             transactionMode = TransactionMode.WRITABLE_MANUAL_CLOSURE; // TODO Hack
         }
-//        } else if (repository.getInferenceMode().isForwardEnabled()) {
-//            transactionMode = TransactionMode.WRITABLE_AUTO_CLOSURE;
-//        } else {
-//            transactionMode = TransactionMode.WRITABLE_MANUAL_CLOSURE;
-//        }
+        // } else if (repository.getInferenceMode().isForwardEnabled()) {
+        // transactionMode = TransactionMode.WRITABLE_AUTO_CLOSURE;
+        // } else {
+        // transactionMode = TransactionMode.WRITABLE_MANUAL_CLOSURE;
+        // }
 
         this.id = id;
         this.repository = repository;
-        this.parserConfig = DEFAULT_PARSER_CONFIG;
+        this.parserConfig = SpringlesConnectionBase.DEFAULT_PARSER_CONFIG;
         this.inferenceMode = repository.getInferenceMode();
 
         this.status = Status.IDLE;
@@ -215,13 +219,14 @@ public class SpringlesConnectionBase implements SpringlesConnection
         }
 
         if (transactionsToEnd != null) {
-            LOGGER.debug("[{}] Forcing rollback of {} pending transaction", this.id,
-                    transactionsToEnd.size());
+            SpringlesConnectionBase.LOGGER.info("[{}] Forcing rollback of {} pending transaction",
+                    this.id, transactionsToEnd.size());
             for (final Transaction transactionToEnd : transactionsToEnd) {
                 try {
                     transactionToEnd.end(false);
                 } catch (final Throwable ex) {
-                    LOGGER.error("Got exception while forcing transaction rollback", ex);
+                    SpringlesConnectionBase.LOGGER
+                            .error("Got exception while forcing transaction rollback", ex);
                 }
             }
         }
@@ -263,7 +268,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
 
     /**
      * Helper method throwing an exception if the transaction is closing / closed.
-     * 
+     *
      * @throws IllegalStateException
      *             if the transaction is closing / closed
      */
@@ -280,7 +285,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final TransactionMode getTransactionMode() throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
         return this.currentTransactionMode;
     }
 
@@ -289,7 +294,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
             throws RepositoryException
     {
         Preconditions.checkNotNull(transactionMode);
-        checkAccessible();
+        this.checkAccessible();
 
         TransactionMode actualMode = transactionMode;
         if (transactionMode != TransactionMode.READ_ONLY && !this.repository.isWritable()) {
@@ -300,19 +305,20 @@ public class SpringlesConnectionBase implements SpringlesConnection
         }
 
         if (actualMode != transactionMode) {
-            LOGGER.warn("[" + this.id + "] Requested transaction mode " + transactionMode
-                    + " is unsupported, falling back to " + actualMode);
+            SpringlesConnectionBase.LOGGER.warn("[" + this.id + "] Requested transaction mode "
+                    + transactionMode + " is unsupported, falling back to " + actualMode);
         }
 
         this.currentTransactionMode = actualMode;
 
-        LOGGER.debug("[{}] Transaction mode set to {}", this.id, actualMode);
+        SpringlesConnectionBase.LOGGER.info("[{}] Transaction mode set to {}", this.id,
+                actualMode);
     }
 
     @Override
     public final synchronized boolean isAutoCommit() throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
         return this.autoCommit;
     }
 
@@ -322,7 +328,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
         Transaction transactionToEnd;
 
         synchronized (this) {
-            checkAccessible();
+            this.checkAccessible();
 
             if (this.autoCommit == autoCommit) {
                 return;
@@ -334,12 +340,13 @@ public class SpringlesConnectionBase implements SpringlesConnection
             this.lastTransaction = null;
             this.lastTransactionMode = null;
 
-            LOGGER.debug("[{}] Auto-commit set to {}", this.id, autoCommit);
+            SpringlesConnectionBase.LOGGER.info("[{}] Auto-commit set to {}", this.id, autoCommit);
         }
 
         if (transactionToEnd != null) {
             transactionToEnd.end(true);
-            LOGGER.debug("[{}] Transaction committed due to auto-commit switched on",
+            SpringlesConnectionBase.LOGGER.info(
+                    "[{}] Transaction committed due to auto-commit switched on",
                     transactionToEnd.getID());
         }
     }
@@ -347,13 +354,13 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final void commit() throws RepositoryException
     {
-        endTransaction(true);
+        this.endTransaction(true);
     }
 
     @Override
     public final void rollback() throws RepositoryException
     {
-        endTransaction(false);
+        this.endTransaction(false);
     }
 
     private void endTransaction(final boolean commit) throws RepositoryException
@@ -361,7 +368,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
         Transaction transactionToEnd;
 
         synchronized (this) {
-            checkAccessible();
+            this.checkAccessible();
             if (this.autoCommit) {
                 transactionToEnd = null;
             } else {
@@ -373,9 +380,9 @@ public class SpringlesConnectionBase implements SpringlesConnection
 
         if (transactionToEnd != null) {
             transactionToEnd.end(commit);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[{}] Transaction manually {}", transactionToEnd.getID(),
-                        commit ? "committed" : "rolled back");
+            if (SpringlesConnectionBase.LOGGER.isInfoEnabled()) {
+                SpringlesConnectionBase.LOGGER.info("[{}] Transaction manually {}",
+                        transactionToEnd.getID(), commit ? "committed" : "rolled back");
             }
         }
     }
@@ -387,7 +394,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
     protected final synchronized Transaction getTransaction(final boolean writeOperation)
             throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
         if (this.lastTransaction != null) {
             if (writeOperation && this.lastTransactionMode == TransactionMode.READ_ONLY) {
@@ -409,10 +416,10 @@ public class SpringlesConnectionBase implements SpringlesConnection
             if (this.autoCommit && mode == TransactionMode.WRITABLE_MANUAL_CLOSURE
                     && !writeOperation) {
                 mode = TransactionMode.READ_ONLY;
-                LOGGER.debug("[{}] Transaction mode downgraded to {} for auto-committing, "
-                        + "non auto-closure operation", this.id, mode);
+                SpringlesConnectionBase.LOGGER
+                        .info("[{}] Transaction mode downgraded to {} for auto-committing, "
+                                + "non auto-closure operation", this.id, mode);
             }
-
             final AtomicReference<String> idHolder = new AtomicReference<String>(null);
             final Transaction transaction = this.repository.getTransaction(mode, this.autoCommit,
                     new EndListener() {
@@ -423,14 +430,14 @@ public class SpringlesConnectionBase implements SpringlesConnection
                         {
                             final String id = idHolder.get();
                             if (id != null) {
-                                unregisterPendingTransaction(id);
+                                SpringlesConnectionBase.this.unregisterPendingTransaction(id);
                             }
                         }
 
                     });
             idHolder.set(transaction.getID());
 
-            registerPendingTransaction(transaction.getID(), transaction,
+            this.registerPendingTransaction(transaction.getID(), transaction,
                     mode != TransactionMode.READ_ONLY);
 
             if (!this.autoCommit) {
@@ -442,33 +449,32 @@ public class SpringlesConnectionBase implements SpringlesConnection
         }
     }
 
-  /*  private Transaction getTransaction(final boolean writeOperation, final BindingSet specification)
-            throws RepositoryException
-    {
-  //      final Options options = Options.fromBindings(specification);
-
-        if (writeOperation && options.getTransactionMode() == TransactionMode.READ_ONLY) {
-            throw new IllegalStateException("Cannot perform a write operation "
-                    + "in the context of read-only transaction");
-        }
-
-        return this.repository.getTransaction(options.getTransactionMode(),
-                options.isAutoCommit(), options.getTransactionName());
-    }*/
+    /*
+     * private Transaction getTransaction(final boolean writeOperation, final BindingSet
+     * specification) throws RepositoryException { // final Options options =
+     * Options.fromBindings(specification);
+     *
+     * if (writeOperation && options.getTransactionMode() == TransactionMode.READ_ONLY) { throw
+     * new IllegalStateException("Cannot perform a write operation " +
+     * "in the context of read-only transaction"); }
+     *
+     * return this.repository.getTransaction(options.getTransactionMode(), options.isAutoCommit(),
+     * options.getTransactionName()); }
+     */
 
     // NAMESPACE MANAGEMENT
 
     @Override
     public final RepositoryResult<Namespace> getNamespaces() throws RepositoryException
     {
-        return new RepositoryResult<Namespace>(getTransaction(false).getNamespaces());
+        return new RepositoryResult<Namespace>(this.getTransaction(false).getNamespaces());
     }
 
     @Override
     public final String getNamespace(final String prefix) throws RepositoryException
     {
         Preconditions.checkNotNull(prefix);
-        return getTransaction(false).getNamespace(prefix);
+        return this.getTransaction(false).getNamespace(prefix);
     }
 
     @Override
@@ -477,20 +483,20 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         Preconditions.checkNotNull(prefix);
         Preconditions.checkNotNull(name);
-        getTransaction(true).setNamespace(prefix, name);
+        this.getTransaction(true).setNamespace(prefix, name);
     }
 
     @Override
     public final void removeNamespace(final String prefix) throws RepositoryException
     {
         Preconditions.checkNotNull(prefix);
-        getTransaction(true).setNamespace(prefix, null);
+        this.getTransaction(true).setNamespace(prefix, null);
     }
 
     @Override
     public final void clearNamespaces() throws RepositoryException
     {
-        getTransaction(true).clearNamespaces();
+        this.getTransaction(true).clearNamespaces();
     }
 
     // QUERY HANDLING
@@ -499,14 +505,14 @@ public class SpringlesConnectionBase implements SpringlesConnection
     public final Query prepareQuery(final QueryLanguage language, final String queryString)
             throws RepositoryException, MalformedQueryException
     {
-        return prepareQuery(language, queryString, null);
+        return this.prepareQuery(language, queryString, null);
     }
 
     @Override
     public final Query prepareQuery(final QueryLanguage language, final String queryString,
             @Nullable final String baseURI) throws RepositoryException, MalformedQueryException
     {
-        checkAccessible();
+        this.checkAccessible();
         Preconditions.checkNotNull(queryString);
 
         // Code taken taken from HTTPRepositoryConnection.
@@ -514,27 +520,27 @@ public class SpringlesConnectionBase implements SpringlesConnection
             final String strippedQuery = QueryParserUtil.removeSPARQLQueryProlog(queryString)
                     .toUpperCase();
             if (strippedQuery.startsWith("SELECT")) {
-                return prepareTupleQuery(language, queryString, baseURI);
+                return this.prepareTupleQuery(language, queryString, baseURI);
             } else if (strippedQuery.startsWith("ASK")) {
-                return prepareBooleanQuery(language, queryString, baseURI);
+                return this.prepareBooleanQuery(language, queryString, baseURI);
             } else {
-                return prepareGraphQuery(language, queryString, baseURI);
+                return this.prepareGraphQuery(language, queryString, baseURI);
             }
 
         } else if (QueryLanguage.SERQL.equals(language)) {
             final String strippedQuery = queryString.replace('(', ' ').trim();
             if (strippedQuery.toUpperCase().startsWith("SELECT")) {
-                return prepareTupleQuery(language, queryString, baseURI);
+                return this.prepareTupleQuery(language, queryString, baseURI);
             } else {
-                return prepareGraphQuery(language, queryString, baseURI);
+                return this.prepareGraphQuery(language, queryString, baseURI);
             }
 
         } else if (SpringlesRepository.PROTOCOL.equals(language)) {
-            return prepareTupleQuery(language, queryString, baseURI);
+            return this.prepareTupleQuery(language, queryString, baseURI);
 
         } else {
-            throw new UnsupportedOperationException("Operation unsupported for query language "
-                    + language);
+            throw new UnsupportedOperationException(
+                    "Operation unsupported for query language " + language);
         }
     }
 
@@ -542,17 +548,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
     public final TupleQuery prepareTupleQuery(final QueryLanguage language,
             final String queryString) throws RepositoryException, MalformedQueryException
     {
-        return prepareTupleQuery(language, queryString, null);
+        return this.prepareTupleQuery(language, queryString, null);
     }
 
     @Override
     public final TupleQuery prepareTupleQuery(final QueryLanguage language,
-            final String queryString, @Nullable final String baseURI) throws RepositoryException,
-            MalformedQueryException
+            final String queryString, @Nullable final String baseURI)
+            throws RepositoryException, MalformedQueryException
     {
-        checkAccessible();
-        return new UnpreparedTupleQuery(QuerySpec.from(QueryType.TUPLE, queryString, language,
-                baseURI));
+        this.checkAccessible();
+        return new UnpreparedTupleQuery(
+                QuerySpec.from(QueryType.TUPLE, queryString, language, baseURI));
     }
 
     private class UnpreparedTupleQuery extends AbstractQuery implements TupleQuery
@@ -568,16 +574,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
         @Override
         public TupleQueryResult evaluate() throws QueryEvaluationException
         {
-            return evaluateQuery(this.spec, getDataset(), getBindings(), getIncludeInferred(),
-                    getMaxQueryTime());
+            return SpringlesConnectionBase.this.evaluateQuery(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred(), this.getMaxExecutionTime());
         }
 
         @Override
         public void evaluate(final TupleQueryResultHandler handler)
                 throws QueryEvaluationException, TupleQueryResultHandlerException
         {
-            evaluateQuery(this.spec, getDataset(), getBindings(), getIncludeInferred(),
-                    getMaxQueryTime(), handler);
+            SpringlesConnectionBase.this.evaluateQuery(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred(), this.getMaxExecutionTime(),
+                    handler);
         }
 
     }
@@ -586,17 +593,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
     public final GraphQuery prepareGraphQuery(final QueryLanguage language,
             final String queryString) throws RepositoryException, MalformedQueryException
     {
-        return prepareGraphQuery(language, queryString, null);
+        return this.prepareGraphQuery(language, queryString, null);
     }
 
     @Override
     public final GraphQuery prepareGraphQuery(final QueryLanguage language,
-            final String queryString, @Nullable final String baseURI) throws RepositoryException,
-            MalformedQueryException
+            final String queryString, @Nullable final String baseURI)
+            throws RepositoryException, MalformedQueryException
     {
-        checkAccessible();
-        return new UnpreparedGraphQuery(QuerySpec.from(QueryType.GRAPH, queryString, language,
-                baseURI));
+        this.checkAccessible();
+        return new UnpreparedGraphQuery(
+                QuerySpec.from(QueryType.GRAPH, queryString, language, baseURI));
     }
 
     private class UnpreparedGraphQuery extends AbstractQuery implements GraphQuery
@@ -612,16 +619,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
         @Override
         public GraphQueryResult evaluate() throws QueryEvaluationException
         {
-            return evaluateQuery(this.spec, getDataset(), getBindings(), getIncludeInferred(),
-                    getMaxQueryTime());
+            return SpringlesConnectionBase.this.evaluateQuery(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred(), this.getMaxExecutionTime());
         }
 
         @Override
-        public void evaluate(final RDFHandler handler) throws QueryEvaluationException,
-                RDFHandlerException
+        public void evaluate(final RDFHandler handler)
+                throws QueryEvaluationException, RDFHandlerException
         {
-            evaluateQuery(this.spec, getDataset(), getBindings(), getIncludeInferred(),
-                    getMaxQueryTime(), handler);
+            SpringlesConnectionBase.this.evaluateQuery(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred(), this.getMaxExecutionTime(),
+                    handler);
         }
 
     }
@@ -630,17 +638,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
     public final BooleanQuery prepareBooleanQuery(final QueryLanguage language,
             final String queryString) throws RepositoryException, MalformedQueryException
     {
-        return prepareBooleanQuery(language, queryString, null);
+        return this.prepareBooleanQuery(language, queryString, null);
     }
 
     @Override
     public final BooleanQuery prepareBooleanQuery(final QueryLanguage language,
-            final String queryString, @Nullable final String baseURI) throws RepositoryException,
-            MalformedQueryException
+            final String queryString, @Nullable final String baseURI)
+            throws RepositoryException, MalformedQueryException
     {
-        checkAccessible();
-        return new UnpreparedBooleanQuery(QuerySpec.from(QueryType.BOOLEAN, queryString, language,
-                baseURI));
+        this.checkAccessible();
+        return new UnpreparedBooleanQuery(
+                QuerySpec.from(QueryType.BOOLEAN, queryString, language, baseURI));
     }
 
     private class UnpreparedBooleanQuery extends AbstractQuery implements BooleanQuery
@@ -656,35 +664,36 @@ public class SpringlesConnectionBase implements SpringlesConnection
         @Override
         public boolean evaluate() throws QueryEvaluationException
         {
-            return evaluateQuery(this.spec, getDataset(), getBindings(), getIncludeInferred(),
-                    getMaxQueryTime());
+            return SpringlesConnectionBase.this.evaluateQuery(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred(), this.getMaxExecutionTime());
         }
 
     }
 
     private void evaluateQuery(final QuerySpec<TupleQueryResult> query, final Dataset dataset,
             final BindingSet bindings, final boolean includeInferred, final int timeout,
-            final TupleQueryResultHandler handler) throws QueryEvaluationException,
-            TupleQueryResultHandlerException
+            final TupleQueryResultHandler handler)
+            throws QueryEvaluationException, TupleQueryResultHandlerException
     {
         Preconditions.checkNotNull(handler);
+        SpringlesConnectionBase.LOGGER.info("{}", query.getString());
         try {
             if (SpringlesRepository.PROTOCOL.equals(query.getLanguage())) {
-            //    getTransaction(false, bindings).query(query, null, null, InferenceMode.NONE, 0,
-              //          handler);
+                // getTransaction(false, bindings).query(query, null, null, InferenceMode.NONE, 0,
+                // handler);
             } else {
-                getTransaction(false).query(query, dataset, bindings,
-                        getActualInferenceMode(includeInferred), timeout, handler);
+                this.getTransaction(false).query(query, dataset, bindings,
+                        this.getActualInferenceMode(includeInferred), timeout, handler);
             }
         } catch (final QueryEvaluationException ex) {
             if (ex.getCause() instanceof TupleQueryResultHandlerException) {
                 throw (TupleQueryResultHandlerException) ex.getCause();
             }
             throw ex;
-        } catch (final RuntimeException ex) {
-            throw ex;
         } catch (final RepositoryException ex) {
             throw new QueryEvaluationException(ex);
+        } catch (final RuntimeException ex) {
+            throw ex;
         }
     }
 
@@ -694,39 +703,82 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         Preconditions.checkNotNull(handler);
         try {
-            getTransaction(false).query(query, dataset, bindings,
-                    getActualInferenceMode(includeInferred), timeout, handler);
+            this.getTransaction(false).query(query, dataset, bindings,
+                    this.getActualInferenceMode(includeInferred), timeout, handler);
 
         } catch (final QueryEvaluationException ex) {
             if (ex.getCause() instanceof RDFHandlerException) {
                 throw (RDFHandlerException) ex.getCause();
             }
             throw ex;
-        } catch (final RuntimeException ex) {
-            throw ex;
         } catch (final RepositoryException ex) {
             throw new QueryEvaluationException(ex);
+        } catch (final RuntimeException ex) {
+            throw ex;
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T evaluateQuery(final QuerySpec<T> query, final Dataset dataset,
             final BindingSet bindings, final boolean includeInferred, final int timeout)
             throws QueryEvaluationException
     {
+        SpringlesConnectionBase.LOGGER.info("{}", query.getString());
         try {
             if (SpringlesRepository.PROTOCOL.equals(query.getLanguage())) {
-               return getTransaction(false).query(query, null, null,
-                       InferenceMode.NONE, 0);
+                return this.getTransaction(false).query(query, null, null, InferenceMode.NONE, 0);
+
+            } else if (query.getString().toLowerCase().replaceAll("\\s+", "")
+                    .equals("select?closurestatus{}")) {
+                final List<String> variables = ImmutableList.of("closurestatus");
+                final ClosureStatus cs = this.getClosureStatus();
+                SpringlesConnectionBase.LOGGER.info("{}", cs);
+                final Literal lit = SimpleValueFactory.getInstance().createLiteral(cs.toString());
+                return (T) new IteratingTupleQueryResult(variables,
+                        ImmutableList.of(new ListBindingSet(variables, lit)));
+
+            } else if (query.getString().toLowerCase().replaceAll("\\s+", "")
+                    .equals("select?listofruleset{}")) {
+                final List<String> variables = ImmutableList.of("listofruleset");
+                String list = "";
+                Rulesets.load();
+                int list_size = Rulesets.list().size();
+                for (final Ruleset r : Rulesets.list()) {
+                    if (list_size > 4) {
+                        Rulesets.unregister(r.getID());
+                    }
+                    list_size--;
+                }
+                list_size = Rulesets.list().size();
+                SpringlesConnectionBase.LOGGER.info("{}", list_size);
+                if (list_size - 4 == 0) {
+                    final Literal lit = SimpleValueFactory.getInstance()
+                            .createLiteral("no-ruleset");
+                    return (T) new IteratingTupleQueryResult(variables,
+                            ImmutableList.of(new ListBindingSet(variables, lit)));
+                }
+                for (final Ruleset r : Rulesets.list()) {
+                    if (list_size > 4) {
+                        list += r.getID().stringValue() + "--"
+                                + r.getURL().toString().replaceAll("file:", "") + "\n";
+                    }
+                    list_size--;
+                }
+
+                SpringlesConnectionBase.LOGGER.info("{}", list);
+                final Literal lit = SimpleValueFactory.getInstance().createLiteral(list);
+                return (T) new IteratingTupleQueryResult(variables,
+                        ImmutableList.of(new ListBindingSet(variables, lit)));
             } else {
-                return getTransaction(false).query(query, dataset, bindings,
-                        getActualInferenceMode(includeInferred), timeout);
+                return this.getTransaction(false).query(query, dataset, bindings,
+                        this.getActualInferenceMode(includeInferred), timeout);
             }
         } catch (final QueryEvaluationException ex) {
             throw ex;
-        } catch (final RuntimeException ex) {
-            throw ex;
         } catch (final RepositoryException ex) {
             throw new QueryEvaluationException(ex);
+        } catch (final RuntimeException ex) {
+            throw ex;
         }
     }
 
@@ -736,14 +788,14 @@ public class SpringlesConnectionBase implements SpringlesConnection
     public final Update prepareUpdate(final QueryLanguage language, final String updateString)
             throws RepositoryException, MalformedQueryException
     {
-        return prepareUpdate(language, updateString, null);
+        return this.prepareUpdate(language, updateString, null);
     }
 
     @Override
     public final Update prepareUpdate(final QueryLanguage language, final String updateString,
             @Nullable final String baseURI) throws RepositoryException, MalformedQueryException
     {
-        checkAccessible();
+        this.checkAccessible();
         return new UnpreparedUpdate(UpdateSpec.from(updateString, language, baseURI));
     }
 
@@ -760,7 +812,8 @@ public class SpringlesConnectionBase implements SpringlesConnection
         @Override
         public void execute() throws UpdateExecutionException
         {
-            executeUpdate(this.spec, getDataset(), getBindings(), getIncludeInferred());
+            SpringlesConnectionBase.this.executeUpdate(this.spec, this.getDataset(),
+                    this.getBindings(), this.getIncludeInferred());
         }
 
     }
@@ -771,46 +824,61 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         try {
             if (SpringlesRepository.PROTOCOL.equals(update.getLanguage())) {
-               // getTransaction(true, bindings).update(update, null, null, InferenceMode.NONE);
+                // getTransaction(true, bindings).update(update, null, null, InferenceMode.NONE);
             } else {
 
                 // TODO this is an hack...
                 if (update.getExpressions().size() == 1
                         && update.getExpressions().get(0) instanceof Clear) {
                     final Clear clear = (Clear) update.getExpressions().get(0);
-                    if (clear.getGraph() != null && clear.getGraph().getValue() instanceof URI) {
-                        final String command = ((URI) clear.getGraph().getValue()).stringValue();
+                    if (clear.getGraph() != null && clear.getGraph().getValue() instanceof IRI) {
+                        final String command = ((IRI) clear.getGraph().getValue()).stringValue();
                         if (command.equals("springles:update-closure")) {
-                            LOGGER.info("Handling 'clear graph springles:update-closure' request");
-                            clearClosure();
-                            updateClosure();
+                            SpringlesConnectionBase.LOGGER.info(
+                                    "Handling 'clear graph springles:update-closure' request");
+                            this.clearClosure();
+                            this.updateClosure();
                             return;
                         } else if (command.equals("springles:clear-closure")) {
-                            LOGGER.info("Handling 'clear graph springles:clear-closure' request");
-                            clearClosure();
+                            SpringlesConnectionBase.LOGGER.info(
+                                    "Handling 'clear graph springles:clear-closure' request");
+                            this.clearClosure();
+                            return;
+                        } else if (command.equals("rdfpro:update-closure")) {
+                            SpringlesConnectionBase.LOGGER
+                                    .info("Handling 'clear graph rdfpro:update-closure' request");
+                            RulesetsRDFPRO.load();
+                            this.clearClosure();
+                            this.updateClosure();
+                            return;
+                        } else if (command.equals("rdfpro:clear-closure")) {
+                            SpringlesConnectionBase.LOGGER.info("Handling 'clear graph' request");
+                            this.clearClosure();
                             return;
                         } else if (command.equals("springles:auto-closure")) {
-                            LOGGER.info("Handling 'clear graph springles:auto-closure' request");
-                            setTransactionMode(TransactionMode.WRITABLE_AUTO_CLOSURE);
+                            SpringlesConnectionBase.LOGGER
+                                    .info("Handling 'clear graph springles:auto-closure' request");
+                            this.setTransactionMode(TransactionMode.WRITABLE_AUTO_CLOSURE);
                             return;
                         } else if (command.equals("springles:manual-closure")) {
-                            LOGGER.info("Handling 'clear graph springles:manual-closure' request");
-                            setTransactionMode(TransactionMode.WRITABLE_MANUAL_CLOSURE);
+                            SpringlesConnectionBase.LOGGER.info(
+                                    "Handling 'clear graph springles:manual-closure' request");
+                            this.setTransactionMode(TransactionMode.WRITABLE_MANUAL_CLOSURE);
                             return;
                         }
                     }
                 }
 
-                getTransaction(true).update(update, dataset, bindings,
-                        getActualInferenceMode(includeInferred));
+                this.getTransaction(true).update(update, dataset, bindings,
+                        this.getActualInferenceMode(includeInferred));
             }
 
         } catch (final UpdateExecutionException ex) {
             throw ex;
-        } catch (final RuntimeException ex) {
-            throw ex;
         } catch (final RepositoryException ex) {
             throw new UpdateExecutionException(ex);
+        } catch (final RuntimeException ex) {
+            throw ex;
         }
     }
 
@@ -819,64 +887,64 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final RepositoryResult<Resource> getContextIDs() throws RepositoryException
     {
-        return getContextIDs(true);
+        return this.getContextIDs(true);
     }
 
     @Override
     public final RepositoryResult<Resource> getContextIDs(final boolean includeInferred)
             throws RepositoryException
     {
-        return new RepositoryResult<Resource>(getTransaction(false).getContextIDs(
-                getActualInferenceMode(includeInferred)));
+        return new RepositoryResult<Resource>(this.getTransaction(false)
+                .getContextIDs(this.getActualInferenceMode(includeInferred)));
     }
 
     @Override
     public final RepositoryResult<Statement> getStatements(@Nullable final Resource subj,
-            @Nullable final URI pred, @Nullable final Value obj, final boolean includeInferred,
+            @Nullable final IRI pred, @Nullable final Value obj, final boolean includeInferred,
             final Resource... contexts) throws RepositoryException
     {
         Preconditions.checkNotNull(contexts);
-        return new RepositoryResult<Statement>(getTransaction(false).getStatements(subj, pred,
-                obj, getActualInferenceMode(includeInferred), contexts));
+        return new RepositoryResult<Statement>(this.getTransaction(false).getStatements(subj, pred,
+                obj, this.getActualInferenceMode(includeInferred), contexts));
     }
 
     @Override
     public final boolean hasStatement(final Statement statement, final boolean includeInferred,
             final Resource... contexts) throws RepositoryException
     {
-        return hasStatement(statement.getSubject(), statement.getPredicate(),
+        return this.hasStatement(statement.getSubject(), statement.getPredicate(),
                 statement.getObject(), includeInferred, contexts);
     }
 
     @Override
-    public final boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public final boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final boolean includeInferred, final Resource... contexts)
             throws RepositoryException
     {
         Preconditions.checkNotNull(contexts);
-        return getTransaction(false).hasStatement(subj, pred, obj,
-                getActualInferenceMode(includeInferred), contexts);
+        return this.getTransaction(false).hasStatement(subj, pred, obj,
+                this.getActualInferenceMode(includeInferred), contexts);
     }
 
     @Override
     public final void export(final RDFHandler handler, final Resource... contexts)
             throws RepositoryException, RDFHandlerException
     {
-        exportStatements(null, null, null, false, handler, contexts);
+        this.exportStatements(null, null, null, false, handler, contexts);
     }
 
     @Override
-    public final void exportStatements(@Nullable final Resource subj, @Nullable final URI pred,
+    public final void exportStatements(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final boolean includeInferred, final RDFHandler handler,
             final Resource... contexts) throws RepositoryException, RDFHandlerException
     {
         Preconditions.checkNotNull(handler);
         Preconditions.checkNotNull(contexts);
 
-        final InferenceMode mode = getActualInferenceMode(includeInferred);
+        final InferenceMode mode = this.getActualInferenceMode(includeInferred);
         final boolean updateClosure = includeInferred && mode.isForwardEnabled();
 
-        final Transaction transaction = getTransaction(false);
+        final Transaction transaction = this.getTransaction(false);
         transaction.execute(new Operation<Void, RDFHandlerException>() {
 
             @Override
@@ -916,7 +984,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final long size(final Resource... contexts) throws RepositoryException
     {
-        return size(false, contexts);
+        return this.size(false, contexts);
     }
 
     @Override
@@ -924,19 +992,20 @@ public class SpringlesConnectionBase implements SpringlesConnection
             throws RepositoryException
     {
         Preconditions.checkNotNull(contexts);
-        return getTransaction(false).size(getActualInferenceMode(includeInferred), contexts);
+        return this.getTransaction(false).size(this.getActualInferenceMode(includeInferred),
+                contexts);
     }
 
     @Override
     public final boolean isEmpty() throws RepositoryException
     {
-        return !hasStatement(null, null, null, false);
+        return !this.hasStatement(null, null, null, false);
     }
 
     @Override
     public final boolean isEmpty(final boolean includeInferred) throws RepositoryException
     {
-        return !hasStatement(null, null, null, includeInferred);
+        return !this.hasStatement(null, null, null, includeInferred);
     }
 
     // ADD METHODS (FROM STREAMS)
@@ -944,52 +1013,53 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final ParserConfig getParserConfig()
     {
-        checkAccessible();
+        this.checkAccessible();
         return this.parserConfig;
     }
 
     @Override
     public final void setParserConfig(final ParserConfig parserConfig)
     {
-        checkAccessible();
-        this.parserConfig = parserConfig != null ? parserConfig : DEFAULT_PARSER_CONFIG;
+        this.checkAccessible();
+        this.parserConfig = parserConfig != null ? parserConfig
+                : SpringlesConnectionBase.DEFAULT_PARSER_CONFIG;
     }
 
     @Override
     public final void add(final InputStream stream, @Nullable final String baseURI,
-            @Nullable final RDFFormat format, final Resource... contexts) throws IOException,
-            RDFParseException, RepositoryException
+            @Nullable final RDFFormat format, final Resource... contexts)
+            throws IOException, RDFParseException, RepositoryException
     {
-        addHelper(stream, baseURI, format, contexts);
+        this.addHelper(stream, baseURI, format, contexts);
     }
 
     @Override
     public final void add(final Reader reader, @Nullable final String baseURI,
-            @Nullable final RDFFormat format, final Resource... contexts) throws IOException,
-            RDFParseException, RepositoryException
+            @Nullable final RDFFormat format, final Resource... contexts)
+            throws IOException, RDFParseException, RepositoryException
     {
-        addHelper(reader, baseURI, format, contexts);
+        this.addHelper(reader, baseURI, format, contexts);
     }
 
     @Override
     public final void add(final URL url, @Nullable final String baseURI,
-            @Nullable final RDFFormat format, final Resource... contexts) throws IOException,
-            RDFParseException, RepositoryException
+            @Nullable final RDFFormat format, final Resource... contexts)
+            throws IOException, RDFParseException, RepositoryException
     {
-        addHelper(url, baseURI, format, contexts);
+        this.addHelper(url, baseURI, format, contexts);
     }
 
     @Override
     public final void add(final File file, @Nullable final String baseURI,
-            @Nullable final RDFFormat format, final Resource... contexts) throws IOException,
-            RDFParseException, RepositoryException
+            @Nullable final RDFFormat format, final Resource... contexts)
+            throws IOException, RDFParseException, RepositoryException
     {
-        addHelper(file, baseURI, format, contexts);
+        this.addHelper(file, baseURI, format, contexts);
     }
 
     private void addHelper(final Object input, @Nullable final String baseURI,
-            @Nullable final RDFFormat format, final Resource... contexts) throws IOException,
-            RDFParseException, RepositoryException
+            @Nullable final RDFFormat format, final Resource... contexts)
+            throws IOException, RDFParseException, RepositoryException
     {
         Preconditions.checkNotNull(contexts);
 
@@ -1010,17 +1080,17 @@ public class SpringlesConnectionBase implements SpringlesConnection
                 throw new Error("Unexpected input type: " + input.getClass().getName());
             }
 
-            final Transaction transaction = getTransaction(true);
+            final Transaction transaction = this.getTransaction(true);
             transaction.execute(new Operation<Void, RDFParseException>() {
 
                 @Override
                 public Void execute() throws RDFParseException, RepositoryException
                 {
                     try {
-                        source.streamTo(new RDFHandlerBase() {
+                        source.streamTo(new AbstractRDFHandler() {
 
                             private final List<Statement> buffer = Lists
-                                    .newArrayListWithCapacity(BATCH_SIZE);
+                                    .newArrayListWithCapacity(SpringlesConnectionBase.BATCH_SIZE);
 
                             @Override
                             public void handleNamespace(final String prefix, final String uri)
@@ -1038,8 +1108,8 @@ public class SpringlesConnectionBase implements SpringlesConnection
                                     throws RDFHandlerException
                             {
                                 this.buffer.add(statement);
-                                if (this.buffer.size() == BATCH_SIZE) {
-                                    flush();
+                                if (this.buffer.size() == SpringlesConnectionBase.BATCH_SIZE) {
+                                    this.flush();
                                 }
                             }
 
@@ -1047,7 +1117,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
                             public void endRDF() throws RDFHandlerException
                             {
                                 if (!this.buffer.isEmpty()) {
-                                    flush();
+                                    this.flush();
                                 }
                             };
 
@@ -1085,10 +1155,11 @@ public class SpringlesConnectionBase implements SpringlesConnection
     // ADD METHODS (FROM STATEMENTS)
 
     @Override
-    public final void add(final Resource subj, final URI pred, final Value obj,
+    public final void add(final Resource subj, final IRI pred, final Value obj,
             final Resource... contexts) throws RepositoryException
     {
-        add(Collections.singleton(new StatementImpl(subj, pred, obj)), contexts);
+        final Statement stmt = SimpleValueFactory.getInstance().createStatement(subj, pred, obj);
+        this.add(Collections.singleton(stmt), contexts);
     }
 
     @Override
@@ -1096,15 +1167,14 @@ public class SpringlesConnectionBase implements SpringlesConnection
             throws RepositoryException
     {
         Preconditions.checkNotNull(statement);
-        add(Collections.singleton(statement), contexts);
+        this.add(Collections.singleton(statement), contexts);
     }
 
     @Override
-    public final <E extends Exception> void add(
-            final Iteration<? extends Statement, E> statements, final Resource... contexts)
-            throws RepositoryException, E
+    public final <E extends Exception> void add(final Iteration<? extends Statement, E> statements,
+            final Resource... contexts) throws RepositoryException, E
     {
-        add(Iterations.asIterable(statements), contexts);
+        this.add(Iterations.asIterable(statements), contexts);
     }
 
     @Override
@@ -1113,24 +1183,24 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         Preconditions.checkNotNull(statements);
         Preconditions.checkNotNull(contexts);
-        getTransaction(true).add(statements, contexts);
+        this.getTransaction(true).add(statements, contexts);
     }
 
     // REMOVE METHODS
 
     @Override
-    public final void remove(@Nullable final Resource subj, @Nullable final URI pred,
+    public final void remove(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final Resource... contexts) throws RepositoryException
     {
         Preconditions.checkNotNull(contexts);
-        getTransaction(true).remove(subj, pred, obj, contexts);
+        this.getTransaction(true).remove(subj, pred, obj, contexts);
     }
 
     @Override
     public final void remove(final Statement statement, final Resource... contexts)
             throws RepositoryException
     {
-        remove(Collections.singleton(statement), contexts);
+        this.remove(Collections.singleton(statement), contexts);
     }
 
     @Override
@@ -1139,7 +1209,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
             throws RepositoryException, E
     {
         // Must read all elements as the iteration may come from a query to this repository.
-        remove(Iterations.getAllElements(statements), contexts);
+        this.remove(Iterations.getAllElements(statements), contexts);
     }
 
     @Override
@@ -1148,19 +1218,19 @@ public class SpringlesConnectionBase implements SpringlesConnection
     {
         Preconditions.checkNotNull(statements);
         Preconditions.checkNotNull(contexts);
-        getTransaction(true).remove(statements, contexts);
+        this.getTransaction(true).remove(statements, contexts);
     }
 
     @Override
     public final void clear(final Resource... contexts) throws RepositoryException
     {
-        remove(null, null, null, contexts);
+        this.remove(null, null, null, contexts);
     }
 
     @Override
     public final void reset() throws RepositoryException
     {
-        getTransaction(true).reset();
+        this.getTransaction(true).reset();
     }
 
     // INFERENCE MANAGEMENT
@@ -1168,7 +1238,7 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final InferenceMode getInferenceMode() throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
         return this.inferenceMode;
     }
 
@@ -1177,19 +1247,19 @@ public class SpringlesConnectionBase implements SpringlesConnection
             throws RepositoryException
     {
         Preconditions.checkNotNull(inferenceMode);
-        checkAccessible();
+        this.checkAccessible();
 
         final InferenceMode actualMode = InferenceMode.intersect(inferenceMode,
                 this.repository.getInferenceMode());
 
-        if (actualMode != inferenceMode && LOGGER.isWarnEnabled()) {
-            LOGGER.warn("[" + this.id + "] Requested inference mode " + inferenceMode
-                    + " is unsupported, falling back to " + actualMode);
+        if (actualMode != inferenceMode && SpringlesConnectionBase.LOGGER.isWarnEnabled()) {
+            SpringlesConnectionBase.LOGGER.warn("[" + this.id + "] Requested inference mode "
+                    + inferenceMode + " is unsupported, falling back to " + actualMode);
         }
 
         if (actualMode != this.inferenceMode) {
             this.inferenceMode = actualMode;
-            LOGGER.debug("[{}] Inference mode set to {}", actualMode);
+            SpringlesConnectionBase.LOGGER.info("[{}] Inference mode set to {}", actualMode);
         }
     }
 
@@ -1202,59 +1272,60 @@ public class SpringlesConnectionBase implements SpringlesConnection
     @Override
     public final ClosureStatus getClosureStatus() throws RepositoryException
     {
-        return getTransaction(false).getClosureStatus();
+        return this.getTransaction(false).getClosureStatus();
     }
 
     @Override
     public final void updateClosure() throws RepositoryException
     {
-        getTransaction(true).updateClosure();
+        this.getTransaction(true).updateClosure();
     }
 
     @Override
     public final void clearClosure() throws RepositoryException
     {
-        getTransaction(true).clearClosure();
+        this.getTransaction(true).clearClosure();
     }
 
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this).add("id", this.id).add("autoCommit", this.autoCommit)
+        return MoreObjects.toStringHelper(this).add("id", this.id)
+                .add("autoCommit", this.autoCommit)
                 .add("transactionMode", this.currentTransactionMode)
                 .add("inferenceMode", this.inferenceMode).toString();
     }
 
-	@Override
-	public void begin() throws RepositoryException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void begin() throws RepositoryException
+    {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public boolean isActive() throws UnknownTransactionStateException,
-			RepositoryException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public void begin(final IsolationLevel level) throws RepositoryException
+    {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void setIsolationLevel(IsolationLevel level)
-			throws IllegalStateException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public boolean isActive() throws UnknownTransactionStateException, RepositoryException
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public IsolationLevel getIsolationLevel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setIsolationLevel(final IsolationLevel level) throws IllegalStateException
+    {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void begin(IsolationLevel level) throws RepositoryException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public IsolationLevel getIsolationLevel()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

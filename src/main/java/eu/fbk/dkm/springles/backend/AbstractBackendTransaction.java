@@ -2,9 +2,9 @@ package eu.fbk.dkm.springles.backend;
 
 import com.google.common.base.Preconditions;
 
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,14 +45,14 @@ public abstract class AbstractBackendTransaction implements Transaction
     }
 
     @Override
-    public final <T> T query(final URI queryURI, final QueryType<T> queryType,
+    public final <T> T query(final IRI queryURI, final QueryType<T> queryType,
             final InferenceMode mode, final Object... parameters)
     {
         throw new UnsupportedOperationException("No named query for URI: " + queryURI);
     }
 
     @Override
-    public final void update(final URI updateURI, final InferenceMode mode,
+    public final void update(final IRI updateURI, final InferenceMode mode,
             final Object... parameters)
     {
         throw new UnsupportedOperationException("No named update for URI: " + updateURI);
@@ -86,8 +86,8 @@ public abstract class AbstractBackendTransaction implements Transaction
 
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
         return operation.execute();
     }
@@ -97,12 +97,10 @@ public abstract class AbstractBackendTransaction implements Transaction
     {
         boolean success = false;
         try {
-            doEnd(commit);
+            this.doEnd(commit);
             success = true;
 
         } catch (final RuntimeException ex) {
-            throw ex;
-        } catch (final RepositoryException ex) {
             throw ex;
         } catch (final Exception ex) {
             throw new RepositoryException(ex.getMessage(), ex);
@@ -110,16 +108,18 @@ public abstract class AbstractBackendTransaction implements Transaction
         } finally {
             if (commit && !success) {
                 try {
-                    doEnd(false);
+                    this.doEnd(false);
                 } catch (final Throwable ex) {
-                    LOGGER.error("Rollback failed after previous commit failure. Ignoring.", ex);
+                    AbstractBackendTransaction.LOGGER
+                            .error("Rollback failed after previous commit failure. Ignoring.", ex);
                 }
             }
 
             try {
-                doClose();
+                this.doClose();
             } catch (final Throwable ex) {
-                LOGGER.error("Exception caught while closing repository connection. Ignoring.", ex);
+                AbstractBackendTransaction.LOGGER.error(
+                        "Exception caught while closing repository connection. Ignoring.", ex);
             }
         }
     }

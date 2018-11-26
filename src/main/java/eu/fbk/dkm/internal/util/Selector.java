@@ -22,16 +22,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 
 public final class Selector
 {
@@ -48,25 +48,13 @@ public final class Selector
         }
     }
 
-    /**
-	 * @uml.property  name="graph"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
-    private final Graph graph;
+    private final Model graph;
 
-    /**
-	 * @uml.property  name="node"
-	 * @uml.associationEnd  multiplicity="(1 1)"
-	 */
     private final Resource node;
 
-    /**
-	 * @uml.property  name="contexts"
-	 * @uml.associationEnd  multiplicity="(0 -1)"
-	 */
     private final Resource[] contexts;
 
-    protected Selector(final Graph graph, final Resource node, final Resource[] contexts)
+    protected Selector(final Model graph, final Resource node, final Resource[] contexts)
     {
         this.graph = graph;
         this.node = node;
@@ -75,15 +63,15 @@ public final class Selector
 
     // SELECTION
 
-    public static Selector select(final Graph graph, final Resource node)
+    public static Selector select(final Model graph, final Resource node)
     {
         Preconditions.checkNotNull(graph);
         Preconditions.checkNotNull(node);
 
-        return new Selector(graph, node, ALL_CONTEXTS);
+        return new Selector(graph, node, Selector.ALL_CONTEXTS);
     }
 
-    public static Selector select(final Graph graph, final Resource node,
+    public static Selector select(final Model graph, final Resource node,
             final Resource... contexts)
     {
         Preconditions.checkNotNull(graph);
@@ -93,13 +81,13 @@ public final class Selector
         return new Selector(graph, node, contexts);
     }
 
-    public Selector select(final URI predicate)
+    public Selector select(final IRI predicate)
     {
-        final Resource node = get(predicate, Resource.class);
+        final Resource node = this.get(predicate, Resource.class);
         return this.node == node ? this : new Selector(this.graph, node, this.contexts);
     }
 
-    public static Iterable<Selector> selectAll(final Graph graph,
+    public static Iterable<Selector> selectAll(final Model graph,
             final Iterable<? extends Resource> nodes, final Resource... contexts)
     {
         Preconditions.checkNotNull(graph);
@@ -111,13 +99,13 @@ public final class Selector
             @Override
             public Iterator<Selector> iterator()
             {
-                return selectAll(graph, nodes.iterator(), contexts);
+                return Selector.selectAll(graph, nodes.iterator(), contexts);
             }
 
         };
     }
 
-    public static Iterator<Selector> selectAll(final Graph graph,
+    public static Iterator<Selector> selectAll(final Model graph,
             final Iterator<? extends Resource> nodes, final Resource... contexts)
     {
         Preconditions.checkNotNull(graph);
@@ -141,19 +129,20 @@ public final class Selector
         };
     }
 
-    public Iterable<Selector> selectAll(final URI predicate)
+    public Iterable<Selector> selectAll(final IRI predicate)
     {
-        return selectAll(this.graph, getAll(predicate, Resource.class), this.contexts);
+        return Selector.selectAll(this.graph, this.getAll(predicate, Resource.class),
+                this.contexts);
     }
 
     // ATTRIBUTES
 
-    public Graph graph()
+    public Model graph()
     {
         return this.graph;
     }
 
-    public Selector graph(final Graph graph)
+    public Selector graph(final Model graph)
     {
         Preconditions.checkNotNull(graph);
 
@@ -184,10 +173,10 @@ public final class Selector
         return new Selector(this.graph, this.node, this.contexts);
     }
 
-    public Set<URI> properties()
+    public Set<IRI> properties()
     {
-        final Set<URI> properties = Sets.newHashSet();
-        final Iterator<Statement> i = match(this.node, null, null);
+        final Set<IRI> properties = Sets.newHashSet();
+        final Iterator<Statement> i = this.match(this.node, null, null);
         while (i.hasNext()) {
             properties.add(i.next().getPredicate());
         }
@@ -196,18 +185,18 @@ public final class Selector
 
     // RETRIEVE
 
-    public boolean isEmpty(final URI predicate)
+    public boolean isEmpty(final IRI predicate)
     {
         Preconditions.checkNotNull(predicate);
 
-        return !match(this.node, predicate, null).hasNext();
+        return !this.match(this.node, predicate, null).hasNext();
     }
 
-    public boolean isUnique(final URI predicate)
+    public boolean isUnique(final IRI predicate)
     {
         Preconditions.checkNotNull(predicate);
 
-        final Iterator<Statement> i = match(this.node, predicate, null);
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
         if (!i.hasNext()) {
             return false;
         }
@@ -215,11 +204,11 @@ public final class Selector
         return !i.hasNext();
     }
 
-    public boolean isSet(final URI predicate)
+    public boolean isSet(final IRI predicate)
     {
         Preconditions.checkNotNull(predicate);
 
-        final Iterator<Statement> i = match(this.node, predicate, null);
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
         return i.hasNext() && ((Literal) Iterators.getOnlyElement(i).getObject()).booleanValue();
     }
 
@@ -227,60 +216,61 @@ public final class Selector
     {
         Preconditions.checkNotNull(classResource);
 
-        return match(this.node, RDF.TYPE, classResource).hasNext();
+        return this.match(this.node, RDF.TYPE, classResource).hasNext();
     }
 
-    public <T> T get(final URI predicate, final Class<T> type)
+    public <T> T get(final IRI predicate, final Class<T> type)
     {
         Preconditions.checkNotNull(predicate);
 
-        final Iterator<Statement> i = match(this.node, predicate, null);
-        return valueTo(Iterators.getOnlyElement(i).getObject(), type);
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
+        return this.valueTo(Iterators.getOnlyElement(i).getObject(), type);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T get(final URI predicate, final T defaultValue)
+    public <T> T get(final IRI predicate, final T defaultValue)
     {
         Preconditions.checkNotNull(predicate);
         Preconditions.checkNotNull(defaultValue);
 
-        final Iterator<Statement> i = match(this.node, predicate, null);
-        return i.hasNext() ? valueTo(Iterators.getOnlyElement(i).getObject(),
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
+        return i.hasNext() ? this.valueTo(Iterators.getOnlyElement(i).getObject(),
                 (Class<T>) defaultValue.getClass()) : defaultValue;
     }
 
-    public <T> T get(final URI predicate, final Class<T> type, @Nullable final T defaultValue)
+    public <T> T get(final IRI predicate, final Class<T> type, @Nullable final T defaultValue)
     {
         Preconditions.checkNotNull(predicate);
         Preconditions.checkNotNull(type);
 
-        final Iterator<Statement> i = match(this.node, predicate, null);
-        return i.hasNext() ? valueTo(Iterators.getOnlyElement(i).getObject(), type) : defaultValue;
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
+        return i.hasNext() ? this.valueTo(Iterators.getOnlyElement(i).getObject(), type)
+                : defaultValue;
     }
 
-    public <T> List<T> getAll(final URI predicate, final Class<T> type)
+    public <T> List<T> getAll(final IRI predicate, final Class<T> type)
     {
         Preconditions.checkNotNull(predicate);
         Preconditions.checkNotNull(type);
 
         final List<T> result = Lists.newArrayList();
-        final Iterator<Statement> i = match(this.node, predicate, null);
+        final Iterator<Statement> i = this.match(this.node, predicate, null);
         while (i.hasNext()) {
-            result.add(valueTo(i.next().getObject(), type));
+            result.add(this.valueTo(i.next().getObject(), type));
         }
         return result;
     }
 
-    public <T> List<T> getList(final URI predicate, final Class<T> type)
+    public <T> List<T> getList(final IRI predicate, final Class<T> type)
     {
         Preconditions.checkNotNull(type);
 
         final List<T> result = Lists.newArrayList();
-        Resource node = get(predicate, Resource.class, null);
+        Resource node = this.get(predicate, Resource.class, null);
         while (node != null && !RDF.NIL.equals(node)) {
-            Iterator<Statement> i = match(node, RDF.FIRST, null);
-            result.add(valueTo(Iterators.getOnlyElement(i).getObject(), type));
-            i = match(node, RDF.REST, null);
+            Iterator<Statement> i = this.match(node, RDF.FIRST, null);
+            result.add(this.valueTo(Iterators.getOnlyElement(i).getObject(), type));
+            i = this.match(node, RDF.REST, null);
             node = i.hasNext() ? (Resource) i.next().getObject() : null;
         }
         return result;
@@ -288,69 +278,69 @@ public final class Selector
 
     // EDITING
 
-    public Selector set(final URI predicate, final Object... objects)
+    public Selector set(final IRI predicate, final Object... objects)
     {
         Preconditions.checkNotNull(objects);
 
-        remove(predicate);
-        add(predicate, objects);
+        this.remove(predicate);
+        this.add(predicate, objects);
         return this;
     }
 
-    public Selector set(final URI predicate, final Iterable<?> objects)
+    public Selector set(final IRI predicate, final Iterable<?> objects)
     {
         Preconditions.checkNotNull(objects);
 
-        remove(predicate);
-        add(predicate, objects);
+        this.remove(predicate);
+        this.add(predicate, objects);
         return this;
     }
 
-    public Selector add(final URI predicate, final Object... objects)
+    public Selector add(final IRI predicate, final Object... objects)
     {
         Preconditions.checkNotNull(predicate);
 
         for (final Object object : objects) {
-            this.graph.add(this.node, predicate, valueFrom(object), this.contexts);
+            this.graph.add(this.node, predicate, this.valueFrom(object), this.contexts);
         }
         return this;
     }
 
-    public Selector add(final URI predicate, final Iterable<?> objects)
+    public Selector add(final IRI predicate, final Iterable<?> objects)
     {
         Preconditions.checkNotNull(predicate);
 
         for (final Object object : objects) {
-            this.graph.add(this.node, predicate, valueFrom(object), this.contexts);
+            this.graph.add(this.node, predicate, this.valueFrom(object), this.contexts);
         }
         return this;
     }
 
-    public Selector remove(final URI predicate)
+    public Selector remove(final IRI predicate)
     {
         Preconditions.checkNotNull(predicate);
 
-        Iterators.removeIf(match(this.node, predicate, null), Predicates.alwaysTrue());
+        Iterators.removeIf(this.match(this.node, predicate, null), Predicates.alwaysTrue());
         return this;
     }
 
-    public Selector remove(final URI predicate, final Object... objects)
+    public Selector remove(final IRI predicate, final Object... objects)
     {
         Preconditions.checkNotNull(predicate);
 
         for (final Object object : objects) {
-            Iterators.removeIf(match(this.node, predicate, valueFrom(object)),
+            Iterators.removeIf(this.match(this.node, predicate, this.valueFrom(object)),
                     Predicates.alwaysTrue());
         }
         return this;
     }
 
-    public Selector remove(final URI predicate, final Iterable<?> objects)
+    public Selector remove(final IRI predicate, final Iterable<?> objects)
     {
         Preconditions.checkNotNull(predicate);
 
         for (final Object object : objects) {
-            Iterators.removeIf(match(this.node, predicate, valueFrom(object)),
+            Iterators.removeIf(this.match(this.node, predicate, this.valueFrom(object)),
                     Predicates.alwaysTrue());
         }
         return this;
@@ -395,7 +385,7 @@ public final class Selector
             return (Value) object;
         }
 
-        final ValueFactory factory = ValueFactoryImpl.getInstance();
+        final ValueFactory factory = SimpleValueFactory.getInstance();
 
         if (object instanceof Character) {
             return factory.createLiteral("" + object, XMLSchema.TOKEN);
@@ -424,22 +414,24 @@ public final class Selector
         } else if (object instanceof XMLGregorianCalendar) {
             return factory.createLiteral((XMLGregorianCalendar) object);
         } else if (object instanceof GregorianCalendar) {
-            return factory.createLiteral(DATATYPE_FACTORY
-                    .newXMLGregorianCalendar((GregorianCalendar) object));
+            return factory.createLiteral(
+                    Selector.DATATYPE_FACTORY.newXMLGregorianCalendar((GregorianCalendar) object));
         } else if (object instanceof Calendar) {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTime(((Calendar) object).getTime());
-            return factory.createLiteral(DATATYPE_FACTORY.newXMLGregorianCalendar(calendar));
+            return factory
+                    .createLiteral(Selector.DATATYPE_FACTORY.newXMLGregorianCalendar(calendar));
         } else if (object instanceof Date) {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTime((Date) object);
-            return factory.createLiteral(DATATYPE_FACTORY.newXMLGregorianCalendar(calendar));
+            return factory
+                    .createLiteral(Selector.DATATYPE_FACTORY.newXMLGregorianCalendar(calendar));
 
         } else {
             final String string = object.toString();
             if (string.startsWith("http://")) {
                 try {
-                    return factory.createURI(string);
+                    return factory.createIRI(string);
                 } catch (final Throwable ex) {
                     // Ignore.
                 }
@@ -487,10 +479,10 @@ public final class Selector
         }
     }
 
-    private Iterator<Statement> match(final Resource subject, final URI predicate,
+    private Iterator<Statement> match(final Resource subject, final IRI predicate,
             final Value object)
     {
-        return this.graph.match(subject, predicate, object, this.contexts);
+        return this.graph.filter(subject, predicate, object, this.contexts).iterator();
     }
 
 }

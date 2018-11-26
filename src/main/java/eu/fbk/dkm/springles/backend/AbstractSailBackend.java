@@ -1,27 +1,25 @@
 package eu.fbk.dkm.springles.backend;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.io.File;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.impl.EmptyBindingSet;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.sail.Sail;
-import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.SailException;
+import com.google.common.base.Preconditions;
+
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.impl.EmptyBindingSet;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.sail.Sail;
+import org.eclipse.rdf4j.sail.SailConnection;
+import org.eclipse.rdf4j.sail.SailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.bigdata.rdf.sail.BigdataSail;
-import com.google.common.base.Preconditions;
 
 import eu.fbk.dkm.springles.base.QuerySpec;
 import eu.fbk.dkm.springles.base.QueryType;
@@ -50,9 +48,6 @@ public abstract class AbstractSailBackend implements Backend
     /** The wrapped sail object, assigned at initialization time. */
     private Sail sail;
 
-    /** Flag being <tt>true</tt> if a Bigdata sail has been detected. */
-    private boolean isBigdata;
-
     /**
      * Flag being <tt>true</tt> if the wrapped sail is writable. Note this flag is redundant, but
      * it is kept as accessing property {@link Sail#isWritable()} may throw exceptions.
@@ -65,7 +60,6 @@ public abstract class AbstractSailBackend implements Backend
     protected AbstractSailBackend()
     {
         this.sail = null;
-        this.isBigdata = false;
         this.writable = false;
     }
 
@@ -97,7 +91,7 @@ public abstract class AbstractSailBackend implements Backend
                     iter.close();
                     final int n = ((Literal) bindings.getValue("n")).intValue();
                     final int m = ((Literal) bindings.getValue("m")).intValue();
-                    final int s = (int) connection.size();
+                    // final int s = (int) connection.size();
                     AbstractSailBackend.LOGGER.info("{} triples in SAIL default context, "
                             + "{} triples total (reported size: {})", n - m, n);
                 } catch (final MalformedQueryException ex) {
@@ -109,12 +103,6 @@ public abstract class AbstractSailBackend implements Backend
                 }
             }
 
-            if (this.sail.getClass().getName().toLowerCase().contains("bigdata")) {
-                this.isBigdata = true;
-                AbstractSailBackend.LOGGER
-                        .debug("Bigdata sail detected: read-only connections enabled");
-            }
-
         } catch (final SailException ex) {
             throw new RepositoryException(ex);
         }
@@ -124,7 +112,7 @@ public abstract class AbstractSailBackend implements Backend
      * Acquires and initializes the wrapped sail, based on the supplied optional data directory.
      * This method is called by {@link #initialize(File)} and must return the wrapped sail
      * instance, non-initialized.
-     * 
+     *
      * @param dataDir
      *            the data directory, possibly <tt>null</tt> for transient backends
      * @return a non-initialized sail instance
@@ -133,13 +121,13 @@ public abstract class AbstractSailBackend implements Backend
      * @throws RepositoryException
      *             on failure
      */
-    protected abstract Sail initializeSail(@Nullable File dataDir) throws SailException,
-            RepositoryException;
+    protected abstract Sail initializeSail(@Nullable File dataDir)
+            throws SailException, RepositoryException;
 
     /**
      * Provides access to the wrapped sail object. This method can be called only after
      * initialization of the backend.
-     * 
+     *
      * @return the wrapped sail object
      */
     protected final Sail getSail()
@@ -178,11 +166,10 @@ public abstract class AbstractSailBackend implements Backend
     {
         try {
             final ValueFactory factory = this.sail.getValueFactory();
-            final SailConnection connection = this.isBigdata ? AbstractSailBackend
-                    .getBigdataConnection(this.sail, writable) : this.sail.getConnection();
-
-            return writable ? new SailTransaction(id, connection, factory) : Transactions
-                    .unmodifiableTransaction(new SailTransaction(id, connection, factory));
+            final SailConnection connection = this.sail.getConnection();
+            return writable ? new SailTransaction(id, connection, factory)
+                    : Transactions
+                            .unmodifiableTransaction(new SailTransaction(id, connection, factory));
 
         } catch (final SailException ex) {
             throw new RepositoryException(ex);
@@ -200,25 +187,6 @@ public abstract class AbstractSailBackend implements Backend
         } catch (final SailException ex) {
             throw new RepositoryException(ex);
         }
-    }
-
-    /**
-     * Helper method that opens the appropriate Bigdata connection based on the specified
-     * <tt>writable</tt> parameter.
-     * 
-     * @param sail
-     *            the Bigdata sail
-     * @param writable
-     *            the desired <tt>writable</tt> status for the connection
-     * @return the opened connection, on success
-     * @throws SailException
-     *             on failure
-     */
-    private static SailConnection getBigdataConnection(final Sail sail, final boolean writable)
-            throws SailException
-    {
-        final BigdataSail bigdata = (BigdataSail) sail;
-        return !writable ? bigdata.getReadOnlyConnection() : bigdata.getConnection();
     }
 
 }

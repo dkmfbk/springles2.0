@@ -2,9 +2,9 @@ package eu.fbk.dkm.springles.inferencer;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.base.QuerySpec;

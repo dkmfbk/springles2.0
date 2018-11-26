@@ -1,0 +1,6 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Nov 20 11:24:16 CET 2018
+rdfpro-tql-0.7-SNAPSHOT-javadoc.jar>=
+rdfpro-tql-0.7-SNAPSHOT.jar>=
+rdfpro-tql-0.7-SNAPSHOT.pom>=
+rdfpro-tql-0.7-SNAPSHOT-sources.jar>=

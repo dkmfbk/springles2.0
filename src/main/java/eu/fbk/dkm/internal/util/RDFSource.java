@@ -2,7 +2,6 @@ package eu.fbk.dkm.internal.util;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -28,36 +27,38 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
+import com.google.common.io.CharSink;
+import com.google.common.io.CharSource;
+import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
-import com.google.common.io.InputSupplier;
-import com.google.common.io.OutputSupplier;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.impl.GraphImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFParser;
-import org.openrdf.rio.RDFParserRegistry;
-import org.openrdf.rio.RDFWriter;
-import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.rio.Rio;
-import org.openrdf.rio.helpers.RDFHandlerBase;
-import org.openrdf.rio.helpers.StatementCollector;
-
-import info.aduna.io.GZipUtil;
-import info.aduna.io.ZipUtil;
+import org.eclipse.rdf4j.common.io.GZipUtil;
+import org.eclipse.rdf4j.common.io.ZipUtil;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.RDFParser;
+import org.eclipse.rdf4j.rio.RDFParserRegistry;
+import org.eclipse.rdf4j.rio.RDFWriter;
+import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.helpers.AbstractRDFHandler;
+import org.eclipse.rdf4j.rio.helpers.StatementCollector;
 
 public abstract class RDFSource<E extends Exception>
 {
 
     public static RDFSource<RuntimeException> wrap(final Iterable<Statement> statements)
     {
-        return wrap(statements, Collections.<String, String>emptyMap());
+        return RDFSource.wrap(statements, Collections.<String, String>emptyMap());
     }
 
     public static RDFSource<RuntimeException> wrap(final Iterable<Statement> statements,
@@ -66,8 +67,8 @@ public abstract class RDFSource<E extends Exception>
         return new RDFSource<RuntimeException>() {
 
             @Override
-            public void streamTo(final RDFHandler handler) throws RuntimeException,
-                    RDFHandlerException
+            public void streamTo(final RDFHandler handler)
+                    throws RuntimeException, RDFHandlerException
             {
                 handler.startRDF();
                 for (final Map.Entry<String, String> entry : namespaces.entrySet()) {
@@ -104,11 +105,11 @@ public abstract class RDFSource<E extends Exception>
                 editedOptions.setBaseURI(file.toURI().toString());
             }
             if (editedOptions.getFormat() == null) {
-                editedOptions.setFormat(Rio.getParserFormatForFileName(file.getName()));
+                editedOptions.setFormat(Rio.getParserFormatForFileName(file.getName()).get());
             }
         }
 
-        return new RDFDeserializerSource(Files.newInputStreamSupplier(file), editedOptions);
+        return new RDFDeserializerSource(Files.asByteSource(file), editedOptions);
     }
 
     public static RDFSource<RDFParseException> deserializeFrom(final URL url,
@@ -123,16 +124,23 @@ public abstract class RDFSource<E extends Exception>
         return new RDFDeserializerSource(url, editedOptions);
     }
 
-    public static RDFSource<RDFParseException> deserializeFrom(final InputSupplier<?> supplier,
+    public static RDFSource<RDFParseException> deserializeFrom(final ByteSource source,
             final RDFParseOptions options)
     {
-        return new RDFDeserializerSource(supplier, options);
+        return new RDFDeserializerSource(source, options);
     }
 
+    public static RDFSource<RDFParseException> deserializeFrom(final CharSource source,
+            final RDFParseOptions options)
+    {
+        return new RDFDeserializerSource(source, options);
+    }
+
+    @SuppressWarnings("unchecked")
     public static <E extends Exception> RDFSource<E> concat(
             final RDFSource<? extends E>... sources)
     {
-        return concat(Arrays.asList(sources));
+        return RDFSource.concat(Arrays.asList(sources));
     }
 
     public static <E extends Exception> RDFSource<E> concat(
@@ -177,12 +185,12 @@ public abstract class RDFSource<E extends Exception>
 
     public RDFSource<E> setContexts(final Iterable<Resource> contexts)
     {
-        return setContexts(Iterables.toArray(contexts, Resource.class));
+        return this.setContexts(Iterables.toArray(contexts, Resource.class));
     }
 
     public RDFSource<E> filter(final Predicate<? super Statement> statementPredicate)
     {
-        return filter(statementPredicate, null);
+        return this.filter(statementPredicate, null);
     }
 
     public RDFSource<E> filter(final Predicate<? super Statement> statementPredicate,
@@ -204,11 +212,10 @@ public abstract class RDFSource<E extends Exception>
     public RDFSource<E> transform(final Function<? super Statement, //
             ? extends Iterable<? extends Statement>> statementFunction)
     {
-        return transform(statementFunction, null);
+        return this.transform(statementFunction, null);
     }
 
-    public RDFSource<E> transform(
-            final Function<? super Statement, //
+    public RDFSource<E> transform(final Function<? super Statement, //
             ? extends Iterable<? extends Statement>> statementFunction,
             final Function<? super Namespace, ? extends Namespace> namespaceFunction)
     {
@@ -218,8 +225,8 @@ public abstract class RDFSource<E extends Exception>
             @Override
             public void streamTo(final RDFHandler handler) throws E, RDFHandlerException
             {
-                thisSource.streamTo(RDFHandlers.transform(handler, statementFunction,
-                        namespaceFunction));
+                thisSource.streamTo(
+                        RDFHandlers.transform(handler, statementFunction, namespaceFunction));
             }
         };
     }
@@ -228,23 +235,23 @@ public abstract class RDFSource<E extends Exception>
 
     public void streamTo(final Collection<Statement> statements) throws E
     {
-        streamTo(statements, Maps.<String, String>newHashMap());
+        this.streamTo(statements, Maps.<String, String>newHashMap());
     }
 
     public void streamTo(final Collection<Statement> statements,
             final Map<String, String> namespaces) throws E
     {
         try {
-            streamTo(new StatementCollector(statements, namespaces));
+            this.streamTo(new StatementCollector(statements, namespaces));
         } catch (final RDFHandlerException ex) {
             throw new Error("Unexpected exception", ex);
         }
     }
 
-    public Graph streamToGraph() throws E
+    public Model streamToGraph() throws E
     {
-        final Graph graph = new GraphImpl();
-        streamTo(graph);
+        final Model graph = new LinkedHashModel();
+        this.streamTo(graph);
         return graph;
     }
 
@@ -252,7 +259,7 @@ public abstract class RDFSource<E extends Exception>
     {
         try {
             final StatementCollector collector = new StatementCollector();
-            streamTo(collector);
+            this.streamTo(collector);
             return collector;
         } catch (final RDFHandlerException ex) {
             throw new Error("Unexpected exception", ex);
@@ -263,7 +270,7 @@ public abstract class RDFSource<E extends Exception>
     {
         try {
             final Map<String, String> namespaces = Maps.newHashMap();
-            streamTo(new RDFHandlerBase() {
+            this.streamTo(new AbstractRDFHandler() {
 
                 @Override
                 public void handleNamespace(final String prefix, final String uri)
@@ -282,7 +289,7 @@ public abstract class RDFSource<E extends Exception>
     public void serializeTo(final RDFWriter rdfWriter) throws E, IOException
     {
         try {
-            streamTo(rdfWriter);
+            this.streamTo(rdfWriter);
 
         } catch (final RDFHandlerException ex) {
             if (ex.getCause() instanceof IOException) {
@@ -292,51 +299,39 @@ public abstract class RDFSource<E extends Exception>
         }
     }
 
-    public void serializeTo(final RDFFormat format, final OutputStream stream) throws E,
-            IOException
+    public void serializeTo(final RDFFormat format, final OutputStream stream)
+            throws E, IOException
     {
-        serializeTo(RDFWriterRegistry.getInstance().get(format).getWriter(stream));
+        this.serializeTo(RDFWriterRegistry.getInstance().get(format).get().getWriter(stream));
     }
 
     public void serializeTo(final RDFFormat format, final Writer writer) throws E, IOException
     {
-        serializeTo(RDFWriterRegistry.getInstance().get(format).getWriter(writer));
+        this.serializeTo(RDFWriterRegistry.getInstance().get(format).get().getWriter(writer));
     }
 
     public void serializeTo(final RDFFormat format, final File file) throws E, IOException
     {
-        serializeTo(format, Files.newOutputStreamSupplier(file));
+        this.serializeTo(format, Files.asByteSink(file, FileWriteMode.APPEND).openStream());
     }
 
-    public void serializeTo(final RDFFormat format, final OutputSupplier<?> supplier) throws E,
-            IOException
+    public void serializeTo(final RDFFormat format, final ByteSink sink) throws E, IOException
     {
-        final Object output = supplier.getOutput();
+        try (OutputStream output = sink.openBufferedStream()) {
+            this.serializeTo(format, output);
+        }
+    }
 
-        if (output instanceof OutputStream) {
-            try {
-                serializeTo(format, (OutputStream) output);
-            } finally {
-                ((OutputStream) output).close();
-            }
-
-        } else if (output instanceof Writer) {
-            try {
-                serializeTo(format, (Writer) output);
-            } finally {
-                ((Writer) output).close();
-            }
-
-        } else {
-            Preconditions.checkNotNull(output);
-            throw new UnsupportedOperationException("Cannot serialize to "
-                    + output.getClass().getName());
+    public void serializeTo(final RDFFormat format, final CharSink sink) throws E, IOException
+    {
+        try (Writer output = sink.openBufferedStream()) {
+            this.serializeTo(format, output);
         }
     }
 
     public byte[] toByteArray(final RDFFormat format) throws E
     {
-        return toByteArray(format, null);
+        return this.toByteArray(format, null);
     }
 
     public byte[] toByteArray(final RDFFormat format, final Charset charset) throws E
@@ -344,9 +339,9 @@ public abstract class RDFSource<E extends Exception>
         try {
             final ByteArrayOutputStream stream = new ByteArrayOutputStream();
             if (charset == null) {
-                serializeTo(format, stream);
+                this.serializeTo(format, stream);
             } else {
-                serializeTo(format, new OutputStreamWriter(stream, charset));
+                this.serializeTo(format, new OutputStreamWriter(stream, charset));
             }
             return stream.toByteArray();
 
@@ -359,7 +354,7 @@ public abstract class RDFSource<E extends Exception>
     {
         try {
             final StringWriter writer = new StringWriter();
-            serializeTo(format, writer);
+            this.serializeTo(format, writer);
             return writer.toString();
 
         } catch (final IOException ex) {
@@ -371,24 +366,20 @@ public abstract class RDFSource<E extends Exception>
     public String toString()
     {
         try {
-            return toString(RDFFormat.TRIG);
+            return this.toString(RDFFormat.TRIG);
         } catch (final Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
     /**
-	 * @author  calabrese
-	 */
+     * @author calabrese
+     */
     private static class RDFDeserializerSource extends RDFSource<RDFParseException>
     {
 
         private final Object source;
 
-        /**
-		 * @uml.property  name="options"
-		 * @uml.associationEnd  
-		 */
         private final RDFParseOptions options;
 
         public RDFDeserializerSource(final Object source, final RDFParseOptions options)
@@ -401,11 +392,11 @@ public abstract class RDFSource<E extends Exception>
         }
 
         @Override
-        public void streamTo(final RDFHandler handler) throws RDFParseException,
-                RDFHandlerException
+        public void streamTo(final RDFHandler handler)
+                throws RDFParseException, RDFHandlerException
         {
             try {
-                processSource(handler, this.source, this.options.getFormat());
+                this.processSource(handler, this.source, this.options.getFormat());
 
             } catch (final IOException ex) {
                 throw new RDFParseException(ex);
@@ -415,31 +406,37 @@ public abstract class RDFSource<E extends Exception>
         private void processSource(final RDFHandler handler, final Object source,
                 final RDFFormat format) throws IOException, RDFHandlerException, RDFParseException
         {
-            if (source instanceof InputSupplier<?>) {
-                processSupplier(handler, (InputSupplier<?>) source, format);
+            if (source instanceof ByteSource) {
+                this.processByteSource(handler, (ByteSource) source, format);
+
+            } else if (source instanceof CharSource) {
+                this.processCharSource(handler, (CharSource) source, format);
 
             } else if (source instanceof URL) {
-                processURL(handler, (URL) source, format);
+                this.processURL(handler, (URL) source, format);
 
             } else if (source instanceof Reader) {
-                processReader(handler, (Reader) source, format);
+                this.processReader(handler, (Reader) source, format);
 
             } else if (source instanceof InputStream) {
-                processStream(handler, (InputStream) source, format);
+                this.processStream(handler, (InputStream) source, format);
 
             }
         }
 
-        private void processSupplier(final RDFHandler handler, final InputSupplier<?> supplier,
+        private void processByteSource(final RDFHandler handler, final ByteSource source,
                 final RDFFormat format) throws IOException, RDFHandlerException, RDFParseException
         {
-            final Object input = supplier.getInput();
+            try (InputStream stream = source.openBufferedStream()) {
+                this.processStream(handler, stream, format);
+            }
+        }
 
-            try {
-                processSource(handler, input, format);
-
-            } finally {
-                ((Closeable) input).close();
+        private void processCharSource(final RDFHandler handler, final CharSource source,
+                final RDFFormat format) throws IOException, RDFHandlerException, RDFParseException
+        {
+            try (Reader reader = source.openBufferedStream()) {
+                this.processReader(handler, reader, format);
             }
         }
 
@@ -460,20 +457,19 @@ public abstract class RDFSource<E extends Exception>
 
             try {
                 if (chosenFormat == null) {
-                    String mimeType = connection.getContentType();
+                    final String mimeType = connection.getContentType();
                     if (mimeType != null) {
                         final int semiColonIdx = mimeType.indexOf(';');
-                        if (semiColonIdx >= 0) {
-                            mimeType = mimeType.substring(0, semiColonIdx);
-                        }
-                        chosenFormat = Rio.getParserFormatForMIMEType(mimeType);
+                        final String mt = semiColonIdx < 0 ? mimeType
+                                : mimeType.substring(0, semiColonIdx);
+                        chosenFormat = Rio.getParserFormatForMIMEType(mt).orElse(null);
                     }
                     if (chosenFormat == null) {
-                        chosenFormat = Rio.getParserFormatForFileName(url.getPath());
+                        chosenFormat = Rio.getParserFormatForFileName(url.getPath()).orElse(null);
                     }
                 }
 
-                processSource(handler, stream, chosenFormat);
+                this.processSource(handler, stream, chosenFormat);
 
             } finally {
                 stream.close();
@@ -483,7 +479,7 @@ public abstract class RDFSource<E extends Exception>
         private void processReader(final RDFHandler handler, final Reader reader,
                 final RDFFormat format) throws IOException, RDFHandlerException, RDFParseException
         {
-            final RDFParser parser = RDFParserRegistry.getInstance().get(format).getParser();
+            final RDFParser parser = RDFParserRegistry.getInstance().get(format).get().getParser();
             parser.setRDFHandler(handler);
             this.options.configure(parser);
             parser.parse(reader, this.options.getBaseURI());
@@ -499,16 +495,17 @@ public abstract class RDFSource<E extends Exception>
             final boolean isZip = !isGZip && ZipUtil.isZipStream(actualStream);
 
             if (!isGZip && !isZip) {
-                final RDFParser parser = RDFParserRegistry.getInstance().get(format).getParser();
+                final RDFParser parser = RDFParserRegistry.getInstance().get(format).get()
+                        .getParser();
                 parser.setRDFHandler(handler);
                 this.options.configure(parser);
                 parser.parse(actualStream, this.options.getBaseURI());
 
             } else if (isGZip && this.options.isUncompressEnabled()) {
-                processStream(handler, new GZIPInputStream(actualStream), format);
+                this.processStream(handler, new GZIPInputStream(actualStream), format);
 
             } else if (isZip && this.options.isUncompressEnabled()) {
-                processZip(handler, new ZipInputStream(actualStream), format);
+                this.processZip(handler, new ZipInputStream(actualStream), format);
             }
         }
 
@@ -524,12 +521,12 @@ public abstract class RDFSource<E extends Exception>
                     continue;
                 }
 
-                final RDFFormat actualFormat = Rio.getParserFormatForFileName(entry.getName(),
-                        format);
+                final RDFFormat actualFormat = Rio.getParserFormatForFileName(entry.getName())
+                        .get();
 
                 try {
                     // Prevent parser (Xerces) from closing the input stream.
-                    processStream(handler, new FilterInputStream(stream) {
+                    this.processStream(handler, new FilterInputStream(stream) {
 
                         @Override
                         public void close()
@@ -540,9 +537,9 @@ public abstract class RDFSource<E extends Exception>
 
                 } catch (final RDFParseException ex) {
                     // Wrap so to provide information about the source of the error.
-                    throw (RDFParseException) new RDFParseException(ex.getMessage() + " in "
-                            + entry.getName(), ex.getLineNumber(), ex.getColumnNumber())
-                            .initCause(ex);
+                    throw (RDFParseException) new RDFParseException(
+                            ex.getMessage() + " in " + entry.getName(), ex.getLineNumber(),
+                            ex.getColumnNumber()).initCause(ex);
 
                 } finally {
                     stream.closeEntry();

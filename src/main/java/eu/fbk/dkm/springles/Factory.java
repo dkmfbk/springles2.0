@@ -9,20 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.util.GraphUtil;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfigException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
@@ -31,6 +17,18 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
+
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * General-purpose factory based on RDF object specification.
@@ -42,7 +40,7 @@ import com.google.common.io.Resources;
  * The creation mechanism is articulated in two steps:
  * <ol>
  * <li>A factory for a specific object is obtained through method
- * {@link #get(Class, Graph, Resource)}, by specifying the (base) type of object to create and
+ * {@link #get(Class, Model, Resource)}, by specifying the (base) type of object to create and
  * supplying an RDF graph containing an RDF specification of the properties of the object plus the
  * configuration root node in the graph. A registry of providers is consulted in order to create
  * the factory (see below). Errors in the RDF configuration are reported through
@@ -66,10 +64,10 @@ import com.google.common.io.Resources;
  * at step 1. The exact signature of the provider method is the following:
  * </p>
  * <p style="text-align: center">
- * <tt>T name (Graph graph, Resource node)</tt>
+ * <tt>T name (Model graph, Resource node)</tt>
  * </p>
  * <p>
- * A provider is selected as part of the execution of {@link #get(Class, Graph, Resource)}, by
+ * A provider is selected as part of the execution of {@link #get(Class, Model, Resource)}, by
  * matching the RDF type associated to the root nodes with the provider URIs; the factory-creation
  * method of the chosen provider is then invoked to create the factory, by supplying exactly the
  * same RDF graph and root node specified by the caller. Providers must be declared in classpath
@@ -84,7 +82,7 @@ import com.google.common.io.Resources;
  *   eu.fbk.dkm.springles.store.SpringlesStore
  *   eu.fbk.dkm.springles.store.SpringlesStore.getFactory;</tt>
  * </p>
- * 
+ *
  * @param <T>
  *            the type of objects produced by the factory
  * @apiviz.stereotype static
@@ -97,22 +95,22 @@ public abstract class Factory<T>
     private static final Logger LOGGER = LoggerFactory.getLogger(Factory.class);
 
     /** A map of registered providers, indexed by their URIs. */
-    private static final Map<URI, Provider<?>> PROVIDERS = Provider.scan();
+    private static final Map<IRI, Provider<?>> PROVIDERS = Provider.scan();
 
     // PUBLIC API
 
     /**
      * Lists all the provider URIs whose produced objects are compatible with the specified type.
-     * 
+     *
      * @param type
      *            the produced object (base) type
      * @return a list of provider URIs
      */
-    public static List<URI> list(final Class<?> type)
+    public static List<IRI> list(final Class<?> type)
     {
         Preconditions.checkNotNull(type);
 
-        final List<URI> uris = Lists.newArrayList();
+        final List<IRI> uris = Lists.newArrayList();
         for (final Provider<?> implementation : Factory.PROVIDERS.values()) {
             if (type.isAssignableFrom(implementation.type)) {
                 uris.add(implementation.uri);
@@ -128,7 +126,7 @@ public abstract class Factory<T>
      * then asked to instantiate a factory specific for the configuration data supplied. This
      * process fails with a {@link RepositoryConfigException} in case a unique provider cannot be
      * found or if the provider fails in creating the factory due to bad configuration data.
-     * 
+     *
      * @param type
      *            the base type of the object to produce
      * @param graph
@@ -142,7 +140,7 @@ public abstract class Factory<T>
      *             in case there are no providers matching the configuration supplied or the
      *             configuration is not valid
      */
-    public static <T> Factory<T> get(final Class<T> type, final Graph graph, final Resource node)
+    public static <T> Factory<T> get(final Class<T> type, final Model graph, final Resource node)
             throws RepositoryConfigException
     {
         Preconditions.checkNotNull(type);
@@ -151,7 +149,7 @@ public abstract class Factory<T>
 
         Provider<T> chosenImplementation = null;
 
-        final Set<Value> values = GraphUtil.getObjects(graph, node, RDF.TYPE);
+        final Set<Value> values = graph.filter(node, RDF.TYPE, null).objects();
 
         for (final Value value : values) {
 
@@ -184,8 +182,8 @@ public abstract class Factory<T>
         }
 
         if (chosenImplementation == null) {
-            throw new UnsupportedOperationException("No factory for node " + node + ", types "
-                    + values);
+            throw new UnsupportedOperationException(
+                    "No factory for node " + node + ", types " + values);
         }
 
         return chosenImplementation.get(graph, node);
@@ -194,10 +192,10 @@ public abstract class Factory<T>
     /**
      * Helper method that creates a factory for a set of objects, each one with its own
      * configuration. The method takes a RDF graph and a set of configuration nodes in that graph.
-     * The method creates a factory (using {@link #get(Class, Graph, Resource)}) for each
+     * The method creates a factory (using {@link #get(Class, Model, Resource)}) for each
      * configuration node, and pack them in a new factory object able to create a set of objects
      * by invoking in turns those factories.
-     * 
+     *
      * @param type
      *            the type of object to be produced and packed in the set
      * @param graph
@@ -212,7 +210,7 @@ public abstract class Factory<T>
      *             in case any of the factories wrapped by the returned factory cannot be created
      *             due to bad configuration data or missing provider
      */
-    public static <T> Factory<Set<T>> get(final Class<T> type, final Graph graph,
+    public static <T> Factory<Set<T>> get(final Class<T> type, final Model graph,
             final Set<? extends Resource> nodes) throws RepositoryConfigException
     {
         Preconditions.checkNotNull(type);
@@ -242,12 +240,12 @@ public abstract class Factory<T>
      * Helper method that creates a factory for a list of objects, each one with its own
      * configuration. The method takes a RDF graph and a list of configuration nodes in that
      * graph, with possible repetitions. The method creates a factory (using
-     * {@link #get(Class, Graph, Resource)}) for each distinct configuration node, and pack them
+     * {@link #get(Class, Model, Resource)}) for each distinct configuration node, and pack them
      * in a new factory object able to create a list of objects by invoking in turns those
      * factories. Note that a unique object will be created for each configuration node, no matter
      * how many times it appears in the supplied configuration node list (i.e., supplying twice
      * the same node leads to creating a list that contains twice a uniquely created object).
-     * 
+     *
      * @param type
      *            the type of object to be produced and packed in the list
      * @param graph
@@ -262,7 +260,7 @@ public abstract class Factory<T>
      *             in case any of the factories wrapped by the returned factory cannot be created
      *             due to bad configuration data or missing provider
      */
-    public static <T> Factory<List<T>> get(final Class<T> type, final Graph graph,
+    public static <T> Factory<List<T>> get(final Class<T> type, final Model graph,
             final List<? extends Resource> nodes) throws RepositoryConfigException
     {
         Preconditions.checkNotNull(type);
@@ -307,7 +305,7 @@ public abstract class Factory<T>
      * method may fail with a {@link RepositoryException} if an error occurs when creating the
      * object, but it will not fail due to bad configuration data, as this is checked when
      * creating the factory (see discussion on two step process in class overview).
-     * 
+     *
      * @return the created instance
      * @throws RepositoryException
      *             on failure
@@ -316,12 +314,12 @@ public abstract class Factory<T>
 
     /**
      * A provider entry in the registry of registered providers.
-     * 
+     *
      * <p>
      * This helper class contains the metadata associated to a provider, namely its URI, the type
      * of produced object and the reflection object for the factory-creation method.
      * </p>
-     * 
+     *
      * @param <T>
      *            the type of objects produced by the provider.
      */
@@ -332,7 +330,7 @@ public abstract class Factory<T>
         private static final String RESOURCE_NAME = "META-INF/springles-factory";
 
         /** The provider URI. */
-        private final URI uri;
+        private final IRI uri;
 
         /** The class object for instances produced by provider factories. */
         private final Class<T> type;
@@ -342,7 +340,7 @@ public abstract class Factory<T>
 
         /**
          * Creates a new provider instance for the parameters supplied.
-         * 
+         *
          * @param uri
          *            the provider URI
          * @param type
@@ -350,7 +348,7 @@ public abstract class Factory<T>
          * @param method
          *            the static method to invoke to create a factory.
          */
-        public Provider(final URI uri, final Class<T> type, final Method method)
+        public Provider(final IRI uri, final Class<T> type, final Method method)
         {
             this.uri = uri;
             this.type = type;
@@ -360,7 +358,7 @@ public abstract class Factory<T>
         /**
          * Creates a factory object configured with the RDF data supplied. The static
          * factory-creation method of the provider is called to instantiate the factory.
-         * 
+         *
          * @param graph
          *            an RDF graph containing the configuration data for the factory
          * @param node
@@ -371,7 +369,7 @@ public abstract class Factory<T>
          * @throws Error
          *             in case the provider factory method cannot be called, for any reason
          */
-        public Factory<T> get(final Graph graph, final Resource node)
+        public Factory<T> get(final Model graph, final Resource node)
                 throws RepositoryConfigException
         {
             try {
@@ -387,8 +385,8 @@ public abstract class Factory<T>
                 if (cause instanceof RepositoryConfigException) {
                     throw (RepositoryConfigException) cause;
                 } else {
-                    throw new RepositoryConfigException("Creation failed: "
-                            + ex.getCause().getMessage(), ex.getCause());
+                    throw new RepositoryConfigException(
+                            "Creation failed: " + ex.getCause().getMessage(), ex.getCause());
                 }
             }
         }
@@ -406,31 +404,32 @@ public abstract class Factory<T>
         /**
          * Scans the classpath for provider declarations, returning a map of instantiated provider
          * objects.
-         * 
+         *
          * @return a map containing the instantiated provider objects, indexed by their URI.
          */
-        public static Map<URI, Provider<?>> scan()
+        public static Map<IRI, Provider<?>> scan()
         {
-            final Map<URI, Provider<?>> map = Maps.newHashMap();
+            final Map<IRI, Provider<?>> map = Maps.newHashMap();
 
             try {
-                final Enumeration<URL> e = Factory.class.getClassLoader().getResources(
-                        Provider.RESOURCE_NAME);
+                final Enumeration<URL> e = Factory.class.getClassLoader()
+                        .getResources(Provider.RESOURCE_NAME);
                 while (e.hasMoreElements()) {
                     final URL url = e.nextElement();
-                    Factory.LOGGER.debug("Scanning resource {}", url);
+                    Factory.LOGGER.info("Scanning resource {}", url);
                     try {
                         final String declarations = Resources.toString(url, Charsets.UTF_8);
                         for (final String declaration : Splitter.on(';').omitEmptyStrings()
                                 .trimResults().split(declarations)) {
 
                             try {
-                                final List<String> tokens = ImmutableList.copyOf(Splitter
-                                        .on(CharMatcher.WHITESPACE).trimResults()
-                                        .omitEmptyStrings().split(declaration));
+                                final List<String> tokens = ImmutableList
+                                        .copyOf(Splitter.onPattern("\\s+").trimResults()
+                                                .omitEmptyStrings().split(declaration));
                                 Preconditions.checkArgument(tokens.size() == 3, "Syntax error");
 
-                                final URI uri = new URIImpl(tokens.get(0));
+                                final IRI uri = SimpleValueFactory.getInstance()
+                                        .createIRI(tokens.get(0));
                                 final Class<?> type = Class.forName(tokens.get(1));
                                 final Method method = Provider.locate(tokens.get(2));
 
@@ -438,7 +437,7 @@ public abstract class Factory<T>
                                 final Provider<?> provider = new Provider(uri, type, method);
 
                                 map.put(provider.uri, provider);
-                                Factory.LOGGER.debug("Registered provider {}", provider);
+                                Factory.LOGGER.info("Registered provider {}", provider);
 
                             } catch (final Throwable ex) {
                                 Factory.LOGGER.error("Error processing declaration in resource "
@@ -456,14 +455,14 @@ public abstract class Factory<T>
                 Factory.LOGGER.error("Error detecting implementations. Detection halted", ex);
             }
 
-            Factory.LOGGER.debug("{} providers registered", map.size());
+            Factory.LOGGER.info("{} providers registered", map.size());
             return map;
         }
 
         /**
          * Helper method that locates the provider static factory-creation method based on its
          * name in a provider declaration.
-         * 
+         *
          * @param name
          *            the method name in the provider declaration
          * @return the located method, on success
@@ -479,9 +478,9 @@ public abstract class Factory<T>
             final Class<?> implementationClass = Class.forName(className);
             for (final Method method : implementationClass.getDeclaredMethods()) {
                 final Class<?>[] parameters = method.getParameterTypes();
-                if (Modifier.isStatic(method.getModifiers())
-                        && methodName.equals(method.getName()) && parameters.length == 2
-                        && parameters[0] == Graph.class && parameters[1] == Resource.class) {
+                if (Modifier.isStatic(method.getModifiers()) && methodName.equals(method.getName())
+                        && parameters.length == 2 && parameters[0] == Model.class
+                        && parameters[1] == Resource.class) {
                     method.setAccessible(true);
                     return method;
                 }

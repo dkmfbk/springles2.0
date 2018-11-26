@@ -16,15 +16,15 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.parser.ParsedGraphQuery;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.query.parser.QueryParserFactory;
-import org.openrdf.query.parser.QueryParserRegistry;
-import org.openrdf.query.parser.QueryParserUtil;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.parser.ParsedGraphQuery;
+import org.eclipse.rdf4j.query.parser.ParsedQuery;
+import org.eclipse.rdf4j.query.parser.QueryParserFactory;
+import org.eclipse.rdf4j.query.parser.QueryParserRegistry;
+import org.eclipse.rdf4j.query.parser.QueryParserUtil;
 
 import eu.fbk.dkm.internal.util.Algebra;
 import eu.fbk.dkm.internal.util.SparqlRenderer;
@@ -73,10 +73,10 @@ import eu.fbk.dkm.internal.util.SparqlRenderer;
  * forbid modifying the query tuple expression ({@link #getExpression()}), THE ALGEBRAIC
  * EXPRESSION MUST NOT BE MODIFIED, as this will interfer with caching.
  * </p>
- * 
+ *
  * @param <T>
  *            the result type of the query, as bound to the query {@link QueryType}
- * 
+ *
  * @apiviz.has eu.fbk.dkm.springles.base.QueryType
  */
 public final class QuerySpec<T> implements Serializable
@@ -122,7 +122,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns a <tt>QuerySpec</tt> for the specified query type and SPARQL query string. This is
      * a convenience method corresponding to
      * <tt>from(type, string, QueryLanguage.SPARQL, null)</tt>.
-     * 
+     *
      * @param type
      *            the query type
      * @param string
@@ -136,13 +136,13 @@ public final class QuerySpec<T> implements Serializable
     public static <T> QuerySpec<T> from(final QueryType<T> type, final String string)
             throws MalformedQueryException
     {
-        return from(type, string, QueryLanguage.SPARQL, null);
+        return QuerySpec.from(type, string, QueryLanguage.SPARQL, null);
     }
 
     /**
      * Returns a <tt>QuerySpec</tt> for the supplied query type, string, language and optional
      * base URI.
-     * 
+     *
      * @param type
      *            the query type
      * @param string
@@ -170,29 +170,32 @@ public final class QuerySpec<T> implements Serializable
                 Strings.nullToEmpty(baseURI));
 
         @SuppressWarnings("unchecked")
-        QuerySpec<T> result = (QuerySpec<T>) CACHE.getIfPresent(cacheKey);
+        QuerySpec<T> result = (QuerySpec<T>) QuerySpec.CACHE.getIfPresent(cacheKey);
 
         if (result == null) {
-            final QueryParserFactory factory = QueryParserRegistry.getInstance().get(language);
+            final QueryParserFactory factory = QueryParserRegistry.getInstance().get(language)
+                    .get();
 
             if (factory == null) {
-                result = new QuerySpec<T>(type, string, language, baseURI, false, null, null, null);
+                result = new QuerySpec<T>(type, string, language, baseURI, false, null, null,
+                        null);
 
             } else {
                 final ParsedQuery parsedQuery = QueryParserUtil.parseQuery(language, string,
                         baseURI);
                 final QueryType<?> parsedType = QueryType.forParsedClass(parsedQuery.getClass());
                 if (type != parsedType) {
-                    throw new MalformedQueryException("Expected " + type + " query, got "
-                            + parsedType + " query");
+                    throw new MalformedQueryException(
+                            "Expected " + type + " query, got " + parsedType + " query");
                 }
                 result = new QuerySpec<T>(type, string, language, baseURI, false,
                         parsedQuery.getTupleExpr(), parsedQuery.getDataset(),
-                        parsedQuery instanceof ParsedGraphQuery ? ((ParsedGraphQuery) parsedQuery)
-                                .getQueryNamespaces() : Collections.<String, String>emptyMap());
+                        parsedQuery instanceof ParsedGraphQuery
+                                ? ((ParsedGraphQuery) parsedQuery).getQueryNamespaces()
+                                : Collections.<String, String>emptyMap());
             }
 
-            CACHE.put(cacheKey, result);
+            QuerySpec.CACHE.put(cacheKey, result);
         }
 
         return result;
@@ -202,7 +205,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns a <tt>QuerySpec</tt> for the query type, algebraic expressions and corresponding
      * dataset specified. This is a convenience methods corresponding to
      * <tt>from(type, expression, dataset, Collections.emptyMap())</tt>.
-     * 
+     *
      * @param type
      *            the query type
      * @param expression
@@ -217,13 +220,13 @@ public final class QuerySpec<T> implements Serializable
     public static <T> QuerySpec<T> from(final QueryType<T> type, final TupleExpr expression,
             @Nullable final Dataset dataset)
     {
-        return from(type, expression, dataset, Collections.<String, String>emptyMap());
+        return QuerySpec.from(type, expression, dataset, Collections.<String, String>emptyMap());
     }
 
     /**
      * Returns an <tt>QuerySpec</tt> for the query type, algebraic expression, corresponding
      * dataset and namespace declarations specified.
-     * 
+     *
      * @param type
      *            the query type
      * @param expression
@@ -251,11 +254,11 @@ public final class QuerySpec<T> implements Serializable
         final List<Object> cacheKey = ImmutableList.of(type, string, QueryLanguage.SPARQL, "");
 
         @SuppressWarnings("unchecked")
-        QuerySpec<T> result = (QuerySpec<T>) CACHE.getIfPresent(cacheKey);
+        QuerySpec<T> result = (QuerySpec<T>) QuerySpec.CACHE.getIfPresent(cacheKey);
         if (result == null) {
             result = new QuerySpec<T>(type, string, QueryLanguage.SPARQL, null, true, expression,
                     clonedDataset, namespaces);
-            CACHE.put(cacheKey, result);
+            QuerySpec.CACHE.put(cacheKey, result);
         }
 
         return result;
@@ -263,7 +266,7 @@ public final class QuerySpec<T> implements Serializable
 
     /**
      * Private constructor, accepting parameters for all the object properties.
-     * 
+     *
      * @param type
      *            the query type
      * @param string
@@ -303,14 +306,14 @@ public final class QuerySpec<T> implements Serializable
     private void checkParsed()
     {
         if (this.expression == null) {
-            throw new UnsupportedOperationException("Operation unsupported for language "
-                    + this.language);
+            throw new UnsupportedOperationException(
+                    "Operation unsupported for language " + this.language);
         }
     }
 
     /**
      * Returns the query type.
-     * 
+     *
      * @return the query type
      */
     public QueryType<T> getType()
@@ -322,7 +325,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns the query string. The returned string is expressed in language
      * {@link #getLanguage()} and possibly automatically rendered ({@link #isRendered()}
      * <tt>true</tt>) from a supplied algebraic expression.
-     * 
+     *
      * @return the update string
      */
     public String getString()
@@ -334,7 +337,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns the language the query string is expressed in. If the string has been automatically
      * rendered from a supplied algebraic expression, the language is {@link QueryLanguage#SPARQL}
      * .
-     * 
+     *
      * @return the language
      */
     public QueryLanguage getLanguage()
@@ -346,7 +349,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns the optional base URI to be used to interpret relative URIs in the query string.
      * The base URI can be <tt>null</tt>, in which case it is assumed that the query string does
      * not contain relative URIs.
-     * 
+     *
      * @return the base URI, possibly null
      */
     @Nullable
@@ -358,7 +361,7 @@ public final class QuerySpec<T> implements Serializable
     /**
      * Returns <tt>true</tt> if the query string has been rendered starting from a supplied
      * algebraic expression.
-     * 
+     *
      * @return <tt>true</tt> if the query string has been rendered
      */
     public boolean isRendered()
@@ -370,7 +373,7 @@ public final class QuerySpec<T> implements Serializable
      * Returns <tt>true</tt> if the algebraic representation of the query is available. This
      * representation may be unavailable in case a query string has been supplied, whose language
      * has not an associated Sesame parser.
-     * 
+     *
      * @return <tt>true</tt> if the algebraic representation is available
      */
     public boolean isParsed()
@@ -383,21 +386,21 @@ public final class QuerySpec<T> implements Serializable
      * expression must be cached for performance reasons, modifying it would affect all subsequent
      * operations on the same <tt>QuerySpec</tt> object, so CLONE THE EXPRESSION BEFORE MODIFYING
      * IT.
-     * 
+     *
      * @return the algebraic expression for this query.
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public TupleExpr getExpression() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.expression;
     }
 
     /**
      * Returns the dataset associated to the algebraic expression, or <tt>null</tt> if such
      * dataset has not been explicitly specified.
-     * 
+     *
      * @return the dataset, possibly null
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
@@ -405,27 +408,27 @@ public final class QuerySpec<T> implements Serializable
     @Nullable
     public Dataset getDataset() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.dataset;
     }
 
     /**
      * Returns the namespace declarations for the query.
-     * 
+     *
      * @return a map of prefix -> namespace declarations
      * @throws UnsupportedOperationException
      *             in case the algebraic representation is unavailable
      */
     public Map<String, String> getNamespaces() throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
         return this.namespaces;
     }
 
     /**
      * Returns a <tt>QuerySpec</tt> with the same query expression of this specification, but
      * associated to the dataset specified.
-     * 
+     *
      * @param dataset
      *            the dataset to be enforced, <tt>null</tt> to associate to an unspecified dataset
      * @return the resulting <tt>QuerySpec</tt> object (possibly <tt>this</tt> if no change is
@@ -435,12 +438,12 @@ public final class QuerySpec<T> implements Serializable
      */
     public QuerySpec<T> enforceDataset(final Dataset dataset) throws UnsupportedOperationException
     {
-        checkParsed();
+        this.checkParsed();
 
         if (Objects.equal(this.dataset, dataset)) {
             return this;
         } else {
-            return from(this.type, this.expression, dataset, this.namespaces);
+            return QuerySpec.from(this.type, this.expression, dataset, this.namespaces);
         }
     }
 
@@ -482,7 +485,7 @@ public final class QuerySpec<T> implements Serializable
 
     /**
      * Overrides deserialization, reusing cached <tt>QuerySpec</tt>s where possible.
-     * 
+     *
      * @return the object to return as result of deserialization
      * @throws ObjectStreamException
      *             declared as mandated by serialization API
@@ -491,10 +494,10 @@ public final class QuerySpec<T> implements Serializable
     {
         final List<Object> cacheKey = ImmutableList.of(this.type, this.string, this.language,
                 Strings.nullToEmpty(this.baseURI));
-        QuerySpec<?> result = CACHE.getIfPresent(cacheKey);
+        QuerySpec<?> result = QuerySpec.CACHE.getIfPresent(cacheKey);
         if (result == null) {
             result = this;
-            CACHE.put(cacheKey, this);
+            QuerySpec.CACHE.put(cacheKey, this);
         }
         return result;
     }

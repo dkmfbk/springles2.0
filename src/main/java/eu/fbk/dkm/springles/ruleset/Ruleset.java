@@ -16,7 +16,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
@@ -24,26 +24,26 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Graph;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.GraphImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.impl.MapBindingSet;
-import org.openrdf.query.parser.ParsedGraphQuery;
-import org.openrdf.query.parser.sparql.SPARQLParser;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfigException;
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.RDFS;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.impl.MapBindingSet;
+import org.eclipse.rdf4j.query.parser.ParsedGraphQuery;
+import org.eclipse.rdf4j.query.parser.sparql.SPARQLParser;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 
 import eu.fbk.dkm.internal.util.Macro;
 import eu.fbk.dkm.internal.util.MacroExpander;
@@ -57,7 +57,7 @@ public final class Ruleset implements Cloneable
 {
 
     @Nullable
-    private URI id;
+    private IRI id;
 
     @Nullable
     private URL url;
@@ -97,12 +97,12 @@ public final class Ruleset implements Cloneable
         this(null, null, null, null, null);
 
         try {
-            final Graph graph = RDFSource.deserializeFrom(url, new RDFParseOptions())
+            final Model graph = RDFSource.deserializeFrom(url, new RDFParseOptions())
                     .streamToGraph();
             this.url = url;
-            this.id = (URI) Iterators.getOnlyElement(graph.match(null, RDF.TYPE, SPR.RULESET))
+            this.id = (IRI) Iterables.getOnlyElement(graph.filter(null, RDF.TYPE, SPR.RULESET))
                     .getSubject();
-            parseRDF(graph);
+            this.parseRDF(graph);
 
         } catch (final Throwable ex) {
             throw new IllegalArgumentException("Unable to load ruleset definition " + url + ": ",
@@ -110,7 +110,7 @@ public final class Ruleset implements Cloneable
         }
     }
 
-    public Ruleset(@Nullable final URI id, @Nullable final URL url,
+    public Ruleset(@Nullable final IRI id, @Nullable final URL url,
             @Nullable final Iterable<? extends Rule> rules,
             @Nullable final ClosureTask closurePlan,
             @Nullable final Iterable<? extends Resource> backwardRuleIDs)
@@ -123,8 +123,8 @@ public final class Ruleset implements Cloneable
         this.parameters = Maps.newHashMap();
         this.rules = rules == null ? Lists.<Rule>newArrayList() : Lists.newArrayList(rules);
         this.closurePlan = closurePlan;
-        this.backwardRuleIDs = backwardRuleIDs == null ? Sets.<Resource>newHashSet() : Sets
-                .newHashSet(backwardRuleIDs);
+        this.backwardRuleIDs = backwardRuleIDs == null ? Sets.<Resource>newHashSet()
+                : Sets.newHashSet(backwardRuleIDs);
         this.frozen = false;
 
         this.ruleIndex = null;
@@ -135,14 +135,14 @@ public final class Ruleset implements Cloneable
     // PROPERTIES
 
     @Nullable
-    public URI getID()
+    public IRI getID()
     {
         return this.id;
     }
 
-    public void setID(@Nullable final URI id)
+    public void setID(@Nullable final IRI id)
     {
-        checkMutable();
+        this.checkMutable();
         this.id = id;
     }
 
@@ -154,7 +154,7 @@ public final class Ruleset implements Cloneable
 
     public void setURL(@Nullable final URL url)
     {
-        checkMutable();
+        this.checkMutable();
         this.url = url;
     }
 
@@ -166,7 +166,7 @@ public final class Ruleset implements Cloneable
 
     public void setLabel(@Nullable final String label)
     {
-        checkMutable();
+        this.checkMutable();
         this.label = label;
     }
 
@@ -177,7 +177,7 @@ public final class Ruleset implements Cloneable
 
     public void setBaseURI(final String baseURI)
     {
-        checkMutable();
+        this.checkMutable();
         this.baseURI = Strings.emptyToNull(baseURI);
     }
 
@@ -188,9 +188,9 @@ public final class Ruleset implements Cloneable
 
     public void setNamespaces(@Nullable final Map<? extends String, ? extends String> namespaces)
     {
-        checkMutable();
-        this.namespaces = namespaces == null ? Maps.<String, String>newHashMap() : Maps
-                .newHashMap(namespaces);
+        this.checkMutable();
+        this.namespaces = namespaces == null ? Maps.<String, String>newHashMap()
+                : Maps.newHashMap(namespaces);
     }
 
     public Map<String, Value> getParameters()
@@ -200,9 +200,9 @@ public final class Ruleset implements Cloneable
 
     public void setParameters(@Nullable final Map<? extends String, ? extends Value> parameters)
     {
-        checkMutable();
-        this.parameters = parameters == null ? Maps.<String, Value>newHashMap() : Maps
-                .newHashMap(parameters);
+        this.checkMutable();
+        this.parameters = parameters == null ? Maps.<String, Value>newHashMap()
+                : Maps.newHashMap(parameters);
     }
 
     public BindingSet getParameterBindings(@Nullable final BindingSet suppliedBindings)
@@ -211,15 +211,15 @@ public final class Ruleset implements Cloneable
 
         for (final String variable : this.parameters.keySet()) {
             final Value defaultValue = this.parameters.get(variable);
-            final Value assignedValue = suppliedBindings == null ? null : suppliedBindings
-                    .getValue(variable);
+            final Value assignedValue = suppliedBindings == null ? null
+                    : suppliedBindings.getValue(variable);
 
             if (defaultValue == null) {
                 if (assignedValue != null) {
                     result.addBinding(variable, assignedValue);
                 } else {
-                    throw new IllegalArgumentException("Missing binding for mandatory parameter "
-                            + variable);
+                    throw new IllegalArgumentException(
+                            "Missing binding for mandatory parameter " + variable);
                 }
             } else {
                 if (assignedValue != null) {
@@ -248,7 +248,7 @@ public final class Ruleset implements Cloneable
 
     public void setRules(@Nullable final Iterable<? extends Rule> rules)
     {
-        checkMutable();
+        this.checkMutable();
         this.rules = rules == null ? Lists.<Rule>newArrayList() : Lists.newArrayList(rules);
     }
 
@@ -256,7 +256,7 @@ public final class Ruleset implements Cloneable
     public Rule getRule(final Resource id)
     {
         Preconditions.checkNotNull(id);
-        return getRuleIndex().get(id);
+        return this.getRuleIndex().get(id);
     }
 
     private Map<Resource, Rule> getRuleIndex()
@@ -285,7 +285,7 @@ public final class Ruleset implements Cloneable
 
     public void setClosurePlan(@Nullable final ClosureTask closurePlan)
     {
-        checkMutable();
+        this.checkMutable();
         this.closurePlan = closurePlan;
     }
 
@@ -295,9 +295,9 @@ public final class Ruleset implements Cloneable
         if (result == null) {
             result = Sets.newHashSet();
             if (this.closurePlan != null) {
-                extractRuleIDs(this.closurePlan, result);
+                Ruleset.extractRuleIDs(this.closurePlan, result);
             }
-            this.forwardRuleIDs = isFrozen() ? result : null;
+            this.forwardRuleIDs = this.isFrozen() ? result : null;
         }
         return result;
     }
@@ -308,7 +308,7 @@ public final class Ruleset implements Cloneable
             ruleIDs.addAll(((ClosureEvalTask) node).getRuleIDs());
         } else if (node instanceof ClosureSequenceTask) {
             for (final ClosureTask arg : ((ClosureSequenceTask) node).getSubTasks()) {
-                extractRuleIDs(arg, ruleIDs);
+                Ruleset.extractRuleIDs(arg, ruleIDs);
             }
         } else {
             ClosureTask arg = null;
@@ -318,7 +318,7 @@ public final class Ruleset implements Cloneable
                 arg = ((ClosureRepeatTask) node).getSubTask();
             }
             if (arg != null) {
-                extractRuleIDs(arg, ruleIDs);
+                Ruleset.extractRuleIDs(arg, ruleIDs);
             }
         }
     }
@@ -331,19 +331,19 @@ public final class Ruleset implements Cloneable
     public void setBackwardRuleIDs(@Nullable final Iterable<? extends Resource> backwardRuleIDs)
     {
         Preconditions.checkNotNull(backwardRuleIDs);
-        checkMutable();
+        this.checkMutable();
 
-        this.backwardRuleIDs = backwardRuleIDs == null ? Sets.<Resource>newHashSet() : Sets
-                .newHashSet(backwardRuleIDs);
+        this.backwardRuleIDs = backwardRuleIDs == null ? Sets.<Resource>newHashSet()
+                : Sets.newHashSet(backwardRuleIDs);
     }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
- /*   public Resource emitRDF(final Graph graph)
+    public Resource emitRDF(final Model graph)
     {
         Preconditions.checkNotNull(graph);
 
-        final ValueFactory vf = graph.getValueFactory();
+        final ValueFactory vf = SimpleValueFactory.getInstance();
         final Resource id = this.id != null ? this.id : vf.createBNode();
 
         graph.add(id, RDF.TYPE, SPR.RULESET);
@@ -356,12 +356,12 @@ public final class Ruleset implements Cloneable
             final StringBuilder builder = new StringBuilder();
             if (this.baseURI != null) {
                 builder.append("BASE ")
-                        .append(SparqlRenderer.render(new URIImpl(this.baseURI)).toString())
+                        .append(SparqlRenderer.render(vf.createIRI(this.baseURI)).toString())
                         .append("\n");
             }
             for (final Map.Entry<String, String> entry : this.namespaces.entrySet()) {
                 builder.append("PREFIX ").append(entry.getKey()).append(": ")
-                        .append(SparqlRenderer.render(new URIImpl(entry.getValue())).toString())
+                        .append(SparqlRenderer.render(vf.createIRI(entry.getValue())).toString())
                         .append("\n");
             }
             graph.add(id, SPR.PROLOGUE, vf.createLiteral(builder.toString(), XMLSchema.STRING));
@@ -369,8 +369,9 @@ public final class Ruleset implements Cloneable
 
         for (final Map.Entry<String, Value> entry : this.parameters.entrySet()) {
             final BNode node = vf.createBNode();
-            final Value defaultValue = entry.getValue() instanceof URI ? vf.createLiteral(entry
-                    .getValue().stringValue(), XMLSchema.ANYURI) : entry.getValue();
+            final Value defaultValue = entry.getValue() instanceof IRI
+                    ? vf.createLiteral(entry.getValue().stringValue(), XMLSchema.ANYURI)
+                    : entry.getValue();
             graph.add(id, SPR.PARAMETERIZED_BY, node);
             graph.add(node, SPR.NAME, vf.createLiteral(entry.getKey(), XMLSchema.STRING));
             graph.add(node, SPR.DEFAULT, defaultValue);
@@ -386,11 +387,11 @@ public final class Ruleset implements Cloneable
         }
 
         return id;
-    }*/
+    }
 
-    public void parseRDF(final Graph graph) throws MalformedQueryException
+    public void parseRDF(final Model graph) throws MalformedQueryException
     {
-        checkMutable();
+        this.checkMutable();
         Preconditions.checkState(this.id != null);
 
         Selector s = Selector.select(graph, this.id);
@@ -410,10 +411,10 @@ public final class Ruleset implements Cloneable
         }
         final MacroExpander expander = new MacroExpander(macros);
 
-        final Graph expandedGraph = new GraphImpl();
-        final ValueFactory vf = expandedGraph.getValueFactory();
+        final Model expandedGraph = new LinkedHashModel();
+        final ValueFactory vf = SimpleValueFactory.getInstance();
         for (final Statement stmt : graph) {
-            final URI pred = stmt.getPredicate();
+            final IRI pred = stmt.getPredicate();
             if (SPR.CONDITION.equals(pred) || SPR.HEAD.equals(pred) || SPR.BODY.equals(pred)
                     || SPR.BIND.equals(pred) || SPR.REPEAT_OVER.equals(pred)) {
                 final Literal obj = vf.createLiteral(
@@ -433,8 +434,9 @@ public final class Ruleset implements Cloneable
         if (prologue != null) {
             try {
                 this.baseURI = null;
-                this.namespaces.putAll(((ParsedGraphQuery) new SPARQLParser().parseQuery(prologue
-                        + "\nCONSTRUCT {} WHERE {}", null)).getQueryNamespaces());
+                this.namespaces.putAll(((ParsedGraphQuery) new SPARQLParser()
+                        .parseQuery(prologue + "\nCONSTRUCT {} WHERE {}", null))
+                                .getQueryNamespaces());
                 final String text = prologue.replace(" ", "");
                 int start = text.toUpperCase().indexOf("BASE<");
                 if (start >= 0) {
@@ -443,8 +445,9 @@ public final class Ruleset implements Cloneable
                     this.baseURI = text.substring(start, end);
                 }
             } catch (final MalformedQueryException ex) {
-                throw new IllegalArgumentException("Malformed namespace declaration: "
-                        + ex.getMessage() + "\n" + prologue, ex);
+                throw new IllegalArgumentException(
+                        "Malformed namespace declaration: " + ex.getMessage() + "\n" + prologue,
+                        ex);
             }
         }
 
@@ -457,7 +460,7 @@ public final class Ruleset implements Cloneable
                 Value value = p.get(SPR.DEFAULT, Value.class, null);
                 if (value instanceof Literal
                         && XMLSchema.ANYURI.equals(((Literal) value).getDatatype())) {
-                    value = expandedGraph.getValueFactory().createURI(value.stringValue());
+                    value = vf.createIRI(value.stringValue());
                 }
                 this.parameters.put(variable, value);
             }
@@ -472,19 +475,20 @@ public final class Ruleset implements Cloneable
 
         this.closurePlan = ClosureTask.parseRDF(expandedGraph, this.baseURI, this.namespaces,
                 s.get(SPR.CLOSURE_PLAN, Resource.class));
-        extractRuleIDs(this.closurePlan, ruleIDs);
+        Ruleset.extractRuleIDs(this.closurePlan, ruleIDs);
 
-        ruleIDs.removeAll(getRuleIndex().keySet());
+        ruleIDs.removeAll(this.getRuleIndex().keySet());
         for (final Resource ruleID : ruleIDs) {
             this.rules.add(Rule.parseRDF(expandedGraph, this.baseURI, this.namespaces, ruleID));
         }
     }
 
-    public static Ruleset parseRDF(final Graph graph, @Nullable final URI rulesetID)
+    public static Ruleset parseRDF(final Model graph, @Nullable final IRI rulesetID)
             throws MalformedQueryException
     {
-        final URI id = rulesetID != null ? rulesetID : (URI) Iterators.getOnlyElement(
-                graph.match(null, RDF.TYPE, SPR.RULESET)).getSubject();
+        final IRI id = rulesetID != null ? rulesetID
+                : (IRI) Iterables.getOnlyElement(graph.filter(null, RDF.TYPE, SPR.RULESET))
+                        .getSubject();
         final Ruleset ruleset = new Ruleset();
         ruleset.setID(id);
         ruleset.parseRDF(graph);
@@ -495,13 +499,14 @@ public final class Ruleset implements Cloneable
 
     public void validate()
     {
-        validate(this.id != null, "missing ruleset ID");
-        validate(!this.parameters.containsKey(null), "null parameter name");
-        validate(this.closurePlan != null, "missing closure plan");
+        this.validate(this.id != null, "missing ruleset ID");
+        this.validate(!this.parameters.containsKey(null), "null parameter name");
+        this.validate(this.closurePlan != null, "missing closure plan");
 
         final Set<Resource> missingRules = Sets.difference(
-                Sets.union(this.backwardRuleIDs, getForwardRuleIDs()), getRuleIndex().keySet());
-        validate(missingRules.isEmpty(), "undefined rules " + missingRules);
+                Sets.union(this.backwardRuleIDs, this.getForwardRuleIDs()),
+                this.getRuleIndex().keySet());
+        this.validate(missingRules.isEmpty(), "undefined rules " + missingRules);
 
         this.closurePlan.validate();
         for (final Rule rule : this.rules) {
@@ -512,8 +517,8 @@ public final class Ruleset implements Cloneable
     private void validate(final boolean condition, final String message)
     {
         if (!condition) {
-            throw new IllegalStateException("Invalid ruleset"
-                    + (this.id == null ? "" : " " + this.id) + ": " + message);
+            throw new IllegalStateException(
+                    "Invalid ruleset" + (this.id == null ? "" : " " + this.id) + ": " + message);
         }
     }
 
@@ -565,8 +570,8 @@ public final class Ruleset implements Cloneable
     private void checkMutable()
     {
         if (this.frozen) {
-            throw new IllegalStateException("Cannot modify ruleset " + this.id
-                    + "; must clone it before");
+            throw new IllegalStateException(
+                    "Cannot modify ruleset " + this.id + "; must clone it before");
         }
     }
 
@@ -584,7 +589,7 @@ public final class Ruleset implements Cloneable
         final Ruleset other = (Ruleset) object;
         return Objects.equal(this.id, other.id) //
                 && this.parameters.equals(other.parameters)
-                && getRuleIndex().equals(other.getRuleIndex())
+                && this.getRuleIndex().equals(other.getRuleIndex())
                 && Objects.equal(this.closurePlan, other.closurePlan)
                 && Objects.equal(this.backwardRuleIDs, other.backwardRuleIDs);
     }
@@ -592,7 +597,7 @@ public final class Ruleset implements Cloneable
     @Override
     public int hashCode()
     {
-        return Objects.hashCode(this.id, this.parameters, getRuleIndex(), this.closurePlan,
+        return Objects.hashCode(this.id, this.parameters, this.getRuleIndex(), this.closurePlan,
                 this.backwardRuleIDs);
     }
 
@@ -602,7 +607,8 @@ public final class Ruleset implements Cloneable
         if (digest == null) {
             final Hasher hasher = Hashing.md5().newHasher();
             for (final String variable : Ordering.natural().sortedCopy(this.parameters.keySet())) {
-                hasher.putUnencodedChars(variable).putUnencodedChars(this.parameters.get(variable).stringValue());
+                hasher.putUnencodedChars(variable)
+                        .putUnencodedChars(this.parameters.get(variable).stringValue());
             }
             final List<String> ruleDigests = Lists.newArrayList();
             for (final Rule rule : this.rules) {
@@ -628,14 +634,14 @@ public final class Ruleset implements Cloneable
 
     // INTEGRATION WITH FACTORY MECHANISM
 
-    static Factory<Ruleset> getFactory(final Graph graph, final Resource node)
+    static Factory<Ruleset> getFactory(final Model graph, final Resource node)
             throws RepositoryConfigException
     {
-        Preconditions.checkArgument(node instanceof URI,
+        Preconditions.checkArgument(node instanceof IRI,
                 "invalid ruleset identifier (must be a URI): " + node);
 
         try {
-            final Ruleset ruleset = parseRDF(graph, (URI) node);
+            final Ruleset ruleset = Ruleset.parseRDF(graph, (IRI) node);
             ruleset.validate();
             ruleset.freeze();
 

@@ -1,65 +1,74 @@
 package eu.fbk.dkm.springles.backend;
 
-import java.util.Arrays;
-
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.BooleanQuery;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.Query;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQuery;
-import org.openrdf.query.TupleQueryResultHandler;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.Update;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.RDFHandler;
-import org.openrdf.rio.RDFHandlerException;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.BooleanQuery;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.GraphQuery;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.Query;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQuery;
+import org.eclipse.rdf4j.query.TupleQueryResultHandler;
+import org.eclipse.rdf4j.query.TupleQueryResultHandlerException;
+import org.eclipse.rdf4j.query.Update;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.rio.RDFHandler;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.sail.SailException;
 
 import eu.fbk.dkm.springles.InferenceMode;
 import eu.fbk.dkm.springles.base.QuerySpec;
 import eu.fbk.dkm.springles.base.QueryType;
 import eu.fbk.dkm.springles.base.UpdateSpec;
 
-public class RepositoryTransaction extends AbstractBackendTransaction {
+public class RepositoryTransaction extends AbstractBackendTransaction
+{
 
     private final RepositoryConnection connection;
 
-    public RepositoryTransaction(final String id, final RepositoryConnection connection) {
+    public RepositoryTransaction(final String id, final RepositoryConnection connection)
+    {
         super(id, connection.getValueFactory());
         this.connection = connection;
+        try {
+            this.connection.begin();
+        } catch (final SailException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected final RepositoryConnection getConnection() {
+    protected final RepositoryConnection getConnection()
+    {
         return this.connection;
     }
 
     @Override
-    public synchronized String getNamespace(final String prefix) throws RepositoryException {
+    public synchronized String getNamespace(final String prefix) throws RepositoryException
+    {
         return this.connection.getNamespace(prefix);
     }
 
     @Override
     public synchronized CloseableIteration<Namespace, RepositoryException> getNamespaces()
-            throws RepositoryException {
+            throws RepositoryException
+    {
         return this.connection.getNamespaces();
     }
 
     @Override
     public synchronized void setNamespace(final String prefix, @Nullable final String name)
-            throws RepositoryException {
+            throws RepositoryException
+    {
         if (name != null) {
             this.connection.setNamespace(prefix, name);
         } else {
@@ -68,15 +77,17 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
     }
 
     @Override
-    public synchronized void clearNamespaces() throws RepositoryException {
+    public synchronized void clearNamespaces() throws RepositoryException
+    {
         this.connection.clearNamespaces();
     }
 
     @Override
     public void query(final QuerySpec<?> query, @Nullable final Dataset dataset,
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout,
-            final Object handler) throws QueryEvaluationException, RepositoryException {
-        final Query preparedQuery = prepareQuery(query, dataset, bindings, timeout);
+            final Object handler) throws QueryEvaluationException, RepositoryException
+    {
+        final Query preparedQuery = this.prepareQuery(query, dataset, bindings, timeout);
 
         final QueryType<?> queryType = query.getType();
 
@@ -101,8 +112,9 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
     @Override
     public <T> T query(final QuerySpec<T> query, @Nullable final Dataset dataset,
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout)
-            throws QueryEvaluationException, RepositoryException {
-        final Query preparedQuery = prepareQuery(query, dataset, bindings, timeout);
+            throws QueryEvaluationException, RepositoryException
+    {
+        final Query preparedQuery = this.prepareQuery(query, dataset, bindings, timeout);
 
         final QueryType<T> queryType = query.getType();
         final Class<T> resultClass = queryType.getResultClass();
@@ -119,7 +131,8 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
     }
 
     protected final Query prepareQuery(final QuerySpec<?> query, @Nullable final Dataset dataset,
-            @Nullable final BindingSet bindings, final int timeout) throws RepositoryException {
+            @Nullable final BindingSet bindings, final int timeout) throws RepositoryException
+    {
         final Query preparedQuery;
         synchronized (this) {
             try {
@@ -149,7 +162,7 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
         }
 
         if (timeout >= 0) {
-            preparedQuery.setMaxQueryTime(timeout);
+            preparedQuery.setMaxExecutionTime(timeout);
         }
 
         preparedQuery.setIncludeInferred(false);
@@ -163,34 +176,39 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
      */
     @Override
     public synchronized CloseableIteration<? extends Resource, RepositoryException> getContextIDs(
-            final InferenceMode mode) throws RepositoryException {
+            final InferenceMode mode) throws RepositoryException
+    {
         return this.connection.getContextIDs();
     }
 
     @Override
     public synchronized CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
-            final InferenceMode mode, final Resource... contexts) throws RepositoryException {
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
+            final InferenceMode mode, final Resource... contexts) throws RepositoryException
+    {
         return this.connection.getStatements(subj, pred, obj, false, contexts);
     }
 
     @Override
     public synchronized boolean hasStatement(@Nullable final Resource subj,
-            @Nullable final URI pred, @Nullable final Value obj, final InferenceMode mode,
-            final Resource... contexts) throws RepositoryException {
+            @Nullable final IRI pred, @Nullable final Value obj, final InferenceMode mode,
+            final Resource... contexts) throws RepositoryException
+    {
         return this.connection.hasStatement(subj, pred, obj, false, contexts);
     }
 
     @Override
     public synchronized long size(final InferenceMode mode, final Resource... contexts)
-            throws RepositoryException {
+            throws RepositoryException
+    {
         return this.connection.size(contexts);
     }
 
     @Override
     public synchronized void update(final UpdateSpec update, @Nullable final Dataset dataset,
             @Nullable final BindingSet bindings, final InferenceMode mode)
-            throws UpdateExecutionException, RepositoryException {
+            throws UpdateExecutionException, RepositoryException
+    {
 
         boolean singleDataset = true;
         Dataset actualDataset = null;
@@ -234,29 +252,32 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
 
         } else {
             for (final UpdateSpec atomicUpdate : update.explode()) {
-                update(atomicUpdate, null, bindings, mode);
+                this.update(atomicUpdate, null, bindings, mode);
             }
         }
     }
 
     @Override
     public synchronized void add(final Iterable<? extends Statement> statements,
-            final Resource... contexts) throws RepositoryException {
+            final Resource... contexts) throws RepositoryException
+    {
         // Note: this seems to be the fastest method among RepositoryConnectionBase.add(...).
         this.connection.add(statements, contexts);
     }
 
     @Override
     public synchronized void remove(final Iterable<? extends Statement> statements,
-            final Resource... contexts) throws RepositoryException {
+            final Resource... contexts) throws RepositoryException
+    {
         // Note: implementation of called method in RepositoryConnectionBase should
         // use removeWithoutCommit for performance reasons (signal issue?)
         this.connection.remove(statements, contexts);
     }
 
     @Override
-    public synchronized void remove(@Nullable final Resource subj, @Nullable final URI pred,
-            @Nullable final Value obj, final Resource... contexts) throws RepositoryException {
+    public synchronized void remove(@Nullable final Resource subj, @Nullable final IRI pred,
+            @Nullable final Value obj, final Resource... contexts) throws RepositoryException
+    {
         if (subj == null && pred == null && obj == null) {
             this.connection.clear(contexts);
         } else {
@@ -265,12 +286,14 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
     }
 
     @Override
-    public synchronized void reset() throws RepositoryException {
+    public synchronized void reset() throws RepositoryException
+    {
         this.connection.clear();
     }
 
     @Override
-    protected synchronized void doEnd(final boolean commit) throws RepositoryException {
+    protected synchronized void doEnd(final boolean commit) throws RepositoryException
+    {
         if (commit) {
             this.connection.commit();
         } else {
@@ -279,7 +302,8 @@ public class RepositoryTransaction extends AbstractBackendTransaction {
     }
 
     @Override
-    protected synchronized void doClose() throws RepositoryException {
+    protected synchronized void doClose() throws RepositoryException
+    {
         this.connection.close();
     }
 

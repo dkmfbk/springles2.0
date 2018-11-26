@@ -10,20 +10,19 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.CloseableIteration;
 
 import eu.fbk.dkm.internal.util.Contexts;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -91,7 +90,7 @@ final class BufferingTransaction extends ForwardingTransaction
 
     /**
      * Creates a new instance wrapping the supplied <tt>Transaction</tt>
-     * 
+     *
      * @param delegate
      *            the wrapped transaction, not null
      */
@@ -100,7 +99,7 @@ final class BufferingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(delegate);
 
         this.delegate = delegate;
-        this.statements = Lists.newArrayListWithCapacity(BATCH_SIZE);
+        this.statements = Lists.newArrayListWithCapacity(BufferingTransaction.BATCH_SIZE);
         this.contexts = Contexts.UNSPECIFIED;
         this.adding = false;
     }
@@ -117,7 +116,7 @@ final class BufferingTransaction extends ForwardingTransaction
     /**
      * Forces flushing buffered statements to wrapped <tt>Transaction</tt>. This is a NOP if the
      * buffer is empty.
-     * 
+     *
      * @throws RepositoryException
      *             on failure
      */
@@ -127,11 +126,13 @@ final class BufferingTransaction extends ForwardingTransaction
         if (size == 0) {
             return;
         } else if (this.adding) {
-            LOGGER.debug("Flushing buffer: adding {} statements to repository", size);
-            delegate().add(this.statements, this.contexts);
+            BufferingTransaction.LOGGER.info("Flushing buffer: adding {} statements to repository",
+                    size);
+            this.delegate().add(this.statements, this.contexts);
         } else {
-            LOGGER.debug("Flushing buffer: removing {} statements from repository", size);
-            delegate().remove(this.statements, this.contexts);
+            BufferingTransaction.LOGGER
+                    .info("Flushing buffer: removing {} statements from repository", size);
+            this.delegate().remove(this.statements, this.contexts);
         }
         this.statements.clear();
     }
@@ -144,8 +145,8 @@ final class BufferingTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout,
             final Object handler) throws QueryEvaluationException, RepositoryException
     {
-        flush();
-        delegate().query(query, dataset, bindings, mode, timeout, handler);
+        this.flush();
+        this.delegate().query(query, dataset, bindings, mode, timeout, handler);
     }
 
     /**
@@ -156,19 +157,19 @@ final class BufferingTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout)
             throws QueryEvaluationException, RepositoryException
     {
-        flush();
-        return delegate().query(query, dataset, bindings, mode, timeout);
+        this.flush();
+        return this.delegate().query(query, dataset, bindings, mode, timeout);
     }
 
     /**
      * {@inheritDoc} Flushes and delegates.
      */
     @Override
-    public <T> T query(final URI queryURI, final QueryType<T> queryType, final InferenceMode mode,
+    public <T> T query(final IRI queryURI, final QueryType<T> queryType, final InferenceMode mode,
             final Object... parameters) throws QueryEvaluationException, RepositoryException
     {
-        flush();
-        return delegate().query(queryURI, queryType, mode, parameters);
+        this.flush();
+        return this.delegate().query(queryURI, queryType, mode, parameters);
     }
 
     /**
@@ -178,8 +179,8 @@ final class BufferingTransaction extends ForwardingTransaction
     public CloseableIteration<? extends Resource, RepositoryException> getContextIDs(
             final InferenceMode mode) throws RepositoryException
     {
-        flush();
-        return delegate().getContextIDs(mode);
+        this.flush();
+        return this.delegate().getContextIDs(mode);
     }
 
     /**
@@ -187,23 +188,23 @@ final class BufferingTransaction extends ForwardingTransaction
      */
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
-        flush();
-        return delegate().getStatements(subj, pred, obj, mode, contexts);
+        this.flush();
+        return this.delegate().getStatements(subj, pred, obj, mode, contexts);
     }
 
     /**
      * {@inheritDoc} Flushes and delegates.
      */
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        flush();
-        return delegate().hasStatement(subj, pred, obj, mode, contexts);
+        this.flush();
+        return this.delegate().hasStatement(subj, pred, obj, mode, contexts);
     }
 
     /**
@@ -213,8 +214,8 @@ final class BufferingTransaction extends ForwardingTransaction
     public long size(final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        flush();
-        return delegate().size(mode, contexts);
+        this.flush();
+        return this.delegate().size(mode, contexts);
     }
 
     /**
@@ -225,19 +226,19 @@ final class BufferingTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode)
             throws UpdateExecutionException, RepositoryException
     {
-        flush();
-        delegate().update(update, dataset, bindings, mode);
+        this.flush();
+        this.delegate().update(update, dataset, bindings, mode);
     }
 
     /**
      * {@inheritDoc} Flushes and delegates.
      */
     @Override
-    public void update(final URI updateURI, final InferenceMode mode, final Object... parameters)
+    public void update(final IRI updateURI, final InferenceMode mode, final Object... parameters)
             throws UpdateExecutionException, RepositoryException
     {
-        flush();
-        delegate().update(updateURI, mode, parameters);
+        this.flush();
+        this.delegate().update(updateURI, mode, parameters);
     }
 
     /**
@@ -259,20 +260,23 @@ final class BufferingTransaction extends ForwardingTransaction
             return; // nop
         }
 
-        final boolean sameContexts = this.contexts == contexts || this.contexts.length == 0
-                && contexts.length == 0;
+        final boolean sameContexts = this.contexts == contexts
+                || this.contexts.length == 0 && contexts.length == 0;
 
         if (!this.statements.isEmpty()) {
             if (!this.adding) {
-                LOGGER.debug("Flushing buffered statements due to remove -> add switch: "
-                        + "removing {} statements from repository", this.statements.size());
-                delegate().remove(this.statements, this.contexts);
+                BufferingTransaction.LOGGER.info(
+                        "Flushing buffered statements due to remove -> add switch: "
+                                + "removing {} statements from repository",
+                        this.statements.size());
+                this.delegate().remove(this.statements, this.contexts);
                 this.statements.clear();
 
             } else if (!sameContexts) {
-                LOGGER.debug("Flushing buffered statements due to change of contexts: "
-                        + "adding {} statements to repository", this.statements.size());
-                delegate().add(this.statements, this.contexts);
+                BufferingTransaction.LOGGER
+                        .info("Flushing buffered statements due to change of contexts: "
+                                + "adding {} statements to repository", this.statements.size());
+                this.delegate().add(this.statements, this.contexts);
                 this.statements.clear();
             }
         }
@@ -286,36 +290,42 @@ final class BufferingTransaction extends ForwardingTransaction
             final int size = this.statements.size();
             final int delta = ((Collection<?>) statements).size();
             final int total = size + delta;
-            if (total < BATCH_SIZE) {
-                LOGGER.debug("Buffered {} statements for addition; buffer contains {} statements",
+            if (total < BufferingTransaction.BATCH_SIZE) {
+                BufferingTransaction.LOGGER.info(
+                        "Buffered {} statements for addition; buffer contains {} statements",
                         delta, total);
                 this.statements.addAll((Collection<? extends Statement>) statements);
 
             } else if (size == 0) {
-                LOGGER.debug("Number of statements to add ({}) exceeds buffer size: "
-                        + "propagating without buffering", delta);
-                delegate().add(statements, contexts);
+                BufferingTransaction.LOGGER
+                        .info("Number of statements to add ({}) exceeds buffer size: "
+                                + "propagating without buffering", delta);
+                this.delegate().add(statements, contexts);
 
             } else {
-                LOGGER.debug("Flushing buffer together with specified statements: "
-                        + "adding {} statements overall", total);
-                delegate().add(Iterables.concat(this.statements, statements), this.contexts);
+                BufferingTransaction.LOGGER
+                        .info("Flushing buffer together with specified statements: "
+                                + "adding {} statements overall", total);
+                this.delegate().add(Iterables.concat(this.statements, statements), this.contexts);
                 this.statements.clear();
             }
             return;
 
         } else {
-            LOGGER.debug("Adding unprecised number of statements");
+            BufferingTransaction.LOGGER.info("Adding unprecised number of statements");
             for (final Statement statement : statements) {
                 this.statements.add(statement);
-                if (this.statements.size() == BATCH_SIZE) {
-                    LOGGER.debug("Flushing buffer due to capacity reached: "
-                            + "adding {} statements to repository", this.statements.size());
-                    delegate().add(this.statements, this.contexts);
+                if (this.statements.size() == BufferingTransaction.BATCH_SIZE) {
+                    BufferingTransaction.LOGGER.info(
+                            "Flushing buffer due to capacity reached: "
+                                    + "adding {} statements to repository",
+                            this.statements.size());
+                    this.delegate().add(this.statements, this.contexts);
                     this.statements.clear();
                 }
             }
-            LOGGER.debug("Buffer contains {} statements to be added", this.statements.size());
+            BufferingTransaction.LOGGER.info("Buffer contains {} statements to be added",
+                    this.statements.size());
         }
     }
 
@@ -333,20 +343,22 @@ final class BufferingTransaction extends ForwardingTransaction
             return; // nop
         }
 
-        final boolean sameContexts = this.contexts == contexts || this.contexts.length == 0
-                && contexts.length == 0;
+        final boolean sameContexts = this.contexts == contexts
+                || this.contexts.length == 0 && contexts.length == 0;
 
         if (!this.statements.isEmpty()) {
             if (this.adding) {
-                LOGGER.debug("Flushing buffered statements due to add -> remove switch: "
-                        + "adding {} statements from repository", this.statements.size());
-                delegate().add(this.statements, this.contexts);
+                BufferingTransaction.LOGGER
+                        .info("Flushing buffered statements due to add -> remove switch: "
+                                + "adding {} statements from repository", this.statements.size());
+                this.delegate().add(this.statements, this.contexts);
                 this.statements.clear();
 
             } else if (!sameContexts) {
-                LOGGER.debug("Flushing buffered statements due to change of contexts: "
-                        + "removing {} statements to repository", this.statements.size());
-                delegate().remove(this.statements, this.contexts);
+                BufferingTransaction.LOGGER
+                        .info("Flushing buffered statements due to change of contexts: "
+                                + "removing {} statements to repository", this.statements.size());
+                this.delegate().remove(this.statements, this.contexts);
                 this.statements.clear();
             }
         }
@@ -360,36 +372,43 @@ final class BufferingTransaction extends ForwardingTransaction
             final int size = this.statements.size();
             final int delta = ((Collection<?>) statements).size();
             final int total = size + delta;
-            if (total < BATCH_SIZE) {
-                LOGGER.debug("Buffered {} statements for removal; buffer contains {} statements",
-                        delta, total);
+            if (total < BufferingTransaction.BATCH_SIZE) {
+                BufferingTransaction.LOGGER.info(
+                        "Buffered {} statements for removal; buffer contains {} statements", delta,
+                        total);
                 this.statements.addAll((Collection<? extends Statement>) statements);
 
             } else if (size == 0) {
-                LOGGER.debug("Number of statements to remove ({}) exceeds buffer size: "
-                        + "propagating without buffering", delta);
-                delegate().remove(statements, contexts);
+                BufferingTransaction.LOGGER
+                        .info("Number of statements to remove ({}) exceeds buffer size: "
+                                + "propagating without buffering", delta);
+                this.delegate().remove(statements, contexts);
 
             } else {
-                LOGGER.debug("Flushing buffer together with specified statements: "
-                        + "removing {} statements overall", total);
-                delegate().remove(Iterables.concat(this.statements, statements), this.contexts);
+                BufferingTransaction.LOGGER
+                        .info("Flushing buffer together with specified statements: "
+                                + "removing {} statements overall", total);
+                this.delegate().remove(Iterables.concat(this.statements, statements),
+                        this.contexts);
                 this.statements.clear();
             }
             return;
 
         } else {
-            LOGGER.debug("Removing unprecised number of statements");
+            BufferingTransaction.LOGGER.info("Removing unprecised number of statements");
             for (final Statement statement : statements) {
                 this.statements.add(statement);
-                if (this.statements.size() == BATCH_SIZE) {
-                    LOGGER.debug("Flushing buffer due to capacity reached: "
-                            + "removing {} statements to repository", this.statements.size());
-                    delegate().remove(this.statements, this.contexts);
+                if (this.statements.size() == BufferingTransaction.BATCH_SIZE) {
+                    BufferingTransaction.LOGGER.info(
+                            "Flushing buffer due to capacity reached: "
+                                    + "removing {} statements to repository",
+                            this.statements.size());
+                    this.delegate().remove(this.statements, this.contexts);
                     this.statements.clear();
                 }
             }
-            LOGGER.debug("Buffer contains {} statements to be removed", this.statements.size());
+            BufferingTransaction.LOGGER.info("Buffer contains {} statements to be removed",
+                    this.statements.size());
         }
     }
 
@@ -398,15 +417,16 @@ final class BufferingTransaction extends ForwardingTransaction
      * wildcards, so to exploit buffering, otherwise flushes and delegates.
      */
     @Override
-    public void remove(@Nullable final Resource subject, @Nullable final URI predicate,
+    public void remove(@Nullable final Resource subject, @Nullable final IRI predicate,
             @Nullable final Value object, final Resource... contexts) throws RepositoryException
     {
         if (subject != null && predicate != null && object != null) {
-            remove(Collections.singleton(ValueFactoryImpl.getInstance().createStatement(subject,
-                    predicate, object)), contexts);
+            this.remove(Collections.singleton(
+                    SimpleValueFactory.getInstance().createStatement(subject, predicate, object)),
+                    contexts);
         } else {
-            flush();
-            delegate().remove(subject, predicate, object, contexts);
+            this.flush();
+            this.delegate().remove(subject, predicate, object, contexts);
         }
     }
 
@@ -416,8 +436,8 @@ final class BufferingTransaction extends ForwardingTransaction
     @Override
     public ClosureStatus getClosureStatus() throws RepositoryException
     {
-        flush();
-        return delegate().getClosureStatus();
+        this.flush();
+        return this.delegate().getClosureStatus();
     }
 
     /**
@@ -426,8 +446,8 @@ final class BufferingTransaction extends ForwardingTransaction
     @Override
     public void updateClosure() throws RepositoryException
     {
-        flush();
-        delegate().updateClosure();
+        this.flush();
+        this.delegate().updateClosure();
     }
 
     /**
@@ -436,8 +456,8 @@ final class BufferingTransaction extends ForwardingTransaction
     @Override
     public void clearClosure() throws RepositoryException
     {
-        flush();
-        delegate().clearClosure();
+        this.flush();
+        this.delegate().clearClosure();
     }
 
     /**
@@ -447,7 +467,7 @@ final class BufferingTransaction extends ForwardingTransaction
     public void reset() throws RepositoryException
     {
         this.statements.clear();
-        delegate().reset();
+        this.delegate().reset();
     }
 
     /**
@@ -457,13 +477,13 @@ final class BufferingTransaction extends ForwardingTransaction
      */
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
         if (!writeOperation || closureNeeded) {
-            flush();
+            this.flush();
         }
-        return delegate().execute(operation, writeOperation, closureNeeded);
+        return this.delegate().execute(operation, writeOperation, closureNeeded);
     }
 
     /**
@@ -472,8 +492,8 @@ final class BufferingTransaction extends ForwardingTransaction
     @Override
     public void end(final boolean commit) throws RepositoryException
     {
-        flush();
-        delegate().end(commit);
+        this.flush();
+        this.delegate().end(commit);
     }
 
 }

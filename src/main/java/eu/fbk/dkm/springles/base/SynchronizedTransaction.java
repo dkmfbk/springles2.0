@@ -12,25 +12,24 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.query.impl.TupleQueryResultImpl;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryResult;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.GraphQueryResult;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.query.impl.IteratingGraphQueryResult;
+import org.eclipse.rdf4j.query.impl.IteratingTupleQueryResult;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import info.aduna.iteration.CloseableIteration;
 
 import eu.fbk.dkm.internal.util.Iterations;
 import eu.fbk.dkm.springles.ClosureStatus;
@@ -113,7 +112,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
         /**
          * Callback method invoked when the transaction for which the listener has been supplied
          * ends.
-         * 
+         *
          * @param committed
          *            <tt>true</tt>, if the transaction was committed
          * @param newClosureStatus
@@ -151,13 +150,17 @@ final class SynchronizedTransaction extends ForwardingTransaction
     /** A semaphore objects used for read/write synchronization. */
     private final Semaphore semaphore; // unfair mode (expect low contention)
 
-    /** A set of pending iterations returned by the transaction, to end if the transaction ends. */
+    /**
+     * A set of pending iterations returned by the transaction, to end if the transaction ends.
+     */
     private final Set<CloseableIteration<?, ?>> pendingIterations;
 
     /** A flag being <tt>true</tt> if closure may be not up-to-date. */
     private volatile boolean checkClosure; // unsynchronized: updateClosure is nop if not needed
 
-    /** A flag being <tt>true</tt> if further operations must be rejected (for auto-commit mode). */
+    /**
+     * A flag being <tt>true</tt> if further operations must be rejected (for auto-commit mode).
+     */
     private volatile boolean rejectStartOperation;
 
     /** A thread local variable storing the states of thread busy in transaction operations. */
@@ -166,14 +169,16 @@ final class SynchronizedTransaction extends ForwardingTransaction
     /** The transaction status. */
     private volatile TransactionStatus transactionStatus;
 
-    /** The optional watchdog, activated periodically to check and react for transaction timeout. */
+    /**
+     * The optional watchdog, activated periodically to check and react for transaction timeout.
+     */
     @Nullable
     private Watchdog watchdog;
 
     /**
      * Creates a new instance wrapping the transaction supplied, not enforcing maximum idle and
      * execution times.
-     * 
+     *
      * @param delegate
      *            the wrapped transaction
      * @param writable
@@ -196,7 +201,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
         this.autoCommit = autoCommit;
         this.autoClosure = autoClosure;
         this.listener = listener;
-        this.semaphore = new Semaphore(MAX_CONCURRENT_OPERATIONS, true);
+        this.semaphore = new Semaphore(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS, true);
         this.pendingIterations = Sets.newHashSet();
         this.checkClosure = autoClosure; // force checking at first operation
         this.rejectStartOperation = false;
@@ -215,7 +220,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
     /**
      * Creates a new instance wrapping the transaction supplied and enforcing the maximum
      * execution and idle times.
-     * 
+     *
      * @param delegate
      *            the wrapped transaction
      * @param writable
@@ -264,7 +269,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * enforces proper operation synchronization, ensuring a read operation is not started if a
      * write operation is in progress; and (3) it ensures the closure is up-to-date before
      * starting the operation, if <tt>closureNeeded</tt> is <tt>true</tt>.
-     * 
+     *
      * @param closureNeeded
      *            <tt>true</tt> if closure must be up-to-date before starting the operation
      * @throws RepositoryException
@@ -276,34 +281,36 @@ final class SynchronizedTransaction extends ForwardingTransaction
         switch (this.threadStatus.get()) {
         case OUTSIDE_EXECUTE:
             if (this.rejectStartOperation || this.transactionStatus != TransactionStatus.ACTIVE) {
-                startOperationFailed();
+                this.startOperationFailed();
             }
             try {
                 if (this.checkClosure && closureNeeded) {
-                    this.semaphore.acquire(MAX_CONCURRENT_OPERATIONS);
+                    this.semaphore.acquire(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
                     try {
                         if (this.transactionStatus != TransactionStatus.ACTIVE) {
-                            startOperationFailed();
+                            this.startOperationFailed();
                         }
-                        delegate().updateClosure();
+                        this.delegate().updateClosure();
                         this.checkClosure = false;
                     } finally {
                         if (!this.checkClosure) { // success
-                            this.semaphore.release(MAX_CONCURRENT_OPERATIONS - 1);
+                            this.semaphore.release(
+                                    SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS - 1);
                         } else { // failure
-                            this.semaphore.release(MAX_CONCURRENT_OPERATIONS);
+                            this.semaphore
+                                    .release(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
                         }
                     }
                 } else {
                     this.semaphore.acquire();
                 }
             } catch (final InterruptedException ex) {
-                throw new RepositoryException("Thread interrupted while acquiring lock to "
-                        + "start a read operation");
+                throw new RepositoryException(
+                        "Thread interrupted while acquiring lock to " + "start a read operation");
             }
             if (this.transactionStatus != TransactionStatus.ACTIVE) {
                 this.semaphore.release();
-                startOperationFailed();
+                this.startOperationFailed();
             }
             this.rejectStartOperation |= this.autoCommit;
             break;
@@ -311,10 +318,10 @@ final class SynchronizedTransaction extends ForwardingTransaction
         case INSIDE_READ_EXECUTE:
         case INSIDE_WRITE_EXECUTE:
             if (this.checkClosure && closureNeeded) {
-                delegate().updateClosure();
+                this.delegate().updateClosure();
                 this.checkClosure = false;
                 if (this.transactionStatus != TransactionStatus.ACTIVE) {
-                    startOperationFailed();
+                    this.startOperationFailed();
                 }
             }
             break;
@@ -331,7 +338,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * enforces proper operation synchronization, ensuring the write operation starts when no
      * other operation is in progress; and (3) it ensures the closure is up-to-date before
      * starting the operation, if <tt>closureNeeded</tt> is <tt>true</tt>.
-     * 
+     *
      * @param closureNeeded
      *            <tt>true</tt> if closure must be up-to-date before starting the operation
      * @throws RepositoryException
@@ -348,32 +355,32 @@ final class SynchronizedTransaction extends ForwardingTransaction
         switch (this.threadStatus.get()) {
         case OUTSIDE_EXECUTE:
             if (this.rejectStartOperation || this.transactionStatus != TransactionStatus.ACTIVE) {
-                startOperationFailed();
+                this.startOperationFailed();
             }
             try {
-                this.semaphore.acquire(MAX_CONCURRENT_OPERATIONS);
+                this.semaphore.acquire(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
                 boolean success = false;
                 try {
                     if (this.transactionStatus != TransactionStatus.ACTIVE) {
-                        startOperationFailed();
+                        this.startOperationFailed();
                     }
                     if (this.checkClosure && closureNeeded) {
-                        delegate().updateClosure();
+                        this.delegate().updateClosure();
                         this.checkClosure = false;
                         if (this.transactionStatus != TransactionStatus.ACTIVE) {
-                            startOperationFailed();
+                            this.startOperationFailed();
                         }
                     }
                     success = true;
                 } finally {
                     if (!success) {
-                        this.semaphore.release(MAX_CONCURRENT_OPERATIONS);
+                        this.semaphore.release(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
                     }
                 }
 
             } catch (final InterruptedException ex) {
-                throw new RepositoryException("Thread interrupted while acquiring lock to "
-                        + "start a read operation");
+                throw new RepositoryException(
+                        "Thread interrupted while acquiring lock to " + "start a read operation");
             }
             this.rejectStartOperation |= this.autoCommit;
             break;
@@ -384,10 +391,10 @@ final class SynchronizedTransaction extends ForwardingTransaction
 
         case INSIDE_WRITE_EXECUTE:
             if (this.checkClosure && closureNeeded) {
-                delegate().updateClosure();
+                this.delegate().updateClosure();
                 this.checkClosure = false;
                 if (this.transactionStatus != TransactionStatus.ACTIVE) {
-                    startOperationFailed();
+                    this.startOperationFailed();
                 }
             }
             break;
@@ -408,11 +415,11 @@ final class SynchronizedTransaction extends ForwardingTransaction
             throw new IllegalStateException("Transaction is being ended while acquiring lock "
                     + "to start a new operation. Operation aborted.");
         case ENDED:
-            throw new IllegalStateException("Transaction already ended. "
-                    + "Cannot start new operations.");
+            throw new IllegalStateException(
+                    "Transaction already ended. " + "Cannot start new operations.");
         case TIMEDOUT:
-            throw new IllegalStateException("Transaction has timed out. "
-                    + "Cannot start new operation");
+            throw new IllegalStateException(
+                    "Transaction has timed out. " + "Cannot start new operation");
         default:
             if (this.rejectStartOperation) {
                 throw new Error("Cannot start more than one operation "
@@ -426,7 +433,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * Method called each time a read operation ends. The method releases the shared read lock
      * associated to the operation, performs auto-commit if required and updates the
      * {@link #watchdog} associated to the operation.
-     * 
+     *
      * @throws RepositoryException
      *             in case auto-commit fails
      */
@@ -438,8 +445,9 @@ final class SynchronizedTransaction extends ForwardingTransaction
         if (this.threadStatus.get() == ThreadStatus.OUTSIDE_EXECUTE) {
             this.semaphore.release();
             if (this.autoCommit) {
-                end(true);
-                LOGGER.debug("[{}] Transaction automatically committed", getID());
+                this.end(true);
+                SynchronizedTransaction.LOGGER.info("[{}] Transaction automatically committed",
+                        this.getID());
             }
         }
     }
@@ -448,7 +456,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * Method called each time a write operation ends. The method releases the exclusive lock
      * associated to the operation, performs auto-commit if required and updates the
      * {@link #watchdog} associated to the operation.
-     * 
+     *
      * @param operationSucceeded
      *            in auto-commit mode, controls whether a commit or a rollback must occur
      * @throws RepositoryException
@@ -460,12 +468,12 @@ final class SynchronizedTransaction extends ForwardingTransaction
             this.watchdog.touch();
         }
         if (this.threadStatus.get() == ThreadStatus.OUTSIDE_EXECUTE) {
-            this.semaphore.release(MAX_CONCURRENT_OPERATIONS);
+            this.semaphore.release(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
             if (this.autoCommit) {
-                end(operationSucceeded);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[{}] Transaction automatically {}", getID(),
-                            operationSucceeded ? "committed" : "rolled-back");
+                this.end(operationSucceeded);
+                if (SynchronizedTransaction.LOGGER.isInfoEnabled()) {
+                    SynchronizedTransaction.LOGGER.info("[{}] Transaction automatically {}",
+                            this.getID(), operationSucceeded ? "committed" : "rolled-back");
                 }
             }
         }
@@ -489,7 +497,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * transaction is ending/ended, the iteration is terminated immediately; otherwise (if outside
      * an <tt>execute()</tt> call), the iteration is registered as pending and is wrapped so to be
      * able to unregister it or force its termination when the transaction ends.
-     * 
+     *
      * @param iteration
      *            the intercepted iteration returned by the transaction
      * @return the supplied iteration, when possible, or a wrapper of if
@@ -498,7 +506,9 @@ final class SynchronizedTransaction extends ForwardingTransaction
             final CloseableIteration<? extends T, RepositoryException> iteration)
     {
         if (this.transactionStatus != TransactionStatus.ACTIVE) {
-            LOGGER.debug("[{}] Forcing closure of iteration as transaction is not active", getID());
+            SynchronizedTransaction.LOGGER.info(
+                    "[{}] Forcing closure of iteration as transaction is not active",
+                    this.getID());
             Iterations.closeQuietly(iteration);
             return iteration;
 
@@ -515,7 +525,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
                         super.handleClose();
                     } finally {
                         SynchronizedTransaction.this.pendingIterations.remove(iteration);
-                        endReadOperation();
+                        SynchronizedTransaction.this.endReadOperation();
                     }
                 }
 
@@ -529,10 +539,13 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * Method called each time a tuple result is returned by the transaction. The method performs
      * similarly to {@link #wrap(CloseableIteration)}.
      */
-    private synchronized TupleQueryResult wrap(final TupleQueryResult iteration) throws QueryEvaluationException
+    private synchronized TupleQueryResult wrap(final TupleQueryResult iteration)
+            throws QueryEvaluationException
     {
         if (this.transactionStatus != TransactionStatus.ACTIVE) {
-            LOGGER.debug("[{}] Forcing closure of iteration as transaction is not active", getID());
+            SynchronizedTransaction.LOGGER.info(
+                    "[{}] Forcing closure of iteration as transaction is not active",
+                    this.getID());
             Iterations.closeQuietly(iteration);
             return iteration;
 
@@ -540,20 +553,20 @@ final class SynchronizedTransaction extends ForwardingTransaction
             return iteration;
 
         } else {
-            final TupleQueryResult wrappedIteration = new TupleQueryResultImpl(
+            final TupleQueryResult wrappedIteration = new IteratingTupleQueryResult(
                     iteration.getBindingNames(), iteration) {
 
-             
-                public void handleClose() throws QueryEvaluationException
+                @Override
+                protected void handleClose() throws QueryEvaluationException
                 {
                     try {
-                        super.close();
+                        super.handleClose();
                     } finally {
                         try {
                             SynchronizedTransaction.this.pendingIterations.remove(iteration);
-                            endReadOperation();
+                            SynchronizedTransaction.this.endReadOperation();
                         } catch (final RepositoryException ex) {
-                            throw new QueryEvaluationException(ex);
+
                         }
                     }
                 }
@@ -567,12 +580,16 @@ final class SynchronizedTransaction extends ForwardingTransaction
     /**
      * Method called each time a graph result is returned by the transaction. The method performs
      * similarly to {@link #wrap(CloseableIteration)}.
-     * @throws QueryEvaluationException 
+     *
+     * @throws QueryEvaluationException
      */
-    private synchronized GraphQueryResult wrap(final GraphQueryResult iteration) throws QueryEvaluationException
+    private synchronized GraphQueryResult wrap(final GraphQueryResult iteration)
+            throws QueryEvaluationException
     {
         if (this.transactionStatus != TransactionStatus.ACTIVE) {
-            LOGGER.debug("[{}] Forcing closure of iteration as transaction is not active", getID());
+            SynchronizedTransaction.LOGGER.info(
+                    "[{}] Forcing closure of iteration as transaction is not active",
+                    this.getID());
             Iterations.closeQuietly(iteration);
             return iteration;
 
@@ -580,7 +597,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
             return iteration;
 
         } else {
-            final GraphQueryResult wrappedIteration = new GraphQueryResultImpl(
+            final GraphQueryResult wrappedIteration = new IteratingGraphQueryResult(
                     iteration.getNamespaces(), iteration) {
 
                 @Override
@@ -591,7 +608,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
                     } finally {
                         try {
                             SynchronizedTransaction.this.pendingIterations.remove(iteration);
-                            endReadOperation();
+                            SynchronizedTransaction.this.endReadOperation();
                         } catch (final RepositoryException ex) {
                             throw new QueryEvaluationException(ex);
                         }
@@ -606,21 +623,21 @@ final class SynchronizedTransaction extends ForwardingTransaction
 
     /**
      * Wraps an object if it is an iteration, calling the appropriate <tt>wrap</tt> method.
-     * 
+     *
      * @param object
      *            the object that has to be possibly wrapped
      * @return the object itself or a wrapper of it
-     * @throws QueryEvaluationException 
+     * @throws QueryEvaluationException
      */
     @SuppressWarnings("unchecked")
     private <T> T wrapIfNecessary(@Nullable final T object) throws QueryEvaluationException
     {
         if (object instanceof TupleQueryResult) {
-            return (T) wrap((TupleQueryResult) object);
+            return (T) this.wrap((TupleQueryResult) object);
         } else if (object instanceof GraphQueryResult) {
-            return (T) wrap((GraphQueryResult) object);
+            return (T) this.wrap((GraphQueryResult) object);
         } else if (object instanceof CloseableIteration<?, ?>) {
-            return (T) wrap((CloseableIteration<?, RepositoryException>) object);
+            return (T) this.wrap((CloseableIteration<?, RepositoryException>) object);
         } else {
             return object;
         }
@@ -634,11 +651,11 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public String getNamespace(final String prefix) throws RepositoryException
     {
-        startReadOperation(false);
+        this.startReadOperation(false);
         try {
-            return delegate().getNamespace(prefix);
+            return this.delegate().getNamespace(prefix);
         } finally {
-            endReadOperation();
+            this.endReadOperation();
         }
     }
 
@@ -649,14 +666,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public CloseableIteration<? extends Namespace, RepositoryException> getNamespaces()
             throws RepositoryException
     {
-        startReadOperation(false);
+        this.startReadOperation(false);
         CloseableIteration<? extends Namespace, RepositoryException> result = null;
         try {
-            result = wrap(delegate().getNamespaces());
+            result = this.wrap(this.delegate().getNamespaces());
             return result;
         } finally {
             if (result == null) {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
     }
@@ -668,13 +685,13 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public void setNamespace(final String prefix, @Nullable final String name)
             throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
-            delegate().setNamespace(prefix, name);
+            this.delegate().setNamespace(prefix, name);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -684,13 +701,13 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public void clearNamespaces() throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
-            delegate().clearNamespaces();
+            this.delegate().clearNamespaces();
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -702,12 +719,12 @@ final class SynchronizedTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout,
             final Object handler) throws QueryEvaluationException, RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
         try {
-            delegate().query(query, dataset, bindings, mode, timeout, handler);
+            this.delegate().query(query, dataset, bindings, mode, timeout, handler);
 
         } finally {
-            endReadOperation();
+            this.endReadOperation();
         }
     }
 
@@ -721,18 +738,18 @@ final class SynchronizedTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout)
             throws QueryEvaluationException, RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
 
         boolean success = false;
         try {
-            final T result = wrapIfNecessary(delegate().query(query, dataset, bindings, mode,
-                    timeout));
+            final T result = this.wrapIfNecessary(
+                    this.delegate().query(query, dataset, bindings, mode, timeout));
             success = true;
             return result;
 
         } finally {
             if (!success || query.getType() == QueryType.BOOLEAN) {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
     }
@@ -743,21 +760,21 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * the operation to complete.
      */
     @Override
-    public <T> T query(final URI queryURI, final QueryType<T> queryType, final InferenceMode mode,
+    public <T> T query(final IRI queryURI, final QueryType<T> queryType, final InferenceMode mode,
             final Object... parameters) throws QueryEvaluationException, RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
 
         boolean success = false;
         try {
-            final T result = wrapIfNecessary(delegate().query(queryURI, queryType, mode,
-                    parameters));
+            final T result = this
+                    .wrapIfNecessary(this.delegate().query(queryURI, queryType, mode, parameters));
             success = true;
             return result;
 
         } finally {
             if (!success || queryType == QueryType.BOOLEAN) {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
     }
@@ -770,14 +787,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public CloseableIteration<? extends Resource, RepositoryException> getContextIDs(
             final InferenceMode mode) throws RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
         CloseableIteration<? extends Resource, RepositoryException> result = null;
         try {
-            result = wrap(delegate().getContextIDs(mode));
+            result = this.wrap(this.delegate().getContextIDs(mode));
             return result;
         } finally {
             if (result == null) {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
     }
@@ -788,17 +805,17 @@ final class SynchronizedTransaction extends ForwardingTransaction
      */
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
         CloseableIteration<? extends Statement, RepositoryException> result = null;
         try {
-            result = wrap(delegate().getStatements(subj, pred, obj, mode, contexts));
+            result = this.wrap(this.delegate().getStatements(subj, pred, obj, mode, contexts));
             return result;
         } finally {
             if (result == null) {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
     }
@@ -807,15 +824,15 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * {@inheritDoc} Executes as a read operation with closure updated if forward inference is on.
      */
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
         try {
-            return delegate().hasStatement(subj, pred, obj, mode, contexts);
+            return this.delegate().hasStatement(subj, pred, obj, mode, contexts);
         } finally {
-            endReadOperation();
+            this.endReadOperation();
         }
     }
 
@@ -826,11 +843,11 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public long size(final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        startReadOperation(mode.isForwardEnabled());
+        this.startReadOperation(mode.isForwardEnabled());
         try {
-            return delegate().size(mode, contexts);
+            return this.delegate().size(mode, contexts);
         } finally {
-            endReadOperation();
+            this.endReadOperation();
         }
     }
 
@@ -842,14 +859,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
             @Nullable final BindingSet bindings, final InferenceMode mode)
             throws UpdateExecutionException, RepositoryException
     {
-        startWriteOperation(mode.isForwardEnabled());
+        this.startWriteOperation(mode.isForwardEnabled());
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().update(update, dataset, bindings, mode);
+            this.delegate().update(update, dataset, bindings, mode);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -857,17 +874,17 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * {@inheritDoc} Executes as a write operation; closure is updated if forward inference is on.
      */
     @Override
-    public void update(final URI updateURI, final InferenceMode mode, final Object... parameters)
+    public void update(final IRI updateURI, final InferenceMode mode, final Object... parameters)
             throws UpdateExecutionException, RepositoryException
     {
-        startWriteOperation(mode.isForwardEnabled());
+        this.startWriteOperation(mode.isForwardEnabled());
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().update(updateURI, mode, parameters);
+            this.delegate().update(updateURI, mode, parameters);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -878,14 +895,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public void add(final Iterable<? extends Statement> statements, final Resource... contexts)
             throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().add(statements, contexts);
+            this.delegate().add(statements, contexts);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -896,14 +913,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     public void remove(final Iterable<? extends Statement> statements, final Resource... contexts)
             throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().remove(statements, contexts);
+            this.delegate().remove(statements, contexts);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -911,17 +928,17 @@ final class SynchronizedTransaction extends ForwardingTransaction
      * {@inheritDoc} Executes as a write operation with no closure requirement.
      */
     @Override
-    public void remove(@Nullable final Resource subject, @Nullable final URI predicate,
+    public void remove(@Nullable final Resource subject, @Nullable final IRI predicate,
             @Nullable final Value object, final Resource... contexts) throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().remove(subject, predicate, object, contexts);
+            this.delegate().remove(subject, predicate, object, contexts);
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -931,11 +948,11 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public ClosureStatus getClosureStatus() throws RepositoryException
     {
-        startReadOperation(false);
+        this.startReadOperation(false);
         try {
-            return delegate().getClosureStatus();
+            return this.delegate().getClosureStatus();
         } finally {
-            endReadOperation();
+            this.endReadOperation();
         }
     }
 
@@ -946,14 +963,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public void updateClosure() throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
-            delegate().updateClosure();
+            this.delegate().updateClosure();
             this.checkClosure = this.autoClosure;
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -964,14 +981,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public void clearClosure() throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().clearClosure();
+            this.delegate().clearClosure();
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -982,14 +999,14 @@ final class SynchronizedTransaction extends ForwardingTransaction
     @Override
     public void reset() throws RepositoryException
     {
-        startWriteOperation(false);
+        this.startWriteOperation(false);
         boolean success = false;
         try {
             this.checkClosure = this.autoClosure;
-            delegate().reset();
+            this.delegate().reset();
             success = true;
         } finally {
-            endWriteOperation(success);
+            this.endWriteOperation(success);
         }
     }
 
@@ -999,37 +1016,38 @@ final class SynchronizedTransaction extends ForwardingTransaction
      */
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
         if (writeOperation) {
-            startWriteOperation(closureNeeded);
+            this.startWriteOperation(closureNeeded);
         } else {
-            startReadOperation(closureNeeded);
+            this.startReadOperation(closureNeeded);
         }
 
         boolean success = false;
         try {
             this.threadStatus.set(writeOperation ? ThreadStatus.INSIDE_WRITE_EXECUTE
                     : ThreadStatus.INSIDE_READ_EXECUTE);
-            T result = delegate().execute(operation, writeOperation, closureNeeded);
+            T result = this.delegate().execute(operation, writeOperation, closureNeeded);
             this.threadStatus.set(ThreadStatus.OUTSIDE_EXECUTE);
-            result = wrapIfNecessary(result);
+            result = this.wrapIfNecessary(result);
             success = true;
             return result;
 
-        } catch (QueryEvaluationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
+        } catch (final QueryEvaluationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        } finally {
             this.threadStatus.set(ThreadStatus.OUTSIDE_EXECUTE);
             if (writeOperation) {
-                endWriteOperation(success);
+                this.endWriteOperation(success);
             } else {
-                endReadOperation();
+                this.endReadOperation();
             }
         }
-		return null;
+
     }
 
     /**
@@ -1046,36 +1064,40 @@ final class SynchronizedTransaction extends ForwardingTransaction
                 return; // BEWARE: don't wait for end() to complete.
             }
             this.transactionStatus = TransactionStatus.ENDING;
-            closeIterations();
+            this.closeIterations();
         }
 
         ClosureStatus newClosureStatus = null;
         boolean committed = false;
         boolean actualCommit = commit;
 
-        this.semaphore.acquireUninterruptibly(MAX_CONCURRENT_OPERATIONS);
+        this.semaphore.acquireUninterruptibly(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS);
         try {
             try {
                 if (this.checkClosure) {
                     actualCommit = false;
-                    delegate().updateClosure();
+                    this.delegate().updateClosure();
                     this.checkClosure = false;
                     actualCommit = commit;
                 }
             } finally {
-                newClosureStatus = delegate().getClosureStatus();
-                delegate().end(actualCommit);
+                newClosureStatus = this.delegate().getClosureStatus();
+                this.delegate().end(actualCommit);
                 committed = actualCommit;
             }
 
         } finally {
             this.transactionStatus = TransactionStatus.ENDED;
-            this.semaphore.release(MAX_CONCURRENT_OPERATIONS); // allows pending calls to complete
+            this.semaphore.release(SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS); // allows
+                                                                                       // pending
+                                                                                       // calls to
+                                                                                       // complete
             if (this.listener != null) {
                 try {
                     this.listener.transactionEnded(committed, newClosureStatus);
                 } catch (final Throwable ex) {
-                    LOGGER.warn("Unexpected exception thrown by listener. Ignoring.", ex);
+                    SynchronizedTransaction.LOGGER
+                            .warn("Unexpected exception thrown by listener. Ignoring.", ex);
                 }
             }
             this.threadStatus.set(null); // avoid memory leaks
@@ -1116,7 +1138,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
         /**
          * Creates a new instance for the maximum times specified, and register it with the
          * supplied scheduler.
-         * 
+         *
          * @param maxExecutionTime
          *            the maximum transaction execution time, in ms
          * @param maxIdleTime
@@ -1131,8 +1153,9 @@ final class SynchronizedTransaction extends ForwardingTransaction
             this.maxIdleTime = maxIdleTime;
             this.startTime = System.currentTimeMillis();
             this.idleTime = this.startTime;
-            this.future = scheduler.scheduleAtFixedRate(this, WATCHDOG_PERIOD, WATCHDOG_PERIOD,
-                    TimeUnit.MILLISECONDS);
+            this.future = scheduler.scheduleAtFixedRate(this,
+                    SynchronizedTransaction.WATCHDOG_PERIOD,
+                    SynchronizedTransaction.WATCHDOG_PERIOD, TimeUnit.MILLISECONDS);
         }
 
         /**
@@ -1145,7 +1168,7 @@ final class SynchronizedTransaction extends ForwardingTransaction
 
         /**
          * Checks whether the transaction time out, w.r.t. the maximum execution and idle times.
-         * 
+         *
          * @return true if transaction timeout occurred
          */
         public boolean timeout()
@@ -1154,8 +1177,8 @@ final class SynchronizedTransaction extends ForwardingTransaction
             final long time = System.currentTimeMillis();
             return this.maxExecutionTime > 0 && time - this.startTime > this.maxExecutionTime
                     || this.maxIdleTime > 0 && time - this.idleTime > this.maxIdleTime
-                    && tx.transactionStatus == TransactionStatus.ACTIVE
-                    && tx.semaphore.availablePermits() == MAX_CONCURRENT_OPERATIONS;
+                            && tx.transactionStatus == TransactionStatus.ACTIVE && tx.semaphore
+                                    .availablePermits() == SynchronizedTransaction.MAX_CONCURRENT_OPERATIONS;
         }
 
         /**
@@ -1167,16 +1190,17 @@ final class SynchronizedTransaction extends ForwardingTransaction
         {
             final SynchronizedTransaction tx = SynchronizedTransaction.this;
 
-            if (timeout() && tx.transactionStatus == TransactionStatus.ACTIVE) {
+            if (this.timeout() && tx.transactionStatus == TransactionStatus.ACTIVE) {
                 try {
                     tx.end(false);
                 } catch (final Throwable ex) {
-                    LOGGER.error("Exception caught while ending timed out transaction", ex);
+                    SynchronizedTransaction.LOGGER
+                            .error("Exception caught while ending timed out transaction", ex);
                 }
                 if (tx.transactionStatus == TransactionStatus.ENDED) {
                     tx.transactionStatus = TransactionStatus.TIMEDOUT;
                 }
-                close();
+                this.close();
             }
         }
 

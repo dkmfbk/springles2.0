@@ -4,15 +4,13 @@ import java.io.File;
 
 import javax.annotation.Nullable;
 
-import com.bigdata.rdf.sail.BigdataSailRepository;
 import com.google.common.base.Preconditions;
 
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.Repository;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import eu.fbk.dkm.springles.base.Transaction;
 import eu.fbk.dkm.springles.base.Transactions;
@@ -34,14 +32,8 @@ import eu.fbk.dkm.springles.base.Transactions;
 public abstract class AbstractRepositoryBackend implements Backend
 {
 
-    /** Shared log object. */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRepositoryBackend.class);
-
     /** The wrapped repository object, assigned at initialization time. */
     private Repository repository;
-
-    /** Flag being <tt>true</tt> if a Bigdata repository has been detected. */
-    private boolean isBigdata;
 
     /**
      * Flag being <tt>true</tt> if the wrapped repository is writable, caching property
@@ -55,7 +47,6 @@ public abstract class AbstractRepositoryBackend implements Backend
     protected AbstractRepositoryBackend()
     {
         this.repository = null;
-        this.isBigdata = false;
         this.writable = false;
     }
 
@@ -68,21 +59,16 @@ public abstract class AbstractRepositoryBackend implements Backend
     public final synchronized void initialize(@Nullable final File dataDir)
             throws RepositoryException
     {
-        this.repository = initializeRepository(dataDir);
+        this.repository = this.initializeRepository(dataDir);
         this.repository.initialize();
         this.writable = this.repository.isWritable();
-
-        if (this.repository.getClass().getName().toLowerCase().contains("bigdata")) {
-            this.isBigdata = true;
-            LOGGER.debug("Bigdata repository detected: read-only connections enabled");
-        }
     }
 
     /**
      * Acquires and initializes the wrapped repository, based on the supplied optional data
      * directory. This method is called by {@link #initialize(File)} and must return a the wrapped
      * repository instance, non-initialized.
-     * 
+     *
      * @param dataDir
      *            the data directory, possibly <tt>null</tt> for transient backends
      * @return a non-initialized repository instance
@@ -95,7 +81,7 @@ public abstract class AbstractRepositoryBackend implements Backend
     /**
      * Provides access to the wrapped repository object. This method can be called only after
      * initialization of the backend.
-     * 
+     *
      * @return the wrapped repository object
      */
     protected final Repository getRepository()
@@ -133,12 +119,9 @@ public abstract class AbstractRepositoryBackend implements Backend
     public synchronized Transaction newTransaction(final String id, final boolean writable)
             throws RepositoryException
     {
-        final RepositoryConnection connection = this.isBigdata ? getBigdataConnection(
-                this.repository, writable) : this.repository.getConnection();
-        connection.setAutoCommit(false);
-
-        return writable ? new RepositoryTransaction(id, connection) : Transactions
-                .unmodifiableTransaction(new RepositoryTransaction(id, connection));
+        final RepositoryConnection connection = this.repository.getConnection();
+        return writable ? new RepositoryTransaction(id, connection)
+                : Transactions.unmodifiableTransaction(new RepositoryTransaction(id, connection));
     }
 
     /**
@@ -148,25 +131,6 @@ public abstract class AbstractRepositoryBackend implements Backend
     public synchronized void close() throws RepositoryException
     {
         this.repository.shutDown();
-    }
-
-    /**
-     * Helper method that opens the appropriate Bigdata repository connection based on the
-     * specified <tt>writable</tt> parameter.
-     * 
-     * @param repository
-     *            the Bigdata repository
-     * @param writable
-     *            the desired <tt>writable</tt> status for the connection
-     * @return the opened connection, on success
-     * @throws RepositoryException
-     *             on failure
-     */
-    private static RepositoryConnection getBigdataConnection(final Repository repository,
-            final boolean writable) throws RepositoryException
-    {
-        final BigdataSailRepository bigdata = (BigdataSailRepository) repository;
-        return writable ? bigdata.getReadOnlyConnection() : bigdata.getConnection();
     }
 
 }

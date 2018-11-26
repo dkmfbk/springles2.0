@@ -7,20 +7,19 @@ import javax.annotation.Nullable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.slf4j.Logger;
-
-import info.aduna.iteration.CloseableIteration;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
@@ -44,7 +43,7 @@ final class DebuggingTransaction extends ForwardingTransaction
     @Override
     protected Transaction delegate()
     {
-        return delegate();
+        return this.delegate();
     }
 
     @Override
@@ -65,18 +64,17 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(prefix);
         Preconditions.checkState(!this.closed);
 
-        this.logger
-                .debug("[{}] Retrieving namespace for prefix {}", this.delegate.getID(), prefix);
+        this.logger.info("[{}] Retrieving namespace for prefix {}", this.delegate.getID(), prefix);
         return this.delegate.getNamespace(prefix);
     }
 
     @Override
     public CloseableIteration<? extends Namespace, RepositoryException> //
-    getNamespaces() throws RepositoryException
+            getNamespaces() throws RepositoryException
     {
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Retrieving namespaces", this.delegate.getID());
+        this.logger.info("[{}] Retrieving namespaces", this.delegate.getID());
         return this.delegate.getNamespaces();
     }
 
@@ -87,12 +85,12 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(prefix);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
+        if (this.logger.isInfoEnabled()) {
             if (name != null) {
-                this.logger.debug("[" + this.delegate.getID() + "] Binding prefix " + prefix
+                this.logger.info("[" + this.delegate.getID() + "] Binding prefix " + prefix
                         + " to namespace " + name);
             } else {
-                this.logger.debug("[" + this.delegate.getID()
+                this.logger.info("[" + this.delegate.getID()
                         + "] Removing namespace binding for prefix " + prefix);
             }
         }
@@ -105,7 +103,7 @@ final class DebuggingTransaction extends ForwardingTransaction
     {
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Clearing namespace bindings", this.delegate.getID());
+        this.logger.info("[{}] Clearing namespace bindings", this.delegate.getID());
         this.delegate.clearNamespaces();
     }
 
@@ -119,8 +117,8 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(handler);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            logQuery(query, dataset, bindings, timeout, handler);
+        if (this.logger.isInfoEnabled()) {
+            this.logQuery(query, dataset, bindings, timeout, handler);
         }
 
         this.delegate.query(query, dataset, bindings, mode, timeout, handler);
@@ -135,15 +133,15 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(mode);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            logQuery(query, dataset, bindings, timeout, null);
+        if (this.logger.isInfoEnabled()) {
+            this.logQuery(query, dataset, bindings, timeout, null);
         }
 
         return this.delegate.query(query, dataset, bindings, mode, timeout);
     }
 
     @Override
-    public <T> T query(final URI queryURI, final QueryType<T> queryType, final InferenceMode mode,
+    public <T> T query(final IRI queryURI, final QueryType<T> queryType, final InferenceMode mode,
             final Object... parameters) throws QueryEvaluationException, RepositoryException
     {
         Preconditions.checkNotNull(queryURI);
@@ -152,10 +150,12 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(parameters);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[{}] Evaluating named query {} of type {} with parameters {}; "
-                    + "inference mode is {}", new Object[] { this.delegate.getID(), queryURI,
-                    queryType, Arrays.toString(parameters), mode });
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info(
+                    "[{}] Evaluating named query {} of type {} with parameters {}; "
+                            + "inference mode is {}",
+                    new Object[] { this.delegate.getID(), queryURI, queryType,
+                            Arrays.toString(parameters), mode });
         }
 
         return this.delegate.query(queryURI, queryType, mode, parameters);
@@ -175,7 +175,7 @@ final class DebuggingTransaction extends ForwardingTransaction
             builder.append("; dataset is\n").append(dataset);
         }
         builder.append("\n").append(query);
-        this.logger.debug(builder.toString());
+        this.logger.info(builder.toString());
     }
 
     @Override
@@ -185,22 +185,22 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(mode);
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Retrieving context IDs", this.delegate.getID());
+        this.logger.info("[{}] Retrieving context IDs", this.delegate.getID());
 
         return this.delegate.getContextIDs(mode);
     }
 
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
         Preconditions.checkNotNull(mode);
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID() + "] Retrieving statements matching <"
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[" + this.delegate.getID() + "] Retrieving statements matching <"
                     + subj + ", " + pred + ", " + obj + ">" + (contexts.length == 0 ? "" : //
                             " in contexts " + Arrays.toString(contexts)));
         }
@@ -209,7 +209,7 @@ final class DebuggingTransaction extends ForwardingTransaction
     }
 
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
@@ -217,11 +217,11 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID()
-                    + "] Checking existence of statements matching <" + subj + ", " + pred + ", "
-                    + obj + ">" + (contexts.length == 0 ? "" : //
-                            " in contexts " + Arrays.toString(contexts)));
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info(
+                    "[" + this.delegate.getID() + "] Checking existence of statements matching <"
+                            + subj + ", " + pred + ", " + obj + ">" + (contexts.length == 0 ? "" : //
+                                    " in contexts " + Arrays.toString(contexts)));
         }
 
         return this.delegate.hasStatement(subj, pred, obj, mode, contexts);
@@ -235,7 +235,7 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Retrieving total number of statements", this.delegate.getID());
+        this.logger.info("[{}] Retrieving total number of statements", this.delegate.getID());
 
         return this.delegate.size(mode, contexts);
     }
@@ -248,8 +248,8 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(mode);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID() + "] Executing update"
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[" + this.delegate.getID() + "] Executing update"
                     + (bindings == null ? "" : " with " + bindings.size() + " bindings")
                     + (dataset == null ? "" : ", dataset is\n" + dataset) + "\n" + update);
         }
@@ -258,7 +258,7 @@ final class DebuggingTransaction extends ForwardingTransaction
     }
 
     @Override
-    public void update(final URI updateURI, final InferenceMode mode, final Object... parameters)
+    public void update(final IRI updateURI, final InferenceMode mode, final Object... parameters)
             throws UpdateExecutionException, RepositoryException
     {
         Preconditions.checkNotNull(updateURI);
@@ -266,10 +266,11 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(parameters);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[{}] Executing named update {} with parameters {}; inference "
-                    + "mode is {}", new Object[] { this.delegate.getID(), updateURI, //
-                    Arrays.toString(parameters), mode });
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info(
+                    "[{}] Executing named update {} with parameters {}; inference " + "mode is {}",
+                    new Object[] { this.delegate.getID(), updateURI, //
+                            Arrays.toString(parameters), mode });
         }
 
         this.delegate.update(updateURI, mode, parameters);
@@ -283,9 +284,9 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID() + "] Adding "
-                    + Iterables.size(statements) + " statements" + (contexts.length == 0 ? "" : //
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[" + this.delegate.getID() + "] Adding " + Iterables.size(statements)
+                    + " statements" + (contexts.length == 0 ? "" : //
                             " in contexts " + Arrays.toString(contexts)));
         }
 
@@ -300,8 +301,8 @@ final class DebuggingTransaction extends ForwardingTransaction
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID() + "] Removing "
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[" + this.delegate.getID() + "] Removing "
                     + Iterables.size(statements) + " statements" + (contexts.length == 0 ? "" : //
                             " from contexts " + Arrays.toString(contexts)));
         }
@@ -310,14 +311,14 @@ final class DebuggingTransaction extends ForwardingTransaction
     }
 
     @Override
-    public void remove(@Nullable final Resource subj, @Nullable final URI pred,
+    public void remove(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final Resource... contexts) throws RepositoryException
     {
         Preconditions.checkNotNull(contexts);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[" + this.delegate.getID() + "] Removing statements matching <"
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[" + this.delegate.getID() + "] Removing statements matching <"
                     + subj + ", " + pred + ", " + obj + ">" + (contexts.length == 0 ? "" : //
                             " from contexts " + Arrays.toString(contexts)));
         }
@@ -354,21 +355,21 @@ final class DebuggingTransaction extends ForwardingTransaction
     {
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Resetting repository", this.delegate.getID());
+        this.logger.info("[{}] Resetting repository", this.delegate.getID());
 
         this.delegate.reset();
     }
 
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
         Preconditions.checkNotNull(operation);
         Preconditions.checkState(!this.closed);
 
-        if (this.logger.isDebugEnabled()) {
-            this.logger.debug("[{}] Executing operation {}, write = {}, closure needed = {}",
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("[{}] Executing operation {}, write = {}, closure needed = {}",
                     new Object[] { this.delegate.getID(), operation.getClass().getName(),
                             writeOperation, closureNeeded });
         }
@@ -381,7 +382,7 @@ final class DebuggingTransaction extends ForwardingTransaction
     {
         Preconditions.checkState(!this.closed);
 
-        this.logger.debug("[{}] Ending transaction, commit = {}", this.delegate.getID(), commit);
+        this.logger.info("[{}] Ending transaction, commit = {}", this.delegate.getID(), commit);
 
         try {
             this.delegate.end(commit);

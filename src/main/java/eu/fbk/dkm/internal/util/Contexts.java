@@ -7,9 +7,9 @@ import javax.annotation.Nullable;
 import com.google.common.base.Predicate;
 import com.google.common.collect.AbstractIterator;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.ValueFactory;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.ValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

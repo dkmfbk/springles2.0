@@ -8,20 +8,22 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.RepositoryException;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.fbk.dkm.internal.util.Contexts;
 import eu.fbk.dkm.internal.util.Iterations;
@@ -52,6 +54,8 @@ import eu.fbk.dkm.springles.inferencer.Inferencer;
  */
 class InferenceContext implements Inferencer.Context
 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(InferenceContext.class);
 
     private final Transaction transaction;
 
@@ -121,8 +125,8 @@ class InferenceContext implements Inferencer.Context
         final String message = "Detected write request from inference engine affecting "
                 + "{} explicit contexts. Explicit contexts removed from the operation "
                 + "target. Operation will be performed on remaining contexts (if any).";
-        return Contexts.filter(contexts,
-                Predicates.not(this.inferredContextPrefix.valueMatcher()), message);
+        return Contexts.filter(contexts, Predicates.not(this.inferredContextPrefix.valueMatcher()),
+                message);
     }
 
     private Iterable<Statement> filter(final Iterable<? extends Statement> iterable)
@@ -130,8 +134,8 @@ class InferenceContext implements Inferencer.Context
         final String message = "Detected write request from inference engine affecting "
                 + "{} explicit statements. Explicit statements removed from the operation "
                 + "target. Operation will be performed on remaining statements (if any).";
-        return Contexts.filter(iterable,
-                Predicates.not(this.inferredContextPrefix.valueMatcher()), message);
+        return Contexts.filter(iterable, Predicates.not(this.inferredContextPrefix.valueMatcher()),
+                message);
     }
 
     private void checkAccessible()
@@ -160,7 +164,7 @@ class InferenceContext implements Inferencer.Context
     @Override
     public synchronized ValueFactory getValueFactory()
     {
-        checkAccessible();
+        this.checkAccessible();
 
         return this.transaction.getValueFactory();
     }
@@ -170,13 +174,13 @@ class InferenceContext implements Inferencer.Context
             final BindingSet bindings, final boolean includeClosure, final int timeout)
             throws MalformedQueryException, QueryEvaluationException, RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
         final T result = this.transaction.query(query, dataset, bindings,
                 includeClosure ? InferenceMode.FORWARD : InferenceMode.NONE, timeout);
 
         if (query.getType() != QueryType.BOOLEAN) {
-            register((CloseableIteration<?, ?>) result);
+            this.register((CloseableIteration<?, ?>) result);
         }
 
         return result;
@@ -184,30 +188,31 @@ class InferenceContext implements Inferencer.Context
 
     @Override
     public synchronized CloseableIteration<? extends Resource, RepositoryException> //
-    getContextIDs(final boolean includeClosure) throws RepositoryException
+            getContextIDs(final boolean includeClosure) throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
-        return register(this.transaction.getContextIDs(includeClosure ? InferenceMode.FORWARD
-                : InferenceMode.NONE));
+        return this.register(this.transaction
+                .getContextIDs(includeClosure ? InferenceMode.FORWARD : InferenceMode.NONE));
     }
 
     @Override
     public synchronized CloseableIteration<? extends Statement, RepositoryException> //
-    getStatements(final Resource subj, final URI pred, final Value obj,
-            final boolean includeClosure, final Resource... contexts) throws RepositoryException
+            getStatements(final Resource subj, final IRI pred, final Value obj,
+                    final boolean includeClosure, final Resource... contexts)
+                    throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
-        return register(this.transaction.getStatements(subj, pred, obj,
+        return this.register(this.transaction.getStatements(subj, pred, obj,
                 includeClosure ? InferenceMode.FORWARD : InferenceMode.NONE, contexts));
     }
 
     @Override
-    public synchronized boolean hasStatement(final Resource subj, final URI pred, final Value obj,
+    public synchronized boolean hasStatement(final Resource subj, final IRI pred, final Value obj,
             final boolean includeClosure, final Resource... contexts) throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
         return this.transaction.hasStatement(subj, pred, obj,
                 includeClosure ? InferenceMode.FORWARD : InferenceMode.NONE, contexts);
@@ -217,7 +222,7 @@ class InferenceContext implements Inferencer.Context
     public synchronized long size(final boolean includeClosure, final Resource... contexts)
             throws RepositoryException
     {
-        checkAccessible();
+        this.checkAccessible();
 
         return this.transaction.size(includeClosure ? InferenceMode.FORWARD : InferenceMode.NONE,
                 contexts);
@@ -229,15 +234,33 @@ class InferenceContext implements Inferencer.Context
     public synchronized void addInferred(final Iterable<? extends Statement> statements,
             final Resource... contexts) throws RepositoryException
     {
-        checkAccessible();
-        checkWritable();
+        if (InferenceContext.LOGGER.isTraceEnabled()) {
+            InferenceContext.LOGGER.trace("Before: repo_size={}, stmts{}",
+                    this.transaction.size(InferenceMode.FORWARD), Iterables.size(statements));
+        }
 
-        final Resource[] targetContexts = filter(contexts);
+        int numStatements = 0;
+        int numPresent = 0;
+        for (final Statement s : statements) {
+            ++numStatements;
+            if (this.transaction.hasStatement(s.getSubject(), s.getPredicate(), s.getObject(),
+                    InferenceMode.FORWARD, s.getContext())) {
+                ++numPresent;
+            }
+        }
 
+        this.checkAccessible();
+        this.checkWritable();
+        final Resource[] targetContexts = this.filter(contexts);
         if (targetContexts == Contexts.UNSPECIFIED) {
-            this.transaction.add(filter(statements), targetContexts);
+            this.transaction.add(this.filter(statements), targetContexts);
         } else if (targetContexts != Contexts.NONE) {
             this.transaction.add(statements, targetContexts);
+        }
+
+        if (InferenceContext.LOGGER.isTraceEnabled()) {
+            InferenceContext.LOGGER.trace("After: repo_size={}, stmts={}, present={}",
+                    this.transaction.size(InferenceMode.FORWARD), numStatements, numPresent);
         }
     }
 
@@ -245,31 +268,31 @@ class InferenceContext implements Inferencer.Context
     public synchronized void removeInferred(final Iterable<? extends Statement> statements,
             final Resource... contexts) throws RepositoryException
     {
-        checkAccessible();
-        checkWritable();
+        this.checkAccessible();
+        this.checkWritable();
 
-        final Resource[] targetContexts = filter(contexts);
+        final Resource[] targetContexts = this.filter(contexts);
 
         if (targetContexts == Contexts.UNSPECIFIED) {
-            this.transaction.remove(filter(statements), targetContexts);
+            this.transaction.remove(this.filter(statements), targetContexts);
         } else if (targetContexts != Contexts.NONE) {
             this.transaction.remove(statements, targetContexts);
         }
     }
 
     @Override
-    public synchronized void removeInferred(final Resource subject, final URI predicate,
+    public synchronized void removeInferred(final Resource subject, final IRI predicate,
             final Value object, final Resource... contexts) throws RepositoryException
     {
-        checkAccessible();
-        checkWritable();
+        this.checkAccessible();
+        this.checkWritable();
 
-        final Resource[] targetContexts = filter(contexts);
+        final Resource[] targetContexts = this.filter(contexts);
 
         if (targetContexts == Contexts.UNSPECIFIED) {
-            final List<Resource> implicitContexts = Iterations.getAllElements(Iterations.filter(
-                    this.transaction.getContextIDs(InferenceMode.FORWARD),
-                    this.inferredContextPrefix.valueMatcher()));
+            final List<Resource> implicitContexts = Iterations.getAllElements(
+                    Iterations.filter(this.transaction.getContextIDs(InferenceMode.FORWARD),
+                            this.inferredContextPrefix.valueMatcher()));
             for (final Resource implicitContext : implicitContexts) {
                 this.transaction.remove(subject, predicate, object, implicitContext);
             }

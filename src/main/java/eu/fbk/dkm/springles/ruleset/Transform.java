@@ -20,15 +20,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import org.openrdf.model.Literal;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.impl.ListBindingSet;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.impl.ListBindingSet;
 
 public final class Transform
 {
@@ -45,12 +45,12 @@ public final class Transform
             try {
                 methodClass = Class.forName(transformerURI.substring(5, index));
             } catch (final ClassNotFoundException ex) {
-                throw new IllegalArgumentException("No such transformer (invalid class name): "
-                        + transformerURI);
+                throw new IllegalArgumentException(
+                        "No such transformer (invalid class name): " + transformerURI);
             }
         } else {
             methodClass = Transform.class;
-            methodName = new URIImpl(transformerURI).getLocalName();
+            methodName = SimpleValueFactory.getInstance().createIRI(transformerURI).getLocalName();
         }
 
         Method method = null;
@@ -142,7 +142,7 @@ public final class Transform
         public TarjanTransformer(final TupleQueryResult iteration, final String prefix)
                 throws QueryEvaluationException
         {
-            super(NAMES, iteration);
+            super(TarjanTransformer.NAMES, iteration);
 
             this.prefix = prefix;
             this.nodes = Maps.newHashMap();
@@ -151,8 +151,8 @@ public final class Transform
 
             while (iteration.hasNext()) {
                 final BindingSet bindings = iteration.next();
-                final Node src = nodeFor(bindings.getValue("src"));
-                final Node dest = nodeFor(bindings.getValue("dest"));
+                final Node src = this.nodeFor(bindings.getValue("src"));
+                final Node dest = this.nodeFor(bindings.getValue("dest"));
                 if (src != null && dest != null) {
                     src.successors.add(dest);
                 }
@@ -160,7 +160,7 @@ public final class Transform
 
             for (final Node node : this.nodes.values()) {
                 if (node.index == 0) {
-                    connect(node);
+                    this.connect(node);
                 }
             }
 
@@ -180,11 +180,11 @@ public final class Transform
             return node;
         }
 
-        private URI uriFor(final Node node)
+        private IRI uriFor(final Node node)
         {
             try {
-                return new URIImpl(this.prefix
-                        + URLEncoder.encode(node.resource.stringValue(), "UTF-8"));
+                return SimpleValueFactory.getInstance().createIRI(
+                        this.prefix + URLEncoder.encode(node.resource.stringValue(), "UTF-8"));
             } catch (final UnsupportedEncodingException ex) {
                 throw new Error("Unexpected exception: " + ex.getMessage(), ex);
             }
@@ -199,7 +199,7 @@ public final class Transform
 
             for (final Node successor : node.successors) {
                 if (successor.index == 0) {
-                    connect(successor);
+                    this.connect(successor);
                     node.lowlink = Math.min(node.lowlink, successor.lowlink);
                 } else if (successor.component == null) {
                     node.lowlink = Math.min(node.lowlink, successor.lowlink);
@@ -207,7 +207,7 @@ public final class Transform
             }
 
             if (node.lowlink == node.index) {
-                final URI uri = uriFor(node);
+                final IRI uri = this.uriFor(node);
                 Node element;
                 do {
                     element = this.stack.pop();
@@ -226,7 +226,8 @@ public final class Transform
         public BindingSet next() throws QueryEvaluationException
         {
             final Node node = this.iterator.next();
-            return new ListBindingSet(NAMES, new Value[] { node.component, node.resource });
+            return new ListBindingSet(TarjanTransformer.NAMES,
+                    new Value[] { node.component, node.resource });
         }
 
         private static final class Node
@@ -240,7 +241,7 @@ public final class Transform
 
             private int lowlink;
 
-            private URI component;
+            private IRI component;
 
             private Node(final Resource resource)
             {

@@ -11,13 +11,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Graph;
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
 
 import eu.fbk.dkm.internal.util.Selector;
 
@@ -38,8 +39,8 @@ public final class ClosureEvalTask extends ClosureTask
             @Nullable final Iterable<? extends Resource> ruleIDs)
     {
         super(id, bindings);
-        this.ruleIDs = ruleIDs == null ? Lists.<Resource>newArrayList() : Lists
-                .newArrayList(ruleIDs);
+        this.ruleIDs = ruleIDs == null ? Lists.<Resource>newArrayList()
+                : Lists.newArrayList(ruleIDs);
     }
 
     // PROPERTIES
@@ -51,24 +52,24 @@ public final class ClosureEvalTask extends ClosureTask
 
     public void setRuleIDs(@Nullable final Iterable<? extends Resource> ruleIDs)
     {
-        checkMutable();
-        this.ruleIDs = ruleIDs == null ? Lists.<Resource>newArrayList() : Lists
-                .newArrayList(ruleIDs);
+        this.checkMutable();
+        this.ruleIDs = ruleIDs == null ? Lists.<Resource>newArrayList()
+                : Lists.newArrayList(ruleIDs);
     }
 
     // SERIALIZATION AND DESERIALIZATION IN RDF
 
     @Override
-    public Resource emitRDF(final Graph graph, @Nullable final String baseURI,
+    public Resource emitRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces)
     {
         final Resource id = super.emitRDF(graph, baseURI, namespaces);
 
         graph.add(id, RDF.TYPE, SPR.CLOSURE_EVAL_TASK);
-        URI pred = SPR.EVAL_OF;
+        IRI pred = SPR.EVAL_OF;
         Resource node = id;
         for (final Resource ruleID : this.ruleIDs) {
-            final BNode newNode = graph.getValueFactory().createBNode();
+            final BNode newNode = SimpleValueFactory.getInstance().createBNode();
             graph.add(node, pred, newNode);
             graph.add(newNode, RDF.FIRST, ruleID);
             pred = RDF.REST;
@@ -80,11 +81,11 @@ public final class ClosureEvalTask extends ClosureTask
     }
 
     @Override
-    public void parseRDF(final Graph graph, @Nullable final String baseURI,
+    public void parseRDF(final Model graph, @Nullable final String baseURI,
             @Nullable final Map<String, String> namespaces) throws MalformedQueryException
     {
         super.parseRDF(graph, baseURI, namespaces);
-        final Selector s = Selector.select(graph, getID());
+        final Selector s = Selector.select(graph, this.getID());
         if (!s.isEmpty(SPR.EVAL_OF)) {
             this.ruleIDs = s.getList(SPR.EVAL_OF, Resource.class);
         }
@@ -96,8 +97,8 @@ public final class ClosureEvalTask extends ClosureTask
     public void validate()
     {
         super.validate();
-        validate(!this.ruleIDs.contains(null), "null rule ID");
-        validate(this.ruleIDs.size() == Sets.newHashSet(this.ruleIDs).size(),
+        this.validate(!this.ruleIDs.contains(null), "null rule ID");
+        this.validate(this.ruleIDs.size() == Sets.newHashSet(this.ruleIDs).size(),
                 "duplicate rule ID(s)");
     }
 
@@ -106,7 +107,7 @@ public final class ClosureEvalTask extends ClosureTask
     @Override
     public void freeze()
     {
-        if (!isFrozen()) {
+        if (!this.isFrozen()) {
             this.ruleIDs = ImmutableList.copyOf(this.ruleIDs);
             super.freeze();
         }

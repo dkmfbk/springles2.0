@@ -2,15 +2,15 @@ package eu.fbk.dkm.springles.base;
 
 import javax.annotation.Nullable;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryReadOnlyException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryReadOnlyException;
 
 import eu.fbk.dkm.springles.InferenceMode;
 
@@ -52,7 +52,7 @@ final class UnmodifiableTransaction extends ForwardingTransaction
     }
 
     @Override
-    public void update(final URI updateURI, final InferenceMode mode, final Object... parameters)
+    public void update(final IRI updateURI, final InferenceMode mode, final Object... parameters)
             throws UpdateExecutionException, RepositoryException
     {
         throw new RepositoryReadOnlyException();
@@ -73,7 +73,7 @@ final class UnmodifiableTransaction extends ForwardingTransaction
     }
 
     @Override
-    public void remove(@Nullable final Resource subject, @Nullable final URI predicate,
+    public void remove(@Nullable final Resource subject, @Nullable final IRI predicate,
             @Nullable final Value object, final Resource... contexts) throws RepositoryException
     {
         throw new RepositoryReadOnlyException();
@@ -99,11 +99,11 @@ final class UnmodifiableTransaction extends ForwardingTransaction
 
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
         if (!writeOperation) {
-            return delegate().execute(operation, writeOperation, closureNeeded);
+            return this.delegate().execute(operation, writeOperation, closureNeeded);
         } else {
             throw new RepositoryReadOnlyException();
         }

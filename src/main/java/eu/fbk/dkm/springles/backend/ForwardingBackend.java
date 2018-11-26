@@ -6,8 +6,8 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ForwardingObject;
 
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.base.Transaction;
 
@@ -35,7 +35,7 @@ public abstract class ForwardingBackend extends ForwardingObject implements Back
     @Override
     public void initialize(@Nullable final File dataDir) throws RepositoryException
     {
-        delegate().initialize(dataDir);
+        this.delegate().initialize(dataDir);
     }
 
     /**
@@ -44,7 +44,7 @@ public abstract class ForwardingBackend extends ForwardingObject implements Back
     @Override
     public boolean isWritable()
     {
-        return delegate().isWritable();
+        return this.delegate().isWritable();
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class ForwardingBackend extends ForwardingObject implements Back
     @Override
     public ValueFactory getValueFactory()
     {
-        return delegate().getValueFactory();
+        return this.delegate().getValueFactory();
     }
 
     /**
@@ -63,7 +63,7 @@ public abstract class ForwardingBackend extends ForwardingObject implements Back
     public Transaction newTransaction(final String id, final boolean writable)
             throws RepositoryException
     {
-        return delegate().newTransaction(id, writable);
+        return this.delegate().newTransaction(id, writable);
     }
 
     /**
@@ -72,7 +72,7 @@ public abstract class ForwardingBackend extends ForwardingObject implements Back
     @Override
     public void close() throws RepositoryException
     {
-        delegate().close();
+        this.delegate().close();
     }
 
 }

@@ -4,19 +4,18 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ForwardingObject;
 
-import org.openrdf.model.Namespace;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.UpdateExecutionException;
-import org.openrdf.repository.RepositoryException;
-
-import info.aduna.iteration.CloseableIteration;
+import org.eclipse.rdf4j.common.iteration.CloseableIteration;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Namespace;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.Dataset;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
+import org.eclipse.rdf4j.query.UpdateExecutionException;
+import org.eclipse.rdf4j.repository.RepositoryException;
 
 import eu.fbk.dkm.springles.ClosureStatus;
 import eu.fbk.dkm.springles.InferenceMode;
@@ -24,7 +23,7 @@ import eu.fbk.dkm.springles.InferenceMode;
 /**
  * Implementation of <tt>Transaction</tt> that forwards by default all method calls to a delegate
  * <tt>Transaction</tt>.
- * 
+ *
  * <p>
  * This class is modeled after the 'forwarding' pattern of Guava (see {@link ForwardingObject}).
  * Subclasses must implement method {@link #delegate()} which is called by other methods and must
@@ -46,7 +45,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public String getID()
     {
-        return delegate().getID();
+        return this.delegate().getID();
     }
 
     /**
@@ -55,7 +54,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public ValueFactory getValueFactory()
     {
-        return delegate().getValueFactory();
+        return this.delegate().getValueFactory();
     }
 
     /**
@@ -64,7 +63,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public String getNamespace(final String prefix) throws RepositoryException
     {
-        return delegate().getNamespace(prefix);
+        return this.delegate().getNamespace(prefix);
     }
 
     /**
@@ -74,7 +73,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public CloseableIteration<? extends Namespace, RepositoryException> getNamespaces()
             throws RepositoryException
     {
-        return delegate().getNamespaces();
+        return this.delegate().getNamespaces();
     }
 
     /**
@@ -84,7 +83,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public void setNamespace(final String prefix, @Nullable final String name)
             throws RepositoryException
     {
-        delegate().setNamespace(prefix, name);
+        this.delegate().setNamespace(prefix, name);
     }
 
     /**
@@ -93,7 +92,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public void clearNamespaces() throws RepositoryException
     {
-        delegate().clearNamespaces();
+        this.delegate().clearNamespaces();
     }
 
     /**
@@ -104,7 +103,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout,
             final Object handler) throws QueryEvaluationException, RepositoryException
     {
-        delegate().query(query, dataset, bindings, mode, timeout, handler);
+        this.delegate().query(query, dataset, bindings, mode, timeout, handler);
     }
 
     /**
@@ -115,17 +114,17 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
             @Nullable final BindingSet bindings, final InferenceMode mode, final int timeout)
             throws QueryEvaluationException, RepositoryException
     {
-        return delegate().query(query, dataset, bindings, mode, timeout);
+        return this.delegate().query(query, dataset, bindings, mode, timeout);
     }
 
     /**
      * {@inheritDoc} Delegates to wrapped transaction.
      */
     @Override
-    public <T> T query(final URI queryURI, final QueryType<T> queryType, final InferenceMode mode,
+    public <T> T query(final IRI queryURI, final QueryType<T> queryType, final InferenceMode mode,
             final Object... parameters) throws QueryEvaluationException, RepositoryException
     {
-        return delegate().query(queryURI, queryType, mode, parameters);
+        return this.delegate().query(queryURI, queryType, mode, parameters);
     }
 
     /**
@@ -135,7 +134,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public CloseableIteration<? extends Resource, RepositoryException> getContextIDs(
             final InferenceMode mode) throws RepositoryException
     {
-        return delegate().getContextIDs(mode);
+        return this.delegate().getContextIDs(mode);
     }
 
     /**
@@ -143,21 +142,21 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
      */
     @Override
     public CloseableIteration<? extends Statement, RepositoryException> getStatements(
-            @Nullable final Resource subj, @Nullable final URI pred, @Nullable final Value obj,
+            @Nullable final Resource subj, @Nullable final IRI pred, @Nullable final Value obj,
             final InferenceMode mode, final Resource... contexts) throws RepositoryException
     {
-        return delegate().getStatements(subj, pred, obj, mode, contexts);
+        return this.delegate().getStatements(subj, pred, obj, mode, contexts);
     }
 
     /**
      * {@inheritDoc} Delegates to wrapped transaction.
      */
     @Override
-    public boolean hasStatement(@Nullable final Resource subj, @Nullable final URI pred,
+    public boolean hasStatement(@Nullable final Resource subj, @Nullable final IRI pred,
             @Nullable final Value obj, final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        return delegate().hasStatement(subj, pred, obj, mode, contexts);
+        return this.delegate().hasStatement(subj, pred, obj, mode, contexts);
     }
 
     /**
@@ -167,7 +166,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public long size(final InferenceMode mode, final Resource... contexts)
             throws RepositoryException
     {
-        return delegate().size(mode, contexts);
+        return this.delegate().size(mode, contexts);
     }
 
     /**
@@ -178,17 +177,17 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
             @Nullable final BindingSet bindings, final InferenceMode mode)
             throws UpdateExecutionException, RepositoryException
     {
-        delegate().update(update, dataset, bindings, mode);
+        this.delegate().update(update, dataset, bindings, mode);
     }
 
     /**
      * {@inheritDoc} Delegates to wrapped transaction.
      */
     @Override
-    public void update(final URI updateURI, final InferenceMode mode, final Object... parameters)
+    public void update(final IRI updateURI, final InferenceMode mode, final Object... parameters)
             throws UpdateExecutionException, RepositoryException
     {
-        delegate().update(updateURI, mode, parameters);
+        this.delegate().update(updateURI, mode, parameters);
     }
 
     /**
@@ -198,7 +197,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public void add(final Iterable<? extends Statement> statements, final Resource... contexts)
             throws RepositoryException
     {
-        delegate().add(statements, contexts);
+        this.delegate().add(statements, contexts);
     }
 
     /**
@@ -208,17 +207,17 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     public void remove(final Iterable<? extends Statement> statements, final Resource... contexts)
             throws RepositoryException
     {
-        delegate().remove(statements, contexts);
+        this.delegate().remove(statements, contexts);
     }
 
     /**
      * {@inheritDoc} Delegates to wrapped transaction.
      */
     @Override
-    public void remove(@Nullable final Resource subject, @Nullable final URI predicate,
+    public void remove(@Nullable final Resource subject, @Nullable final IRI predicate,
             @Nullable final Value object, final Resource... contexts) throws RepositoryException
     {
-        delegate().remove(subject, predicate, object, contexts);
+        this.delegate().remove(subject, predicate, object, contexts);
     }
 
     /**
@@ -227,7 +226,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public ClosureStatus getClosureStatus() throws RepositoryException
     {
-        return delegate().getClosureStatus();
+        return this.delegate().getClosureStatus();
     }
 
     /**
@@ -236,7 +235,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public void updateClosure() throws RepositoryException
     {
-        delegate().updateClosure();
+        this.delegate().updateClosure();
     }
 
     /**
@@ -245,7 +244,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public void clearClosure() throws RepositoryException
     {
-        delegate().clearClosure();
+        this.delegate().clearClosure();
     }
 
     /**
@@ -254,7 +253,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public void reset() throws RepositoryException
     {
-        delegate().reset();
+        this.delegate().reset();
     }
 
     /**
@@ -262,10 +261,10 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
      */
     @Override
     public <T, E extends Exception> T execute(final Operation<T, E> operation,
-            final boolean writeOperation, final boolean closureNeeded) throws E,
-            RepositoryException
+            final boolean writeOperation, final boolean closureNeeded)
+            throws E, RepositoryException
     {
-        return delegate().execute(operation, writeOperation, closureNeeded);
+        return this.delegate().execute(operation, writeOperation, closureNeeded);
     }
 
     /**
@@ -274,7 +273,7 @@ public abstract class ForwardingTransaction extends ForwardingObject implements 
     @Override
     public void end(final boolean commit) throws RepositoryException
     {
-        delegate().end(commit);
+        this.delegate().end(commit);
     }
 
 }
